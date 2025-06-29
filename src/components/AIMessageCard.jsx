@@ -9,28 +9,26 @@ const AIMessageCard = ({
   return (
     <div
       className={`
-        relative overflow-hidden rounded-xl
-        bg-white shadow-lg border border-gray-200
-        p-6 md:p-8
-        transition-all duration-300 ease-in-out
-        hover:shadow-xl hover:-translate-y-1
+        relative overflow-hidden rounded-lg
+        bg-white/10 backdrop-blur-sm
+        border border-white/20
+        p-4 shadow-sm
+        transition-all duration-200 ease-in-out
+        hover:bg-white/15 hover:shadow-md
         ${className}
       `}
-      style={{
-        backgroundColor: 'var(--color-card)',
-        borderColor: 'var(--color-border)',
-      }}
     >
-      {/* Subtle inner glow */}
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+      {/* Subtle inner glow - much lighter */}
+      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
       
-      {/* Card Type Label - similar to answer cards */}
-      <div className="absolute top-0 right-0 h-full flex items-start justify-end pointer-events-none p-4 md:p-6">
+      {/* Softened Card Type Label */}
+      <div className="absolute top-0 right-0 h-full flex items-start justify-end pointer-events-none p-3">
         <span 
-          className="text-xs font-medium tracking-wide uppercase select-none leading-none opacity-60"
+          className="text-xs font-medium tracking-wide uppercase select-none leading-none opacity-40"
           style={{ 
             fontFamily: 'Inter, sans-serif',
             color: 'var(--color-muted)',
+            textShadow: 'none'
           }}
         >
           {cardType}
@@ -38,12 +36,13 @@ const AIMessageCard = ({
       </div>
       
       {/* Content */}
-      <div className="relative z-10 pr-16 md:pr-20">
+      <div className="relative z-10 pr-20">
         {children || (
           <p 
-            className="leading-relaxed text-base font-medium"
+            className="leading-relaxed text-sm"
             style={{ 
               color: 'var(--color-text)',
+              opacity: '0.85'
             }}
           >
             {message}

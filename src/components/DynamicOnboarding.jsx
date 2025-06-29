@@ -176,9 +176,9 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                 `}
               >
                 {/* Question Header */}
-                <div className="text-center space-y-6 md:space-y-8">
+                <div className="text-center space-y-4">
                   {currentQuestionData.title && (
-                    <div className="max-w-xl mx-auto my-6 md:my-8">
+                    <div className="max-w-2xl mx-auto">
                       <AIMessageCard 
                         className="text-center"
                         cardType="DIAGNOSTIC QUESTION"
@@ -187,6 +187,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                           className="text-base font-normal leading-relaxed"
                           style={{ 
                             color: 'var(--color-text)',
+                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
                           }}
                         >
                           {currentQuestionData.title}
