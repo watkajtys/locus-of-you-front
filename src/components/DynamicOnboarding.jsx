@@ -89,9 +89,9 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         {/* Header Section */}
         <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-8 md:pt-12 pb-4 md:pb-8">
           {/* Welcome Text */}
-          <div className="text-center mb-6 md:mb-8">
+          <div className="text-center mb-4 md:mb-6">
             <div className="flex justify-center mb-6">
-              <AuraAvatar size={80} className="hover:scale-105 transition-transform duration-500" />
+              <AuraAvatar size={64} className="hover:scale-105 transition-transform duration-500" />
             </div>
             
             <h1 
