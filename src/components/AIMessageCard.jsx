@@ -1,34 +1,32 @@
 import React from 'react';
 
 const AIMessageCard = ({ 
-  children, 
-  message = "This is a placeholder message from the AI assistant. The glassmorphism effect creates a beautiful frosted-glass appearance with excellent readability.",
+  question,
+  message,
   cardType = "DIAGNOSTIC QUESTION",
   className = '' 
 }) => {
   return (
     <div
       className={`
-        relative overflow-hidden rounded-2xl
-        bg-white/20 backdrop-blur-md
-        border border-white/30
-        p-6 shadow-lg
+        relative overflow-hidden rounded-xl
+        bg-white/30 backdrop-blur-md
+        border border-white/40 shadow-xl
+        p-8 md:p-10
         transition-all duration-300 ease-in-out
-        hover:bg-white/25 hover:border-white/40
+        hover:bg-white/35 hover:shadow-2xl hover:-translate-y-1
         ${className}
       `}
     >
-      {/* Optional subtle inner glow effect */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+      {/* Subtle inner glow */}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
       
-      {/* Burned-in Card Type Label */}
-      <div className="absolute top-0 right-0 h-full flex items-start justify-end pointer-events-none p-4">
+      {/* Burned-in Card Type Label - More Subtle */}
+      <div className="absolute top-0 right-0 h-full flex items-start justify-end pointer-events-none p-6">
         <span 
-          className="text-xs font-bold tracking-wider uppercase select-none leading-none opacity-60"
+          className="text-xs font-bold tracking-widest uppercase text-sky-800/40 select-none leading-none"
           style={{ 
             fontFamily: 'Inter, sans-serif',
-            color: 'var(--color-text)',
-            textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
           }}
         >
           {cardType}
@@ -36,20 +34,36 @@ const AIMessageCard = ({
       </div>
       
       {/* Content */}
-      <div className="relative z-10">
-        {children || (
-          <p 
-            className="text-slate-100 leading-relaxed text-sm sm:text-base"
-            style={{ 
-              textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
-              color: 'var(--color-text)'
-            }}
-          >
-            {message}
-          </p>
+      <div className="relative z-10 space-y-6">
+        {/* AI Commentary/Message */}
+        {message && (
+          <div>
+            <p 
+              className="text-base font-normal leading-relaxed text-sky-900/80"
+              style={{ 
+                fontFamily: 'Inter, sans-serif',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              {message}
+            </p>
+          </div>
+        )}
+        
+        {/* Main Question */}
+        {question && (
+          <div>
+            <h3 
+              className="text-xl md:text-2xl font-bold leading-relaxed text-sky-900"
+              style={{ 
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              {question}
+            </h3>
+          </div>
         )}
       </div>
-      
     </div>
   );
 };

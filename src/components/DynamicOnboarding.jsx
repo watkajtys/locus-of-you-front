@@ -19,7 +19,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     {
       id: 'mindset',
       type: 'choice',
-      title: "To start, I'm curious about your take on this:",
+      message: "To start, I'm curious about your take on this:",
       question: "Do you feel that a person's ability is something they're just born with, or is it a skill that can be developed?",
       options: [
         {
@@ -37,7 +37,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     {
       id: 'locus',
       type: 'choice',
-      title: "That's helpful, thank you.",
+      message: "That's helpful, thank you.",
       question: "Now, when things feel particularly tough, does it seem more like it's due to circumstances beyond your control, or more about the choices you've made?",
       options: [
         {
@@ -175,32 +175,15 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                   }
                 `}
               >
-                {/* Question Header */}
-                <div className="text-center space-y-4">
-                  {currentQuestionData.title && (
-                    <div className="max-w-2xl mx-auto">
-                      <AIMessageCard 
-                        className="text-center"
-                        cardType="DIAGNOSTIC QUESTION"
-                      >
-                        <p 
-                          className="text-base font-normal leading-relaxed"
-                          style={{ 
-                            color: 'var(--color-text)',
-                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          {currentQuestionData.title}
-                        </p>
-                      </AIMessageCard>
-                    </div>
-                  )}
-                  
-                  <h3 
-                    className="text-xl md:text-2xl font-bold leading-relaxed max-w-3xl mx-auto text-sky-900"
-                  >
-                    {currentQuestionData.question}
-                  </h3>
+                {/* AI Message Card with Question */}
+                <div className="text-center">
+                  <div className="max-w-2xl mx-auto">
+                    <AIMessageCard 
+                      message={currentQuestionData.message}
+                      question={currentQuestionData.question}
+                      cardType="DIAGNOSTIC QUESTION"
+                    />
+                  </div>
                 </div>
 
                 {/* Answer Options */}
