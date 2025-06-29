@@ -196,8 +196,17 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         </div>
                         
                         {/* Content Area */}
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-end relative z-10">
+                        <div className="h-full flex items-center relative z-10 ml-16">
+                          <div className="flex-1">
+                            <p 
+                              className="text-lg leading-relaxed font-medium"
+                              style={{ color: 'var(--color-text)' }}
+                            >
+                              {option.label.substring(3)} {/* Remove "A) " or "B) " prefix */}
+                            </p>
+                          </div>
+                          
+                          <div className="ml-4">
                             <ChevronRight 
                               className={`
                                 w-5 h-5 transition-all duration-300 text-sky-600
@@ -208,13 +217,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                               `}
                             />
                           </div>
-                          
-                          <p 
-                            className="text-lg leading-relaxed font-medium relative z-10 ml-16"
-                            style={{ color: 'var(--color-text)' }}
-                          >
-                            {option.label.substring(3)} {/* Remove "A) " or "B) " prefix */}
-                          </p>
                         </div>
                       </Card>
                     ))}
