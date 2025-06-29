@@ -102,114 +102,115 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
             </p>
           </div>
 
-        {/* Progress Section */}
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <h2 
-              className="text-sm font-medium tracking-wide uppercase"
-              style={{ color: 'var(--color-muted)' }}
+          {/* Progress Section */}
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-center justify-between mb-3">
+              <h2 
+                className="text-sm font-medium tracking-wide uppercase"
+                style={{ color: 'var(--color-muted)' }}
+              >
+                Motivational DNA Profile
+              </h2>
+              <span 
+                className="text-sm font-medium"
+                style={{ color: 'var(--color-accent)' }}
+              >
+                {Math.round(progressPercentage)}%
+              </span>
+            </div>
+            
+            {/* Progress Bar */}
+            <div 
+              className="w-full h-2 rounded-full overflow-hidden"
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
-              Motivational DNA Profile
-            </h2>
-            <span 
-              className="text-sm font-medium"
-              style={{ color: 'var(--color-accent)' }}
-            >
-              {Math.round(progressPercentage)}%
-            </span>
-          </div>
-          
-          {/* Progress Bar */}
-          <div 
-            className="w-full h-2 rounded-full overflow-hidden"
-            style={{ backgroundColor: 'var(--color-primary)' }}
-          >
-            <div
-              className="h-full rounded-full transition-all duration-500 ease-out"
-              style={{ 
-                backgroundColor: 'var(--color-accent)',
-                width: `${progressPercentage}%`
-              }}
-            />
+              <div
+                className="h-full rounded-full transition-all duration-500 ease-out"
+                style={{ 
+                  backgroundColor: 'var(--color-accent)',
+                  width: `${progressPercentage}%`
+                }}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Question Area */}
-      <div className="flex-1 flex items-center justify-center px-6 py-8">
-        <div className="max-w-4xl mx-auto w-full">
-          {currentQuestionData && (
-            <div className="space-y-8 animate-fade-in">
-              {/* Question Header */}
-              <div className="text-center space-y-4">
-                {currentQuestionData.title && (
-                  <p 
-                    className="text-lg font-medium"
-                    style={{ color: 'var(--color-accent)' }}
-                  >
-                    {currentQuestionData.title}
-                  </p>
-                )}
-                
-                <h3 
-                  className="text-xl md:text-2xl font-semibold leading-relaxed max-w-3xl mx-auto"
-                  style={{ color: 'var(--color-text)' }}
-                >
-                  {currentQuestionData.question}
-                </h3>
-              </div>
-
-              {/* Answer Options */}
-              {currentQuestionData.type === 'choice' && (
-                <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                  {currentQuestionData.options.map((option) => (
-                    <Card
-                      key={option.id}
-                      hover
-                      className="p-8 cursor-pointer transition-all duration-300 group"
-                      onClick={() => handleAnswerSelect(currentQuestionData.id, option.value)}
+        {/* Main Question Area */}
+        <div className="flex-1 flex items-center justify-center px-6 py-8">
+          <div className="max-w-4xl mx-auto w-full">
+            {currentQuestionData && (
+              <div className="space-y-8 animate-fade-in">
+                {/* Question Header */}
+                <div className="text-center space-y-4">
+                  {currentQuestionData.title && (
+                    <p 
+                      className="text-lg font-medium"
+                      style={{ color: 'var(--color-accent)' }}
                     >
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div 
-                            className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                            style={{ backgroundColor: 'var(--color-accent)' }}
-                          >
-                            {option.id}
+                      {currentQuestionData.title}
+                    </p>
+                  )}
+                  
+                  <h3 
+                    className="text-xl md:text-2xl font-semibold leading-relaxed max-w-3xl mx-auto"
+                    style={{ color: 'var(--color-text)' }}
+                  >
+                    {currentQuestionData.question}
+                  </h3>
+                </div>
+
+                {/* Answer Options */}
+                {currentQuestionData.type === 'choice' && (
+                  <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                    {currentQuestionData.options.map((option) => (
+                      <Card
+                        key={option.id}
+                        hover
+                        className="p-8 cursor-pointer transition-all duration-300 group"
+                        onClick={() => handleAnswerSelect(currentQuestionData.id, option.value)}
+                      >
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div 
+                              className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                              style={{ backgroundColor: 'var(--color-accent)' }}
+                            >
+                              {option.id}
+                            </div>
+                            
+                            <ChevronRight 
+                              className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                              style={{ color: 'var(--color-accent)' }}
+                            />
                           </div>
                           
-                          <ChevronRight 
-                            className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                            style={{ color: 'var(--color-accent)' }}
-                          />
+                          <p 
+                            className="text-lg leading-relaxed"
+                            style={{ color: 'var(--color-text)' }}
+                          >
+                            {option.label}
+                          </p>
                         </div>
-                        
-                        <p 
-                          className="text-lg leading-relaxed"
-                          style={{ color: 'var(--color-text)' }}
-                        >
-                          {option.label}
-                        </p>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Footer Section */}
-      <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pb-12">
-        <div className="text-center">
-          <Button
-            variant="ghost"
-            onClick={onSkip}
-            className="text-sm"
-          >
-            Skip for now & get my preliminary snapshot
-          </Button>
+        {/* Footer Section */}
+        <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pb-12">
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              onClick={onSkip}
+              className="text-sm"
+            >
+              Skip for now & get my preliminary snapshot
+            </Button>
+          </div>
         </div>
       </div>
     </AuraProvider>
