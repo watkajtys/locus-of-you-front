@@ -8,40 +8,45 @@ const AIMessageCard = ({
 }) => {
   return (
     <div className={`relative ${className}`}>
-      {/* File Folder Tab */}
-      <div className="relative z-10 flex justify-center">
-        <div className="bg-sky-200 px-4 py-2 rounded-t-lg border-l border-r border-t border-sky-300/30">
-          <span className="text-xs font-bold tracking-widest uppercase text-sky-800 select-none">
-            {cardType}
-          </span>
-        </div>
-      </div>
-      
-      {/* Main Card */}
+      {/* Main Card Container - Handles unified hover state */}
       <div
         className={`
-          relative overflow-hidden 
+          group relative overflow-hidden 
           bg-white/30 backdrop-blur-md
           border border-white/40 shadow-xl
-          p-8 md:p-10 -mt-px
+          p-8 md:p-10 rounded-xl
           transition-all duration-300 ease-in-out
           hover:bg-white/35 hover:shadow-2xl hover:-translate-y-1
         `}
-        style={{
-          borderTopRightRadius: '0.75rem',
-          borderTopLeftRadius: '0.75rem',
-          borderBottomLeftRadius: '0.75rem',
-          borderBottomRightRadius: '0.75rem'
-        }}
       >
-        {/* Subtle inner glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" 
-             style={{
-               borderTopRightRadius: '0.75rem',
-               borderTopLeftRadius: '0.75rem',
-               borderBottomLeftRadius: '0.75rem',
-               borderBottomRightRadius: '0.75rem'
-             }} />
+        {/* Diagnostic Question Tab - Right Aligned */}
+        <div className="absolute top-0 right-0 -mt-3 mr-6">
+          <div 
+            className="
+              bg-white/40 backdrop-blur-md
+              border border-white/50 shadow-lg
+              px-4 py-2 rounded-t-lg
+              transition-all duration-300 ease-in-out
+              group-hover:bg-white/45 group-hover:shadow-xl group-hover:-translate-y-1
+            "
+          >
+            {/* Tab inner glow */}
+            <div className="absolute inset-0 rounded-t-lg bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+            
+            <span 
+              className="relative z-10 text-xs font-bold tracking-widest uppercase text-sky-800 select-none"
+              style={{ 
+                fontFamily: 'Inter, sans-serif',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              {cardType}
+            </span>
+          </div>
+        </div>
+
+        {/* Subtle inner glow for main card */}
+        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
         
         {/* Content */}
         <div className="relative z-10 space-y-4">
