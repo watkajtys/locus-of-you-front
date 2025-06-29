@@ -175,7 +175,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                           hover:scale-105 hover:shadow-xl
                           shadow-lg
                           ${selectedAnswer === option.value 
-                            ? 'border-2 border-sky-800 shadow-xl' 
+                            ? 'border-2 border-sky-600 shadow-xl' 
                             : 'border border-transparent hover:border-sky-300'
                           }
                         `}
@@ -184,11 +184,11 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         {/* Burned-in Letter Background */}
                         <div className="absolute left-0 top-0 h-full flex items-center justify-start pointer-events-none">
                           <span 
-                            className="text-8xl md:text-9xl font-black text-gray-300/40 select-none leading-none transform -translate-x-4"
+                            className={`text-8xl md:text-9xl font-black select-none leading-none transform -translate-x-4 transition-opacity duration-300 ${
+                              selectedAnswer === option.value ? 'text-gray-400/60' : 'text-gray-300/40'
+                            }`}
                             style={{ 
                               fontFamily: 'Inter, sans-serif',
-                              color: 'var(--color-muted)',
-                              opacity: '0.15'
                             }}
                           >
                             {option.id}
