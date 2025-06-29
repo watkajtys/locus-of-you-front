@@ -179,7 +179,10 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                 <div className="text-center space-y-4">
                   {currentQuestionData.title && (
                     <div className="max-w-2xl mx-auto">
-                      <AIMessageCard className="text-center">
+                      <AIMessageCard 
+                        className="text-center"
+                        cardType="DIAGNOSTIC QUESTION"
+                      >
                         <p 
                           className="text-base font-normal leading-relaxed"
                           style={{ 
