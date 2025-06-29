@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronRight, User, Brain } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
+import AIMessageCard from './AIMessageCard';
 import Card from './Card';
 import Button from './Button';
 
@@ -177,12 +178,19 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                 {/* Question Header */}
                 <div className="text-center space-y-4">
                   {currentQuestionData.title && (
-                    <p 
-                      className="text-base font-normal"
-                      style={{ color: 'var(--color-muted)' }}
-                    >
-                      {currentQuestionData.title}
-                    </p>
+                    <div className="max-w-2xl mx-auto">
+                      <AIMessageCard className="text-center">
+                        <p 
+                          className="text-base font-normal leading-relaxed"
+                          style={{ 
+                            color: 'var(--color-text)',
+                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                          }}
+                        >
+                          {currentQuestionData.title}
+                        </p>
+                      </AIMessageCard>
+                    </div>
                   )}
                   
                   <h3 
