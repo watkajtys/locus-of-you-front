@@ -224,9 +224,10 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                           backgroundColor: 'var(--color-accent)',
                           borderColor: 'var(--color-accent)',
                           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--color-accent)'
+                        } : {
                           backgroundColor: 'var(--color-card)',
                           borderColor: 'var(--color-border)'
-                        } : {}}
+                        }}
                         onClick={() => !isTransitioning && handleAnswerSelect(currentQuestionData.id, option.value, option)}
                       >
                         {/* Burned-in Letter Background */}
