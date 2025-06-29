@@ -170,7 +170,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         key={option.id}
                         hover
                         className={`
-                          p-8 cursor-pointer group
+                          p-8 cursor-pointer group relative overflow-hidden
                           transition-all duration-300 ease-in-out transform
                           hover:scale-105 hover:shadow-xl
                           shadow-lg
@@ -181,14 +181,23 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         `}
                         onClick={() => handleAnswerSelect(currentQuestionData.id, option.value)}
                       >
+                        {/* Burned-in Letter Background */}
+                        <div className="absolute left-0 top-0 h-full flex items-center justify-start pointer-events-none">
+                          <span 
+                            className="text-8xl md:text-9xl font-black text-gray-300/40 select-none leading-none transform -translate-x-4"
+                            style={{ 
+                              fontFamily: 'Inter, sans-serif',
+                              color: 'var(--color-muted)',
+                              opacity: '0.15'
+                            }}
+                          >
+                            {option.id}
+                          </span>
+                        </div>
+                        
+                        {/* Content Area */}
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div 
-                              className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg bg-sky-800 group-hover:bg-sky-900 transition-colors duration-300"
-                            >
-                              {option.id}
-                            </div>
-                            
+                          <div className="flex items-center justify-end relative z-10">
                             <ChevronRight 
                               className={`
                                 w-5 h-5 transition-all duration-300 text-sky-600
@@ -201,10 +210,10 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                           </div>
                           
                           <p 
-                            className="text-lg leading-relaxed font-medium"
+                            className="text-lg leading-relaxed font-medium relative z-10 ml-16"
                             style={{ color: 'var(--color-text)' }}
                           >
-                            {option.label}
+                            {option.label.substring(3)} {/* Remove "A) " or "B) " prefix */}
                           </p>
                         </div>
                       </Card>
