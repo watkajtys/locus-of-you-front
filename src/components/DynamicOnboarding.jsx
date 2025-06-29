@@ -104,33 +104,30 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
 
           {/* Progress Section */}
           <div className="max-w-2xl mx-auto">
-            <div className="flex items-center justify-between mb-3">
-              <h2 
-                className="text-sm font-medium tracking-wide uppercase"
-                style={{ color: 'var(--color-muted)' }}
-              >
-                Motivational DNA Profile
-              </h2>
+            {/* Progress Label */}
+            <h2 
+              className="text-sm font-medium tracking-wide uppercase mb-3 text-center"
+              style={{ color: 'var(--color-muted)' }}
+            >
+              Motivational DNA Profile
+            </h2>
+            
+            {/* Progress Bar */}
+            <div className="w-full h-3 bg-sky-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-sky-600 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            
+            {/* Progress Percentage */}
+            <div className="text-center mt-2">
               <span 
                 className="text-sm font-medium"
                 style={{ color: 'var(--color-accent)' }}
               >
                 {Math.round(progressPercentage)}%
               </span>
-            </div>
-            
-            {/* Progress Bar */}
-            <div 
-              className="w-full h-2 rounded-full overflow-hidden"
-              style={{ backgroundColor: 'var(--color-primary)' }}
-            >
-              <div
-                className="h-full rounded-full transition-all duration-500 ease-out"
-                style={{ 
-                  backgroundColor: 'var(--color-accent)',
-                  width: `${progressPercentage}%`
-                }}
-              />
             </div>
           </div>
         </div>
