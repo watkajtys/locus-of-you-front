@@ -179,21 +179,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                 <div className="text-center space-y-4">
                   {currentQuestionData.title && (
                     <div className="max-w-2xl mx-auto">
-                      <AIMessageCard 
-                        className="text-center"
-                        showDiagnostic={true}
-                        diagnosticData={{
-                          question: currentQuestion === 0 
-                            ? "WHAT FOUNDATIONAL MINDSET PATTERNS DRIVE USER BEHAVIOR?"
-                            : "HOW DOES USER PERCEIVE CONTROL AND AGENCY IN DIFFICULT SITUATIONS?",
-                          observation: currentQuestion === 0
-                            ? "ASSESSING FIXED VS GROWTH MINDSET ORIENTATION TO DETERMINE INTERVENTION APPROACH"
-                            : "EVALUATING INTERNAL VS EXTERNAL LOCUS OF CONTROL FOR TARGETED STRATEGY",
-                          intervention: currentQuestion === 0
-                            ? "DEPLOY NON-JUDGMENTAL INQUIRY TO REVEAL DEEP-SEATED BELIEFS ABOUT ABILITY"
-                            : "UTILIZE REFLECTIVE QUESTIONING TO EXPLORE ATTRIBUTION PATTERNS"
-                        }}
-                      >
+                      <AIMessageCard className="text-center">
                         <p 
                           className="text-base font-normal leading-relaxed"
                           style={{ 
