@@ -7,8 +7,11 @@ import Button from './Button';
 
 const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [answers, setAnswers] = useState({});
   const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [questionVisible, setQuestionVisible] = useState(true);
   
   // Question data structure
   const questions = [
@@ -50,29 +53,48 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     }
   ];
 
-  // Calculate progress percentage
-  const progressPercentage = (currentQuestion / questions.length) * 100;
-
   // Reset selected answer when question changes
   React.useEffect(() => {
     setSelectedAnswer(null);
+    setQuestionVisible(true);
   }, [currentQuestion]);
 
   // Handle answer selection
-  const handleAnswerSelect = (questionId, answer) => {
-    setSelectedAnswer(answer);
+  const handleAnswerSelect = (questionId, answerValue, optionData) => {
+    // Prevent multiple selections during transition
+    if (isTransitioning) return;
+    
+    // Mark as transitioning
+    setIsTransitioning(true);
+    
+    // Step 1: Visually mark the selected card
+    setSelectedAnswer(answerValue);
+    
+    // Step 2: Update answers state
     const newAnswers = {
       ...answers,
-      [questionId]: answer
+      [questionId]: answerValue
     };
     setAnswers(newAnswers);
-
-    // Auto-advance to next question after a brief delay
+    
+    // Step 3: Update progress with animation
+    const newProgress = ((currentQuestion + 1) / questions.length) * 100;
+    setProgress(newProgress);
+    
+    // Step 4: 500ms delay for user to see selection
     setTimeout(() => {
       if (currentQuestion < questions.length - 1) {
-        setCurrentQuestion(currentQuestion + 1);
+        // Step 5: Fade out current question
+        setQuestionVisible(false);
+        
+        // Step 6: After fade out, change question and fade in
+        setTimeout(() => {
+          setCurrentQuestion(currentQuestion + 1);
+          setIsTransitioning(false);
+        }, 200); // Short fade out duration
       } else {
         // Assessment complete
+        setIsTransitioning(false);
         onComplete && onComplete(newAnswers);
       }
     }, 500);
@@ -122,8 +144,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
             {/* Progress Bar */}
             <div className="w-full h-3 bg-sky-200 rounded-full overflow-hidden">
               <div
-                className="h-full bg-sky-600 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${progressPercentage}%` }}
+                className="h-full bg-sky-600 rounded-full transition-all duration-700 ease-out"
+                style={{ width: `${progress}%` }}
               />
             </div>
             
@@ -133,7 +155,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                 className="text-sm font-medium"
                 style={{ color: 'var(--color-accent)' }}
               >
-                {Math.round(progressPercentage)}%
+                {Math.round(progress)}%
               </span>
             </div>
           </div>
@@ -143,7 +165,15 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         <div className="flex-1 flex items-start justify-center px-6 py-4 md:py-8">
           <div className="max-w-4xl mx-auto w-full">
             {currentQuestionData && (
-              <div className="space-y-6 md:space-y-8 animate-fade-in">
+              <div 
+                className={`
+                  space-y-6 md:space-y-8 transition-all duration-200 ease-in-out
+                  ${questionVisible 
+                    ? 'opacity-100 transform translate-y-0' 
+                    : 'opacity-0 transform translate-y-4'
+                  }
+                `}
+              >
                 {/* Question Header */}
                 <div className="text-center space-y-4">
                   {currentQuestionData.title && (
@@ -170,22 +200,27 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         key={option.id}
                         hover
                         className={`
-                          p-6 md:p-8 cursor-pointer group relative overflow-hidden
+                          p-6 md:p-8 group relative overflow-hidden
                           transition-all duration-300 ease-in-out transform
-                          hover:scale-105 hover:shadow-xl
                           shadow-lg
+                          ${isTransitioning 
+                            ? 'cursor-wait' 
+                            : 'cursor-pointer hover:scale-105 hover:shadow-xl'
+                          }
                           ${selectedAnswer === option.value 
-                            ? 'border-2 border-sky-600 shadow-xl' 
+                            ? 'border-2 border-sky-600 shadow-xl bg-sky-50/50' 
                             : 'border border-transparent hover:border-sky-300'
                           }
                         `}
-                        onClick={() => handleAnswerSelect(currentQuestionData.id, option.value)}
+                        onClick={() => !isTransitioning && handleAnswerSelect(currentQuestionData.id, option.value, option)}
                       >
                         {/* Burned-in Letter Background */}
                         <div className="absolute left-0 top-0 h-full flex items-center justify-start pointer-events-none">
                           <span 
                             className={`text-8xl md:text-9xl font-black select-none leading-none transform -translate-x-4 transition-opacity duration-300 ${
-                              selectedAnswer === option.value ? 'text-gray-400/60' : 'text-gray-300/40'
+                              selectedAnswer === option.value 
+                                ? 'text-sky-600/30' 
+                                : 'text-gray-300/40 group-hover:text-gray-400/50'
                             }`}
                             style={{ 
                               fontFamily: 'Inter, sans-serif',
@@ -209,10 +244,10 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                           <div className="ml-4">
                             <ChevronRight 
                               className={`
-                                w-5 h-5 transition-all duration-300 text-sky-600
+                                w-5 h-5 transition-all duration-300
                                 ${selectedAnswer === option.value 
-                                  ? 'opacity-100 transform translate-x-1' 
-                                  : 'opacity-0 group-hover:opacity-100 group-hover:transform group-hover:translate-x-1'
+                                  ? 'opacity-100 transform translate-x-1 text-sky-600' 
+                                  : 'opacity-0 group-hover:opacity-100 group-hover:transform group-hover:translate-x-1 text-sky-600'
                                 }
                               `}
                             />

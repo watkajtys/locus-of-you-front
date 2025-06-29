@@ -61,6 +61,46 @@ html {
 .animate-slide-up:nth-child(3) { animation-delay: 0.3s; }
 .animate-slide-up:nth-child(4) { animation-delay: 0.4s; }
 
+/* Question transition animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOutDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+/* Enhanced interaction feedback */
+.answer-card-selected {
+  animation: pulseSelect 0.3s ease-out;
+}
+
+@keyframes pulseSelect {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 /* Aura Circle Component */
 .aura-circle {
   --aura-size: 128px;
