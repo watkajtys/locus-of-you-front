@@ -11,17 +11,19 @@ const AIMessageCard = ({
       {/* Main Container - position: relative */}
       <div
         className="
-          relative bg-white rounded-xl shadow-lg border border-gray-200
+          relative bg-white shadow-lg border border-gray-200
+          rounded-tl-xl rounded-bl-xl rounded-br-xl
           pt-8 px-8 pb-8 md:px-10 md:pb-10
           transition-all duration-300 ease-in-out
           hover:shadow-xl hover:-translate-y-1
         "
       >
-        {/* The Tab - position: absolute */}
+        {/* The Tab - position: absolute, right-aligned */}
         <div 
           className="
-            absolute top-0 left-1/2 -translate-y-1/2 -translate-x-1/2
-            bg-slate-100 px-4 py-0.5 rounded-t-lg
+            absolute top-0 right-0 -translate-y-1/2
+            bg-slate-100 px-4 py-0.5 
+            rounded-tl-lg rounded-tr-lg
             border border-slate-200 border-b-0
             shadow-sm
           "
