@@ -64,7 +64,7 @@ html {
 /* Aura Circle Component */
 .aura-circle {
   --aura-size: 128px;
-  --aura-duration: 15s;
+  --aura-animation-duration: 15s;
   --aura-color-1: var(--color-accent);
   --aura-color-2: var(--color-primary);
   --aura-color-3: var(--color-secondary);
@@ -80,7 +80,7 @@ html {
     var(--aura-color-1)
   );
   background-size: 300% 300%;
-  animation: aura-shift var(--aura-duration) ease-in-out infinite;
+  animation: aura-shift var(--aura-animation-duration) ease-in-out infinite;
   position: relative;
   overflow: hidden;
 }
