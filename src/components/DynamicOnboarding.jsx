@@ -8,6 +8,7 @@ import Button from './Button';
 const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
   
   // Question data structure
   const questions = [
@@ -52,8 +53,14 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   // Calculate progress percentage
   const progressPercentage = (currentQuestion / questions.length) * 100;
 
+  // Reset selected answer when question changes
+  React.useEffect(() => {
+    setSelectedAnswer(null);
+  }, [currentQuestion]);
+
   // Handle answer selection
   const handleAnswerSelect = (questionId, answer) => {
+    setSelectedAnswer(answer);
     const newAnswers = {
       ...answers,
       [questionId]: answer
@@ -141,16 +148,15 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                 <div className="text-center space-y-4">
                   {currentQuestionData.title && (
                     <p 
-                      className="text-lg font-medium"
-                      style={{ color: 'var(--color-accent)' }}
+                      className="text-base font-normal"
+                      style={{ color: 'var(--color-muted)' }}
                     >
                       {currentQuestionData.title}
                     </p>
                   )}
                   
                   <h3 
-                    className="text-xl md:text-2xl font-semibold leading-relaxed max-w-3xl mx-auto"
-                    style={{ color: 'var(--color-text)' }}
+                    className="text-2xl md:text-3xl font-bold leading-relaxed max-w-3xl mx-auto text-sky-900"
                   >
                     {currentQuestionData.question}
                   </h3>
@@ -163,26 +169,39 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                       <Card
                         key={option.id}
                         hover
-                        className="p-8 cursor-pointer transition-all duration-300 group"
+                        className={`
+                          p-8 cursor-pointer group
+                          transition-all duration-300 ease-in-out transform
+                          hover:scale-105 hover:shadow-xl
+                          shadow-lg
+                          ${selectedAnswer === option.value 
+                            ? 'border-2 border-sky-800 shadow-xl' 
+                            : 'border border-transparent hover:border-sky-300'
+                          }
+                        `}
                         onClick={() => handleAnswerSelect(currentQuestionData.id, option.value)}
                       >
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <div 
-                              className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                              style={{ backgroundColor: 'var(--color-accent)' }}
+                              className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg bg-sky-800 group-hover:bg-sky-900 transition-colors duration-300"
                             >
                               {option.id}
                             </div>
                             
                             <ChevronRight 
-                              className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                              style={{ color: 'var(--color-accent)' }}
+                              className={`
+                                w-5 h-5 transition-all duration-300 text-sky-600
+                                ${selectedAnswer === option.value 
+                                  ? 'opacity-100 transform translate-x-1' 
+                                  : 'opacity-0 group-hover:opacity-100 group-hover:transform group-hover:translate-x-1'
+                                }
+                              `}
                             />
                           </div>
                           
                           <p 
-                            className="text-lg leading-relaxed"
+                            className="text-lg leading-relaxed font-medium"
                             style={{ color: 'var(--color-text)' }}
                           >
                             {option.label}
