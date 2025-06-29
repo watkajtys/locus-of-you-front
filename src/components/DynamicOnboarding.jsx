@@ -1,0 +1,221 @@
+import React, { useState } from 'react';
+import { ChevronRight, User, Brain } from 'lucide-react';
+import Card from './Card';
+import Button from './Button';
+
+const DynamicOnboarding = ({ onComplete, onSkip }) => {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState({});
+  
+  // Question data structure
+  const questions = [
+    {
+      id: 'mindset',
+      type: 'choice',
+      title: "To start, I'm curious about your take on this:",
+      question: "Do you feel that a person's ability is something they're just born with, or is it a skill that can be developed?",
+      options: [
+        {
+          id: 'A',
+          label: "A) It's something you're born with",
+          value: 'fixed'
+        },
+        {
+          id: 'B', 
+          label: "B) It's a skill that can be developed",
+          value: 'growth'
+        }
+      ]
+    },
+    {
+      id: 'locus',
+      type: 'choice',
+      title: "That's helpful, thank you.",
+      question: "Now, when things feel particularly tough, does it seem more like it's due to circumstances beyond your control, or more about the choices you've made?",
+      options: [
+        {
+          id: 'A',
+          label: "A) It's due to circumstances beyond my control",
+          value: 'external'
+        },
+        {
+          id: 'B',
+          label: "B) It's due to the choices I've made",
+          value: 'internal'
+        }
+      ]
+    }
+  ];
+
+  // Calculate progress percentage
+  const progressPercentage = (currentQuestion / questions.length) * 100;
+
+  // Handle answer selection
+  const handleAnswerSelect = (questionId, answer) => {
+    const newAnswers = {
+      ...answers,
+      [questionId]: answer
+    };
+    setAnswers(newAnswers);
+
+    // Auto-advance to next question after a brief delay
+    setTimeout(() => {
+      if (currentQuestion < questions.length - 1) {
+        setCurrentQuestion(currentQuestion + 1);
+      } else {
+        // Assessment complete
+        onComplete && onComplete(newAnswers);
+      }
+    }, 500);
+  };
+
+  const currentQuestionData = questions[currentQuestion];
+
+  return (
+    <div 
+      className="min-h-screen flex flex-col font-inter"
+      style={{ backgroundColor: 'var(--color-background)' }}
+    >
+      {/* Header Section */}
+      <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-12 pb-8">
+        {/* Welcome Text */}
+        <div className="text-center mb-12">
+          <div className="flex justify-center mb-6">
+            <div 
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'var(--color-accent)' }}
+            >
+              <Brain className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          
+          <h1 
+            className="text-2xl md:text-3xl font-semibold mb-6 leading-relaxed max-w-3xl mx-auto"
+            style={{ color: 'var(--color-text)' }}
+          >
+            I'm a new type of AI coach that helps you take action by first understanding what's holding you back.
+          </h1>
+          
+          <p 
+            className="text-lg leading-relaxed max-w-2xl mx-auto"
+            style={{ color: 'var(--color-muted)' }}
+          >
+            We'll discover your unique motivational profile to build a plan that actually works.
+          </p>
+        </div>
+
+        {/* Progress Section */}
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <h2 
+              className="text-sm font-medium tracking-wide uppercase"
+              style={{ color: 'var(--color-muted)' }}
+            >
+              Motivational DNA Profile
+            </h2>
+            <span 
+              className="text-sm font-medium"
+              style={{ color: 'var(--color-accent)' }}
+            >
+              {Math.round(progressPercentage)}%
+            </span>
+          </div>
+          
+          {/* Progress Bar */}
+          <div 
+            className="w-full h-2 rounded-full overflow-hidden"
+            style={{ backgroundColor: 'var(--color-primary)' }}
+          >
+            <div
+              className="h-full rounded-full transition-all duration-500 ease-out"
+              style={{ 
+                backgroundColor: 'var(--color-accent)',
+                width: `${progressPercentage}%`
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Question Area */}
+      <div className="flex-1 flex items-center justify-center px-6 py-8">
+        <div className="max-w-4xl mx-auto w-full">
+          {currentQuestionData && (
+            <div className="space-y-8 animate-fade-in">
+              {/* Question Header */}
+              <div className="text-center space-y-4">
+                {currentQuestionData.title && (
+                  <p 
+                    className="text-lg font-medium"
+                    style={{ color: 'var(--color-accent)' }}
+                  >
+                    {currentQuestionData.title}
+                  </p>
+                )}
+                
+                <h3 
+                  className="text-xl md:text-2xl font-semibold leading-relaxed max-w-3xl mx-auto"
+                  style={{ color: 'var(--color-text)' }}
+                >
+                  {currentQuestionData.question}
+                </h3>
+              </div>
+
+              {/* Answer Options */}
+              {currentQuestionData.type === 'choice' && (
+                <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                  {currentQuestionData.options.map((option) => (
+                    <Card
+                      key={option.id}
+                      hover
+                      className="p-8 cursor-pointer transition-all duration-300 group"
+                      onClick={() => handleAnswerSelect(currentQuestionData.id, option.value)}
+                    >
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div 
+                            className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                            style={{ backgroundColor: 'var(--color-accent)' }}
+                          >
+                            {option.id}
+                          </div>
+                          
+                          <ChevronRight 
+                            className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            style={{ color: 'var(--color-accent)' }}
+                          />
+                        </div>
+                        
+                        <p 
+                          className="text-lg leading-relaxed"
+                          style={{ color: 'var(--color-text)' }}
+                        >
+                          {option.label}
+                        </p>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer Section */}
+      <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pb-12">
+        <div className="text-center">
+          <Button
+            variant="ghost"
+            onClick={onSkip}
+            className="text-sm"
+          >
+            Skip for now & get my preliminary snapshot
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DynamicOnboarding;
