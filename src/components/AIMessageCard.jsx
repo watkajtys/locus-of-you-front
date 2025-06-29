@@ -21,13 +21,13 @@ const AIMessageCard = ({
         <div 
           className="
             absolute top-0 left-1/2 -translate-y-1/2 -translate-x-1/2
-            bg-sky-200 px-4 py-2 rounded-t-lg
-            border border-sky-300 border-b-0
+            bg-slate-100 px-4 py-0.5 rounded-t-lg
+            border border-slate-200 border-b-0
             shadow-sm
           "
         >
           <span 
-            className="text-xs font-bold tracking-widest uppercase text-sky-800 select-none"
+            className="text-xs font-semibold tracking-widest uppercase text-slate-600 select-none"
             style={{ 
               fontFamily: 'Inter, sans-serif',
             }}
@@ -37,12 +37,12 @@ const AIMessageCard = ({
         </div>
         
         {/* Card Content */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           {/* AI's Voice - Conversational Introduction */}
           {message && (
             <div>
               <p 
-                className="text-base font-normal leading-relaxed text-slate-500"
+                className="text-sm font-normal leading-relaxed text-slate-400"
                 style={{ 
                   fontFamily: 'Inter, sans-serif',
                 }}
@@ -54,12 +54,9 @@ const AIMessageCard = ({
           
           {/* Formal Question - Primary Focus */}
           {question && (
-            <div className="mt-3">
+            <div>
               <h3 
-                className="text-2xl font-bold leading-relaxed text-sky-900"
-                style={{ 
-                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                }}
+                className="text-2xl font-bold leading-relaxed text-slate-800"
               >
                 {question}
               </h3>
