@@ -87,25 +87,25 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         style={{ backgroundColor: 'var(--color-background)' }}
       >
         {/* Header Section */}
-        <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-8 md:pt-12 pb-4 md:pb-8">
+        <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-6 md:pt-8 pb-2 md:pb-4">
           {/* Welcome Text */}
-          <div className="text-center mb-4 md:mb-6">
-            <div className="flex justify-center mb-6">
+          <div className="text-center mb-2 md:mb-4">
+            <div className="flex justify-center mb-2">
               <AuraAvatar size={64} className="hover:scale-105 transition-transform duration-500" />
             </div>
             
             <h1 
-              className="text-2xl md:text-4xl font-semibold mb-4 md:mb-6 leading-relaxed max-w-3xl mx-auto"
+              className="text-3xl md:text-4xl font-bold mb-2 md:mb-4 leading-tight max-w-3xl mx-auto"
               style={{ color: 'var(--color-text)' }}
             >
-              I'm a new type of AI coach that helps you take action by first understanding what's holding you back.
+              First, understand what holds you back.
             </h1>
             
             <p 
-              className="text-base md:text-lg leading-relaxed max-w-2xl mx-auto"
+              className="text-lg md:text-xl leading-relaxed max-w-2xl mx-auto"
               style={{ color: 'var(--color-muted)' }}
             >
-              We'll discover your unique motivational profile to build a plan that actually works.
+              Then, build a plan that actually works.
             </p>
           </div>
 
@@ -113,7 +113,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
           <div className="max-w-2xl mx-auto">
             {/* Progress Label */}
             <h2 
-              className="text-sm font-medium tracking-wide uppercase mb-3 text-center"
+              className="text-sm font-medium tracking-wide uppercase mb-2 text-center"
               style={{ color: 'var(--color-muted)' }}
             >
               Motivational DNA Profile
@@ -140,10 +140,10 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         </div>
 
         {/* Main Question Area */}
-        <div className="flex-1 flex items-center justify-center px-6 py-8">
+        <div className="flex-1 flex items-start justify-center px-6 py-4 md:py-8">
           <div className="max-w-4xl mx-auto w-full">
             {currentQuestionData && (
-              <div className="space-y-8 animate-fade-in">
+              <div className="space-y-6 md:space-y-8 animate-fade-in">
                 {/* Question Header */}
                 <div className="text-center space-y-4">
                   {currentQuestionData.title && (
@@ -156,7 +156,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                   )}
                   
                   <h3 
-                    className="text-2xl md:text-3xl font-bold leading-relaxed max-w-3xl mx-auto text-sky-900"
+                    className="text-xl md:text-2xl font-bold leading-relaxed max-w-3xl mx-auto text-sky-900"
                   >
                     {currentQuestionData.question}
                   </h3>
@@ -170,7 +170,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         key={option.id}
                         hover
                         className={`
-                          p-8 cursor-pointer group relative overflow-hidden
+                          p-6 md:p-8 cursor-pointer group relative overflow-hidden
                           transition-all duration-300 ease-in-out transform
                           hover:scale-105 hover:shadow-xl
                           shadow-lg
@@ -196,10 +196,10 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         </div>
                         
                         {/* Content Area */}
-                        <div className="h-full flex items-center relative z-10 ml-16">
+                        <div className="h-full flex items-center relative z-10 ml-12 md:ml-16">
                           <div className="flex-1">
                             <p 
-                              className="text-lg leading-relaxed font-medium"
+                              className="text-base md:text-lg leading-relaxed font-medium"
                               style={{ color: 'var(--color-text)' }}
                             >
                               {option.label.substring(3)} {/* Remove "A) " or "B) " prefix */}
@@ -228,7 +228,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         </div>
 
         {/* Footer Section */}
-        <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pb-12">
+        <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pb-6 md:pb-12">
           <div className="text-center">
             <Button
               variant="ghost"
