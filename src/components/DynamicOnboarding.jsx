@@ -216,13 +216,16 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                             : 'cursor-pointer hover:scale-105 hover:shadow-xl'
                           }
                           ${selectedAnswer === option.value 
-                            ? 'border-2 border-sky-700 shadow-2xl' 
+                            ? 'border-2 shadow-2xl' 
                             : 'border border-transparent hover:border-sky-300'
                           }
                         `}
                         style={selectedAnswer === option.value ? {
                           backgroundColor: 'var(--color-accent)',
-                          borderColor: '#0369a1' // sky-700
+                          borderColor: 'var(--color-accent)',
+                          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--color-accent)'
+                          backgroundColor: 'var(--color-card)',
+                          borderColor: 'var(--color-border)'
                         } : {}}
                         onClick={() => !isTransitioning && handleAnswerSelect(currentQuestionData.id, option.value, option)}
                       >
@@ -249,7 +252,9 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                               className={`text-base md:text-lg leading-relaxed font-medium transition-colors duration-300 ${
                                 selectedAnswer === option.value ? 'text-white' : ''
                               }`}
-                              style={selectedAnswer === option.value ? { color: 'white' } : { color: 'var(--color-text)' }}
+                              style={{ 
+                                color: selectedAnswer === option.value ? 'white' : 'var(--color-text)'
+                              }}
                             >
                               {option.label.substring(3)} {/* Remove "A) " or "B) " prefix */}
                             </p>
@@ -264,6 +269,9 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                                   : 'opacity-0 group-hover:opacity-100 group-hover:transform group-hover:translate-x-1 text-sky-600'
                                 }
                               `}
+                              style={{
+                                color: selectedAnswer === option.value ? 'white' : 'var(--color-accent)'
+                              }}
                             />
                           </div>
                         </div>
