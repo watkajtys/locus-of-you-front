@@ -87,22 +87,22 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         style={{ backgroundColor: 'var(--color-background)' }}
       >
         {/* Header Section */}
-        <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-12 pb-8">
+        <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-8 md:pt-12 pb-4 md:pb-8">
           {/* Welcome Text */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-6 md:mb-8">
             <div className="flex justify-center mb-6">
               <AuraAvatar size={80} className="hover:scale-105 transition-transform duration-500" />
             </div>
             
             <h1 
-              className="text-2xl md:text-3xl font-semibold mb-6 leading-relaxed max-w-3xl mx-auto"
+              className="text-2xl md:text-4xl font-semibold mb-4 md:mb-6 leading-relaxed max-w-3xl mx-auto"
               style={{ color: 'var(--color-text)' }}
             >
               I'm a new type of AI coach that helps you take action by first understanding what's holding you back.
             </h1>
             
             <p 
-              className="text-lg leading-relaxed max-w-2xl mx-auto"
+              className="text-base md:text-lg leading-relaxed max-w-2xl mx-auto"
               style={{ color: 'var(--color-muted)' }}
             >
               We'll discover your unique motivational profile to build a plan that actually works.
