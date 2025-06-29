@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronRight, User, Brain } from 'lucide-react';
+import { AuraProvider } from '../contexts/AuraProvider';
+import AuraAvatar from './AuraAvatar';
 import Card from './Card';
 import Button from './Button';
 
@@ -72,37 +74,33 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const currentQuestionData = questions[currentQuestion];
 
   return (
-    <div 
-      className="min-h-screen flex flex-col font-inter"
-      style={{ backgroundColor: 'var(--color-background)' }}
-    >
-      {/* Header Section */}
-      <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-12 pb-8">
-        {/* Welcome Text */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <div 
-              className="w-16 h-16 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: 'var(--color-accent)' }}
-            >
-              <Brain className="w-8 h-8 text-white" />
+    <AuraProvider>
+      <div 
+        className="min-h-screen flex flex-col font-inter"
+        style={{ backgroundColor: 'var(--color-background)' }}
+      >
+        {/* Header Section */}
+        <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-12 pb-8">
+          {/* Welcome Text */}
+          <div className="text-center mb-12">
+            <div className="flex justify-center mb-6">
+              <AuraAvatar size={80} className="hover:scale-105 transition-transform duration-500" />
             </div>
+            
+            <h1 
+              className="text-2xl md:text-3xl font-semibold mb-6 leading-relaxed max-w-3xl mx-auto"
+              style={{ color: 'var(--color-text)' }}
+            >
+              I'm a new type of AI coach that helps you take action by first understanding what's holding you back.
+            </h1>
+            
+            <p 
+              className="text-lg leading-relaxed max-w-2xl mx-auto"
+              style={{ color: 'var(--color-muted)' }}
+            >
+              We'll discover your unique motivational profile to build a plan that actually works.
+            </p>
           </div>
-          
-          <h1 
-            className="text-2xl md:text-3xl font-semibold mb-6 leading-relaxed max-w-3xl mx-auto"
-            style={{ color: 'var(--color-text)' }}
-          >
-            I'm a new type of AI coach that helps you take action by first understanding what's holding you back.
-          </h1>
-          
-          <p 
-            className="text-lg leading-relaxed max-w-2xl mx-auto"
-            style={{ color: 'var(--color-muted)' }}
-          >
-            We'll discover your unique motivational profile to build a plan that actually works.
-          </p>
-        </div>
 
         {/* Progress Section */}
         <div className="max-w-2xl mx-auto">
@@ -214,7 +212,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
           </Button>
         </div>
       </div>
-    </div>
+    </AuraProvider>
   );
 };
 
