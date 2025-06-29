@@ -204,13 +204,12 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                 {currentQuestionData.type === 'choice' && (
                   <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                     {currentQuestionData.options.map((option) => (
-                      <Card
+                      <div
                         key={option.id}
-                        hover
                         className={`
+                          bg-white rounded-xl shadow-sm border transition-all duration-300 ease-in-out
                           p-6 md:p-8 group relative overflow-hidden
-                          transition-all duration-300 ease-in-out transform
-                          shadow-lg
+                          transform shadow-lg
                           ${isTransitioning 
                             ? 'cursor-wait' 
                             : 'cursor-pointer hover:scale-105 hover:shadow-xl'
@@ -220,13 +219,12 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                             : 'border border-transparent hover:border-sky-300'
                           }
                         `}
-                        style={selectedAnswer === option.value ? {
-                          backgroundColor: 'var(--color-accent)',
-                          borderColor: 'var(--color-accent)',
-                          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--color-accent)'
-                        } : {
-                          backgroundColor: 'var(--color-card)',
-                          borderColor: 'var(--color-border)'
+                        style={{
+                          backgroundColor: selectedAnswer === option.value ? 'var(--color-accent)' : 'var(--color-card)',
+                          borderColor: selectedAnswer === option.value ? 'var(--color-accent)' : 'var(--color-border)',
+                          ...(selectedAnswer === option.value && {
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--color-accent)'
+                          })
                         }}
                         onClick={() => !isTransitioning && handleAnswerSelect(currentQuestionData.id, option.value, option)}
                       >
@@ -276,7 +274,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                             />
                           </div>
                         </div>
-                      </Card>
+                      </div>
                     ))}
                   </div>
                 )}
