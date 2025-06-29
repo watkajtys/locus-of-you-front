@@ -3,11 +3,13 @@ import { supabase } from './lib/supabase';
 import { useTheme } from './hooks/useTheme';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
+import DynamicOnboarding from './components/DynamicOnboarding';
 
 function App() {
   const { theme } = useTheme();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -43,6 +45,19 @@ function App() {
     };
   }, []);
 
+  // Handle onboarding completion
+  const handleOnboardingComplete = (answers) => {
+    console.log('Onboarding completed with answers:', answers);
+    // Store answers in localStorage for later use
+    localStorage.setItem('onboarding-answers', JSON.stringify(answers));
+    setShowAuth(true);
+  };
+
+  // Handle onboarding skip
+  const handleOnboardingSkip = () => {
+    console.log('Onboarding skipped');
+    setShowAuth(true);
+  };
   // Show loading state while checking authentication
   if (loading) {
     return (
@@ -67,11 +82,21 @@ function App() {
   }
 
   // Conditionally render Auth or Dashboard based on session
-  return session ? (
-    <Dashboard session={session} />
-  ) : (
-    <Auth />
-  );
+  if (session) {
+    return <Dashboard session={session} />;
+  }
+
+  // Show onboarding first, then auth
+  if (!showAuth) {
+    return (
+      <DynamicOnboarding 
+        onComplete={handleOnboardingComplete}
+        onSkip={handleOnboardingSkip}
+      />
+    );
+  }
+
+  return <Auth />;
 }
 
 export default App;
