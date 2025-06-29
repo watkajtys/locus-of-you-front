@@ -60,3 +60,45 @@ html {
 .animate-slide-up:nth-child(2) { animation-delay: 0.2s; }
 .animate-slide-up:nth-child(3) { animation-delay: 0.3s; }
 .animate-slide-up:nth-child(4) { animation-delay: 0.4s; }
+
+/* Aura Circle Component */
+.aura-circle {
+  --aura-size: 128px;
+  --aura-duration: 15s;
+  --aura-color-1: var(--color-accent);
+  --aura-color-2: var(--color-primary);
+  --aura-color-3: var(--color-secondary);
+  
+  width: var(--aura-size);
+  height: var(--aura-size);
+  border-radius: 50%;
+  background: linear-gradient(
+    45deg,
+    var(--aura-color-1),
+    var(--aura-color-2),
+    var(--aura-color-3),
+    var(--aura-color-1)
+  );
+  background-size: 300% 300%;
+  animation: aura-shift var(--aura-duration) ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes aura-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 100% 50%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}</parameter>
