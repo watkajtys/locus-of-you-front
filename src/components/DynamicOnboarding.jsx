@@ -175,32 +175,14 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                   }
                 `}
               >
-                {/* Question Header */}
+                {/* AI Message Card with Question */}
                 <div className="text-center space-y-4">
-                  {currentQuestionData.title && (
-                    <div className="max-w-2xl mx-auto">
-                      <AIMessageCard 
-                        className="text-center"
-                        cardType="DIAGNOSTIC QUESTION"
-                      >
-                        <p 
-                          className="text-base font-normal leading-relaxed"
-                          style={{ 
-                            color: 'var(--color-text)',
-                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          {currentQuestionData.title}
-                        </p>
-                      </AIMessageCard>
-                    </div>
-                  )}
-                  
-                  <h3 
-                    className="text-xl md:text-2xl font-bold leading-relaxed max-w-3xl mx-auto text-sky-900"
-                  >
-                    {currentQuestionData.question}
-                  </h3>
+                  <div className="max-w-2xl mx-auto">
+                    <AIMessageCard 
+                      question={currentQuestionData.question}
+                      cardType="DIAGNOSTIC QUESTION"
+                    />
+                  </div>
                 </div>
 
                 {/* Answer Options */}
