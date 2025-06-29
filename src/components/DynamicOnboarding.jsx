@@ -11,16 +11,19 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [progress, setProgress] = useState(0);
   const [answers, setAnswers] = useState({});
   const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [sliderValue, setSliderValue] = useState(3);
+  const [textInput, setTextInput] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [questionVisible, setQuestionVisible] = useState(true);
   
-  // Question data structure
+  // Extended question data structure
   const questions = [
     {
       id: 'mindset',
       type: 'choice',
       message: "To start, I'm curious about your take on this:",
       question: "Do you feel that a person's ability is something they're just born with, or is it a skill that can be developed?",
+      cardType: "DIAGNOSTIC QUESTION",
       options: [
         {
           id: 'A',
@@ -39,6 +42,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       type: 'choice',
       message: "That's helpful, thank you.",
       question: "Now, when things feel particularly tough, does it seem more like it's due to circumstances beyond your control, or more about the choices you've made?",
+      cardType: "DIAGNOSTIC QUESTION",
       options: [
         {
           id: 'A',
@@ -51,53 +55,182 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
           value: 'internal'
         }
       ]
+    },
+    {
+      id: 'regulatory_focus',
+      type: 'choice',
+      message: "That makes sense. Now, let's think about goals.",
+      question: "When you think about achieving your goals, which of these feels more like you?",
+      cardType: "DIAGNOSTIC QUESTION",
+      options: [
+        {
+          id: 'A',
+          label: "A) I'm usually striving to reach my hopes and aspirations",
+          value: 'promotion'
+        },
+        {
+          id: 'B',
+          label: "B) I'm usually focused on fulfilling my duties and responsibilities",
+          value: 'prevention'
+        }
+      ]
+    },
+    {
+      id: 'personality_disorganized',
+      type: 'slider',
+      message: "Okay, just a few more to get a complete picture of your style. Let's go through some quick-fire statements.",
+      question: "Please rate how much this describes you: 'I tend to be disorganized.'",
+      cardType: "PERSONALITY STYLE",
+      min: 1,
+      max: 5,
+      step: 1,
+      labels: {
+        1: "Disagree Strongly",
+        2: "Disagree",
+        3: "Neutral",
+        4: "Agree", 
+        5: "Agree Strongly"
+      }
+    },
+    {
+      id: 'personality_outgoing',
+      type: 'slider',
+      message: "Great, thank you.",
+      question: "And how about this one: 'I see myself as someone who is outgoing and sociable.'",
+      cardType: "PERSONALITY STYLE",
+      min: 1,
+      max: 5,
+      step: 1,
+      labels: {
+        1: "Disagree Strongly",
+        2: "Disagree",
+        3: "Neutral",
+        4: "Agree", 
+        5: "Agree Strongly"
+      }
+    },
+    {
+      id: 'personality_moody',
+      type: 'slider',
+      message: "Perfect.",
+      question: "Last one for this set: 'I can be moody or have up and down mood swings.'",
+      cardType: "PERSONALITY STYLE",
+      min: 1,
+      max: 5,
+      step: 1,
+      labels: {
+        1: "Disagree Strongly",
+        2: "Disagree",
+        3: "Neutral",
+        4: "Agree", 
+        5: "Agree Strongly"
+      }
+    },
+    {
+      id: 'final_focus',
+      type: 'textInput',
+      message: "Perfect, that's everything I need. Thank you. For the final step, let's bring it all together and focus on what's important to you right now.",
+      question: "Thinking about what's on your plate, what's one thing that, if you could make even a tiny bit of progress on it, would bring a little more ease or energy into your life?",
+      cardType: "YOUR FOCUS",
+      placeholder: "Type your response here..."
     }
   ];
 
-  // Reset selected answer when question changes
+  // Reset input states when question changes
   React.useEffect(() => {
     setSelectedAnswer(null);
+    setSliderValue(3);
+    setTextInput('');
     setQuestionVisible(true);
   }, [currentQuestion]);
 
-  // Handle answer selection
+  // Handle choice answer selection
   const handleAnswerSelect = (questionId, answerValue, optionData) => {
-    // Prevent multiple selections during transition
     if (isTransitioning) return;
     
-    // Mark as transitioning
     setIsTransitioning(true);
-    
-    // Step 1: Visually mark the selected card
     setSelectedAnswer(answerValue);
     
-    // Step 2: Update answers state
     const newAnswers = {
       ...answers,
       [questionId]: answerValue
     };
     setAnswers(newAnswers);
     
-    // Step 3: Update progress with animation
     const newProgress = ((currentQuestion + 1) / questions.length) * 100;
     setProgress(newProgress);
     
-    // Step 4: 500ms delay for user to see selection
     setTimeout(() => {
       if (currentQuestion < questions.length - 1) {
-        // Step 5: Fade out current question
         setQuestionVisible(false);
-        
-        // Step 6: After fade out, change question and fade in
         setTimeout(() => {
           setCurrentQuestion(currentQuestion + 1);
           setIsTransitioning(false);
-        }, 200); // Short fade out duration
+        }, 200);
       } else {
-        // Assessment complete
         setIsTransitioning(false);
         onComplete && onComplete(newAnswers);
       }
+    }, 500);
+  };
+
+  // Handle slider input
+  const handleSliderChange = (value) => {
+    setSliderValue(value);
+  };
+
+  // Handle slider submission
+  const handleSliderSubmit = () => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
+    
+    const newAnswers = {
+      ...answers,
+      [currentQuestionData.id]: sliderValue
+    };
+    setAnswers(newAnswers);
+    
+    const newProgress = ((currentQuestion + 1) / questions.length) * 100;
+    setProgress(newProgress);
+    
+    setTimeout(() => {
+      if (currentQuestion < questions.length - 1) {
+        setQuestionVisible(false);
+        setTimeout(() => {
+          setCurrentQuestion(currentQuestion + 1);
+          setIsTransitioning(false);
+        }, 200);
+      } else {
+        setIsTransitioning(false);
+        onComplete && onComplete(newAnswers);
+      }
+    }, 500);
+  };
+
+  // Handle text input change
+  const handleTextInputChange = (e) => {
+    setTextInput(e.target.value);
+  };
+
+  // Handle text input submission
+  const handleTextInputSubmit = () => {
+    if (isTransitioning || !textInput.trim()) return;
+    
+    setIsTransitioning(true);
+    
+    const newAnswers = {
+      ...answers,
+      [currentQuestionData.id]: textInput.trim()
+    };
+    setAnswers(newAnswers);
+    
+    const newProgress = 100;
+    setProgress(newProgress);
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+      onComplete && onComplete(newAnswers);
     }, 500);
   };
 
@@ -181,12 +314,12 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                     <AIMessageCard 
                       message={currentQuestionData.message}
                       question={currentQuestionData.question}
-                      cardType="DIAGNOSTIC QUESTION"
+                      cardType={currentQuestionData.cardType}
                     />
                   </div>
                 </div>
 
-                {/* Answer Options */}
+                {/* Choice Options */}
                 {currentQuestionData.type === 'choice' && (
                   <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                     {currentQuestionData.options.map((option) => (
@@ -262,6 +395,108 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Slider Input */}
+                {currentQuestionData.type === 'slider' && (
+                  <div className="max-w-2xl mx-auto">
+                    <Card className="p-8 space-y-6">
+                      {/* Current Value Display */}
+                      <div className="text-center">
+                        <div 
+                          className="text-4xl font-bold mb-2"
+                          style={{ color: 'var(--color-accent)' }}
+                        >
+                          {sliderValue}
+                        </div>
+                        <div 
+                          className="text-lg font-medium"
+                          style={{ color: 'var(--color-text)' }}
+                        >
+                          {currentQuestionData.labels[sliderValue]}
+                        </div>
+                      </div>
+
+                      {/* Slider */}
+                      <div className="space-y-4">
+                        <input
+                          type="range"
+                          min={currentQuestionData.min}
+                          max={currentQuestionData.max}
+                          step={currentQuestionData.step}
+                          value={sliderValue}
+                          onChange={(e) => handleSliderChange(parseInt(e.target.value))}
+                          className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                          style={{
+                            background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 100%)`
+                          }}
+                        />
+                        
+                        {/* Scale Labels */}
+                        <div className="flex justify-between text-sm" style={{ color: 'var(--color-muted)' }}>
+                          <span>{currentQuestionData.labels[currentQuestionData.min]}</span>
+                          <span>{currentQuestionData.labels[currentQuestionData.max]}</span>
+                        </div>
+                      </div>
+
+                      {/* Submit Button */}
+                      <div className="text-center pt-4">
+                        <Button
+                          variant="accent"
+                          size="large"
+                          onClick={handleSliderSubmit}
+                          disabled={isTransitioning}
+                          className="px-12"
+                        >
+                          {isTransitioning ? 'Loading...' : 'Continue'}
+                        </Button>
+                      </div>
+                    </Card>
+                  </div>
+                )}
+
+                {/* Text Input */}
+                {currentQuestionData.type === 'textInput' && (
+                  <div className="max-w-2xl mx-auto">
+                    <Card className="p-8 space-y-6">
+                      <textarea
+                        value={textInput}
+                        onChange={handleTextInputChange}
+                        placeholder={currentQuestionData.placeholder}
+                        rows={4}
+                        className="w-full px-4 py-3 border rounded-lg resize-none transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-opacity-50"
+                        style={{
+                          backgroundColor: 'var(--color-card)',
+                          borderColor: 'var(--color-border)',
+                          color: 'var(--color-text)',
+                        }}
+                        disabled={isTransitioning}
+                      />
+                      
+                      {/* Character count */}
+                      <div className="text-right">
+                        <span 
+                          className="text-sm"
+                          style={{ color: 'var(--color-muted)' }}
+                        >
+                          {textInput.length} characters
+                        </span>
+                      </div>
+
+                      {/* Submit Button */}
+                      <div className="text-center pt-4">
+                        <Button
+                          variant="accent"
+                          size="large"
+                          onClick={handleTextInputSubmit}
+                          disabled={isTransitioning || !textInput.trim()}
+                          className="px-12"
+                        >
+                          {isTransitioning ? 'Loading...' : 'Complete Assessment'}
+                        </Button>
+                      </div>
+                    </Card>
                   </div>
                 )}
               </div>
