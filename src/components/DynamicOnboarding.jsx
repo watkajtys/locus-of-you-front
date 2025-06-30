@@ -86,9 +86,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       step: 1,
       labels: {
         1: "Disagree Strongly",
-        2: "Disagree",
-        3: "Neutral",
-        4: "Agree", 
         5: "Agree Strongly"
       }
     },
@@ -103,9 +100,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       step: 1,
       labels: {
         1: "Disagree Strongly",
-        2: "Disagree",
-        3: "Neutral",
-        4: "Agree", 
         5: "Agree Strongly"
       }
     },
@@ -120,9 +114,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       step: 1,
       labels: {
         1: "Disagree Strongly",
-        2: "Disagree",
-        3: "Neutral",
-        4: "Agree", 
         5: "Agree Strongly"
       }
     },
@@ -401,25 +392,9 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                 {/* Slider Input */}
                 {currentQuestionData.type === 'slider' && (
                   <div className="max-w-2xl mx-auto">
-                    <Card className="p-8 space-y-6">
-                      {/* Current Value Display */}
-                      <div className="text-center">
-                        <div 
-                          className="text-4xl font-bold mb-2"
-                          style={{ color: 'var(--color-accent)' }}
-                        >
-                          {sliderValue}
-                        </div>
-                        <div 
-                          className="text-lg font-medium"
-                          style={{ color: 'var(--color-text)' }}
-                        >
-                          {currentQuestionData.labels[sliderValue]}
-                        </div>
-                      </div>
-
+                    <Card className="p-8 space-y-8">
                       {/* Slider */}
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <input
                           type="range"
                           min={currentQuestionData.min}
@@ -427,16 +402,16 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                           step={currentQuestionData.step}
                           value={sliderValue}
                           onChange={(e) => handleSliderChange(parseInt(e.target.value))}
-                          className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                          className="w-full h-4 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                           style={{
                             background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 100%)`
                           }}
                         />
                         
-                        {/* Scale Labels */}
-                        <div className="flex justify-between text-sm" style={{ color: 'var(--color-muted)' }}>
-                          <span>{currentQuestionData.labels[currentQuestionData.min]}</span>
-                          <span>{currentQuestionData.labels[currentQuestionData.max]}</span>
+                        {/* Scale Labels - Only Min/Max */}
+                        <div className="flex justify-between text-sm px-2" style={{ color: 'var(--color-muted)' }}>
+                          <span className="text-left">{currentQuestionData.labels[currentQuestionData.min]}</span>
+                          <span className="text-right">{currentQuestionData.labels[currentQuestionData.max]}</span>
                         </div>
                       </div>
 
