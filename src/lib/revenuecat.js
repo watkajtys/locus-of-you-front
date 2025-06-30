@@ -15,7 +15,7 @@ export const ENTITLEMENT_ID = 'premium_features';
 let isConfigured = false;
 
 /**
- * Initialize RevenueCat
+ * Initialize RevenueCat with anonymous user
  */
 export const initializeRevenueCat = async () => {
   if (isConfigured) return;
@@ -26,18 +26,19 @@ export const initializeRevenueCat = async () => {
   }
 
   try {
+    // Configure RevenueCat without user ID (anonymous mode)
     await Purchases.configure({
       apiKey: REVENUECAT_API_KEY,
     });
     isConfigured = true;
-    console.log('RevenueCat initialized successfully');
+    console.log('RevenueCat initialized successfully in anonymous mode');
   } catch (error) {
     console.error('Failed to initialize RevenueCat:', error);
   }
 };
 
 /**
- * Set user ID for RevenueCat
+ * Set user ID for RevenueCat (identify the user)
  */
 export const setRevenueCatUserId = async (userId) => {
   if (!isConfigured) {
@@ -45,11 +46,19 @@ export const setRevenueCatUserId = async (userId) => {
     return;
   }
 
+  if (!userId || userId.trim() === '') {
+    console.warn('Invalid user ID provided to RevenueCat');
+    return;
+  }
+
   try {
-    await Purchases.logIn(userId);
+    // Use logIn to identify the anonymous user
+    const result = await Purchases.logIn(userId);
     console.log('RevenueCat user ID set:', userId);
+    return result;
   } catch (error) {
     console.error('Failed to set RevenueCat user ID:', error);
+    throw error;
   }
 };
 
@@ -200,7 +209,7 @@ export const setCustomerInfoUpdateListener = (callback) => {
 };
 
 /**
- * Log out current user
+ * Log out current user (switch back to anonymous)
  */
 export const logOutRevenueCat = async () => {
   if (!isConfigured) {
@@ -209,7 +218,7 @@ export const logOutRevenueCat = async () => {
 
   try {
     await Purchases.logOut();
-    console.log('RevenueCat user logged out');
+    console.log('RevenueCat user logged out (switched to anonymous)');
   } catch (error) {
     console.error('Failed to log out RevenueCat user:', error);
   }
