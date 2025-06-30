@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, Circle, Check } from 'lucide-react';
-import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Button from './Button';
@@ -173,189 +172,187 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
   };
 
   return (
-    <AuraProvider>
-      <div 
-        className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
-        style={{ backgroundColor: 'var(--color-background)' }}
-      >
-        <div className="max-w-3xl mx-auto w-full space-y-8">
-          {/* Header with Aura */}
-          <div className="text-center space-y-4">
-            <div className="flex justify-center">
-              <AuraAvatar size={64} className="hover:scale-105 transition-transform duration-500" />
-            </div>
-            <div className="space-y-2">
-              <h1 
-                className="text-3xl md:text-4xl font-bold leading-tight"
-                style={{ color: 'var(--color-text)' }}
-              >
-                Your First Step
-              </h1>
-              <p 
-                className="text-lg"
-                style={{ color: 'var(--color-muted)' }}
-              >
-                Let's start with something impossibly small
-              </p>
-            </div>
+    <div 
+      className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
+      style={{ backgroundColor: 'var(--color-background)' }}
+    >
+      <div className="max-w-3xl mx-auto w-full space-y-8">
+        {/* Header with Aura */}
+        <div className="text-center space-y-4">
+          <div className="flex justify-center">
+            <AuraAvatar size={64} className="hover:scale-105 transition-transform duration-500" />
           </div>
+          <div className="space-y-2">
+            <h1 
+              className="text-3xl md:text-4xl font-bold leading-tight"
+              style={{ color: 'var(--color-text)' }}
+            >
+              Your First Step
+            </h1>
+            <p 
+              className="text-lg"
+              style={{ color: 'var(--color-muted)' }}
+            >
+              Let's start with something impossibly small
+            </p>
+          </div>
+        </div>
 
-          {/* First Card - AI Rationale */}
-          <div className="space-y-6">
-            <AIMessageCard 
-              paragraph={rationale}
-              cardType="YOUR AI COACH"
+        {/* First Card - AI Rationale */}
+        <div className="space-y-6">
+          <AIMessageCard 
+            paragraph={rationale}
+            cardType="YOUR AI COACH"
+          />
+
+          {/* Second Card - The Task with consistent styling and confetti */}
+          <div className="relative">
+            {/* Confetti Explosion */}
+            <ConfettiExplosion 
+              isActive={showConfetti} 
+              onComplete={handleConfettiComplete}
             />
-
-            {/* Second Card - The Task with consistent styling and confetti */}
-            <div className="relative">
-              {/* Confetti Explosion */}
-              <ConfettiExplosion 
-                isActive={showConfetti} 
-                onComplete={handleConfettiComplete}
-              />
-              
-              <div
+            
+            <div
+              className={`
+                relative shadow-lg border
+                rounded-tl-xl rounded-bl-xl rounded-br-xl
+                pt-8 px-8 pb-8 md:px-10 md:pb-10
+                transition-all duration-300 ease-in-out
+                hover:shadow-xl hover:-translate-y-1 cursor-pointer
+                ${isTaskCompleted 
+                  ? 'bg-green-50 border-green-200 hover:bg-green-100' 
+                  : 'bg-white border-gray-200 hover:bg-gray-50'
+                }
+              `}
+              style={{
+                backgroundColor: isTaskCompleted ? '#f0fdf4' : 'var(--color-card)',
+                borderColor: isTaskCompleted ? '#bbf7d0' : 'var(--color-border)',
+              }}
+              onClick={handleTaskClick}
+            >
+              {/* The Tab - matching AIMessageCard style */}
+              <div 
                 className={`
-                  relative shadow-lg border
-                  rounded-tl-xl rounded-bl-xl rounded-br-xl
-                  pt-8 px-8 pb-8 md:px-10 md:pb-10
-                  transition-all duration-300 ease-in-out
-                  hover:shadow-xl hover:-translate-y-1 cursor-pointer
+                  absolute top-0 right-0 -translate-y-1/2
+                  px-4 py-0.5 
+                  rounded-tl-lg rounded-tr-lg
+                  border border-b-0 shadow-sm
                   ${isTaskCompleted 
-                    ? 'bg-green-50 border-green-200 hover:bg-green-100' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                    ? 'bg-green-100 border-green-200' 
+                    : 'bg-slate-100 border-slate-200'
                   }
                 `}
-                style={{
-                  backgroundColor: isTaskCompleted ? '#f0fdf4' : 'var(--color-card)',
-                  borderColor: isTaskCompleted ? '#bbf7d0' : 'var(--color-border)',
-                }}
-                onClick={handleTaskClick}
               >
-                {/* The Tab - matching AIMessageCard style */}
-                <div 
+                <span 
                   className={`
-                    absolute top-0 right-0 -translate-y-1/2
-                    px-4 py-0.5 
-                    rounded-tl-lg rounded-tr-lg
-                    border border-b-0 shadow-sm
-                    ${isTaskCompleted 
-                      ? 'bg-green-100 border-green-200' 
-                      : 'bg-slate-100 border-slate-200'
-                    }
+                    text-xs font-semibold tracking-widest uppercase select-none
+                    ${isTaskCompleted ? 'text-green-700' : 'text-slate-600'}
                   `}
+                  style={{ 
+                    fontFamily: 'Inter, sans-serif',
+                  }}
                 >
-                  <span 
-                    className={`
-                      text-xs font-semibold tracking-widest uppercase select-none
-                      ${isTaskCompleted ? 'text-green-700' : 'text-slate-600'}
-                    `}
-                    style={{ 
-                      fontFamily: 'Inter, sans-serif',
-                    }}
-                  >
-                    {isTaskCompleted ? 'COMPLETED' : 'YOUR TASK'}
-                  </span>
-                </div>
+                  {isTaskCompleted ? 'COMPLETED' : 'YOUR TASK'}
+                </span>
+              </div>
 
-                {/* Task Content with Checkbox */}
-                <div className="flex items-center space-x-6">
-                  {/* Large Checkbox Icon - BOUNCES ONCE WHEN COMPLETED */}
-                  <div className="flex-shrink-0">
-                    {isTaskCompleted ? (
-                      <div 
-                        className="relative w-8 h-8 md:w-10 md:h-10"
-                        style={{ 
-                          animation: 'celebrate-jump 0.6s ease-in-out'
-                        }}
-                      >
-                        {/* Green Circle Background */}
-                        <div 
-                          className="absolute inset-0 rounded-full bg-green-600"
-                          style={{ backgroundColor: '#16a34a' }}
-                        />
-                        {/* Centered White Checkmark */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Check 
-                            className="w-5 h-5 md:w-6 md:h-6 text-white"
-                            strokeWidth={3}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <Circle 
-                        className="w-8 h-8 md:w-10 md:h-10"
-                        style={{ color: 'var(--color-accent)' }}
-                        strokeWidth={2}
-                      />
-                    )}
-                  </div>
-
-                  {/* Task Text */}
-                  <div className="flex-1">
-                    <p 
-                      className={`
-                        text-2xl md:text-3xl font-bold leading-relaxed
-                        ${isTaskCompleted ? 'text-green-800 line-through' : ''}
-                      `}
+              {/* Task Content with Checkbox */}
+              <div className="flex items-center space-x-6">
+                {/* Large Checkbox Icon - BOUNCES ONCE WHEN COMPLETED */}
+                <div className="flex-shrink-0">
+                  {isTaskCompleted ? (
+                    <div 
+                      className="relative w-8 h-8 md:w-10 md:h-10"
                       style={{ 
-                        color: isTaskCompleted ? '#166534' : 'var(--color-text)',
-                        fontFamily: 'Inter, sans-serif'
+                        animation: 'celebrate-jump 0.6s ease-in-out'
                       }}
                     >
-                      {task}
-                    </p>
-                  </div>
+                      {/* Green Circle Background */}
+                      <div 
+                        className="absolute inset-0 rounded-full bg-green-600"
+                        style={{ backgroundColor: '#16a34a' }}
+                      />
+                      {/* Centered White Checkmark */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Check 
+                          className="w-5 h-5 md:w-6 md:h-6 text-white"
+                          strokeWidth={3}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <Circle 
+                      className="w-8 h-8 md:w-10 md:h-10"
+                      style={{ color: 'var(--color-accent)' }}
+                      strokeWidth={2}
+                    />
+                  )}
+                </div>
+
+                {/* Task Text */}
+                <div className="flex-1">
+                  <p 
+                    className={`
+                      text-2xl md:text-3xl font-bold leading-relaxed
+                      ${isTaskCompleted ? 'text-green-800 line-through' : ''}
+                    `}
+                    style={{ 
+                      color: isTaskCompleted ? '#166534' : 'var(--color-text)',
+                      fontFamily: 'Inter, sans-serif'
+                    }}
+                  >
+                    {task}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="text-center space-y-4">
-            <div className="pt-4">
-              <Button
-                variant="accent"
-                size="large"
-                onClick={onComplete}
-                disabled={!isTaskCompleted}
-                className={`
-                  group flex items-center space-x-3 text-xl px-12 py-6
-                  ${!isTaskCompleted ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
-              >
-                <CheckCircle className="w-6 h-6" />
-                <span>Keep My Momentum Going</span>
-              </Button>
-            </div>
-            
-            <div>
-              <button
-                onClick={onChangeStep}
-                className="text-base font-medium transition-all duration-200 hover:underline hover:scale-105"
-                style={{ color: 'var(--color-muted)' }}
-              >
-                I need a different first step
-              </button>
-            </div>
+        {/* Action Buttons */}
+        <div className="text-center space-y-4">
+          <div className="pt-4">
+            <Button
+              variant="accent"
+              size="large"
+              onClick={onComplete}
+              disabled={!isTaskCompleted}
+              className={`
+                group flex items-center space-x-3 text-xl px-12 py-6
+                ${!isTaskCompleted ? 'opacity-50 cursor-not-allowed' : ''}
+              `}
+            >
+              <CheckCircle className="w-6 h-6" />
+              <span>Keep My Momentum Going</span>
+            </Button>
           </div>
-
-          {/* Encouraging Footer */}
-          <div className="text-center pt-8">
-            <p 
-              className="text-sm italic"
+          
+          <div>
+            <button
+              onClick={onChangeStep}
+              className="text-base font-medium transition-all duration-200 hover:underline hover:scale-105"
               style={{ color: 'var(--color-muted)' }}
             >
-              {isTaskCompleted 
-                ? "🎉 Amazing! You've taken the first step towards building consistency!" 
-                : "Remember: The goal isn't to be perfect, it's to be consistent."
-              }
-            </p>
+              I need a different first step
+            </button>
           </div>
         </div>
+
+        {/* Encouraging Footer */}
+        <div className="text-center pt-8">
+          <p 
+            className="text-sm italic"
+            style={{ color: 'var(--color-muted)' }}
+          >
+            {isTaskCompleted 
+              ? "🎉 Amazing! You've taken the first step towards building consistency!" 
+              : "Remember: The goal isn't to be perfect, it's to be consistent."
+            }
+          </p>
+        </div>
       </div>
-    </AuraProvider>
+    </div>
   );
 };
 

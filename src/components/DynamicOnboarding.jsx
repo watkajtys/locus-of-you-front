@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, User, Brain } from 'lucide-react';
-import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Card from './Card';
@@ -365,267 +364,265 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   }
 
   return (
-    <AuraProvider>
-      <div 
-        className="min-h-screen flex flex-col font-inter"
-        style={{ backgroundColor: 'var(--color-background)' }}
-      >
-        {/* Header Section */}
-        <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-6 md:pt-8 pb-2 md:pb-4">
-          {/* Welcome Text */}
-          <div className="text-center mb-2 md:mb-4">
-            <div className="flex justify-center mb-2">
-              <AuraAvatar size={64} className="hover:scale-105 transition-transform duration-500" />
-            </div>
-            
-            <h1 
-              className="text-3xl md:text-4xl font-bold mb-2 md:mb-4 leading-tight max-w-3xl mx-auto"
-              style={{ color: 'var(--color-text)' }}
-            >
-              First, understand what holds you back.
-            </h1>
-            
-            <p 
-              className="text-lg md:text-xl leading-relaxed max-w-2xl mx-auto"
-              style={{ color: 'var(--color-muted)' }}
-            >
-              Then, build a plan that actually works.
-            </p>
+    <div 
+      className="min-h-screen flex flex-col font-inter"
+      style={{ backgroundColor: 'var(--color-background)' }}
+    >
+      {/* Header Section */}
+      <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-6 md:pt-8 pb-2 md:pb-4">
+        {/* Welcome Text */}
+        <div className="text-center mb-2 md:mb-4">
+          <div className="flex justify-center mb-2">
+            <AuraAvatar size={64} className="hover:scale-105 transition-transform duration-500" />
           </div>
-
-          {/* Progress Section */}
-          <div className="max-w-2xl mx-auto">
-            {/* Progress Label */}
-            <h2 
-              className="text-sm font-medium tracking-wide uppercase mb-2 text-center"
-              style={{ color: 'var(--color-muted)' }}
-            >
-              Motivational DNA Profile
-            </h2>
-            
-            {/* Progress Bar */}
-            <div className="w-full h-3 bg-sky-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-sky-600 rounded-full transition-all duration-700 ease-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            
-            {/* Progress Percentage */}
-            <div className="text-center mt-2">
-              <span 
-                className="text-sm font-medium"
-                style={{ color: 'var(--color-accent)' }}
-              >
-                {Math.round(progress)}%
-              </span>
-            </div>
-          </div>
+          
+          <h1 
+            className="text-3xl md:text-4xl font-bold mb-2 md:mb-4 leading-tight max-w-3xl mx-auto"
+            style={{ color: 'var(--color-text)' }}
+          >
+            First, understand what holds you back.
+          </h1>
+          
+          <p 
+            className="text-lg md:text-xl leading-relaxed max-w-2xl mx-auto"
+            style={{ color: 'var(--color-muted)' }}
+          >
+            Then, build a plan that actually works.
+          </p>
         </div>
 
-        {/* Main Question Area */}
-        <div className="flex-1 flex items-start justify-center px-6 py-4 md:py-8">
-          <div className="max-w-4xl mx-auto w-full">
-            {currentQuestionData && (
-              <div 
-                className={`
-                  space-y-6 md:space-y-8 transition-all duration-200 ease-in-out
-                  ${questionVisible 
-                    ? 'opacity-100 transform translate-y-0' 
-                    : 'opacity-0 transform translate-y-4'
-                  }
-                `}
-              >
-                {/* AI Message Card with Question */}
-                <div className="text-center">
-                  <div className="max-w-2xl mx-auto">
-                    <AIMessageCard 
-                      message={currentQuestionData.message}
-                      question={currentQuestionData.question}
-                      cardType={currentQuestionData.cardType}
-                    />
-                  </div>
-                </div>
-
-                {/* Choice Options */}
-                {currentQuestionData.type === 'choice' && (
-                  <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                    {currentQuestionData.options.map((option) => (
-                      <div
-                        key={option.id}
-                        className={`
-                          bg-white rounded-xl shadow-sm border transition-all duration-300 ease-in-out
-                          p-6 md:p-8 group relative overflow-hidden
-                          transform shadow-lg
-                          ${isTransitioning 
-                            ? 'cursor-wait' 
-                            : 'cursor-pointer hover:scale-105 hover:shadow-xl'
-                          }
-                          ${selectedAnswer === option.value 
-                            ? 'border-2 shadow-2xl' 
-                            : 'border border-transparent hover:border-sky-300'
-                          }
-                        `}
-                        style={{
-                          backgroundColor: selectedAnswer === option.value ? 'var(--color-accent)' : 'var(--color-card)',
-                          borderColor: selectedAnswer === option.value ? 'var(--color-accent)' : 'var(--color-border)',
-                          ...(selectedAnswer === option.value && {
-                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--color-accent)'
-                          })
-                        }}
-                        onClick={() => !isTransitioning && handleAnswerSelect(currentQuestionData.id, option.value, option)}
-                      >
-                        {/* Burned-in Letter Background */}
-                        <div className="absolute left-0 top-0 h-full flex items-center justify-start pointer-events-none">
-                          <span 
-                            className={`text-8xl md:text-9xl font-black select-none leading-none transform -translate-x-4 transition-opacity duration-300 ${
-                              selectedAnswer === option.value 
-                                ? 'text-white/20' 
-                                : 'text-gray-300/40 group-hover:text-gray-400/50'
-                            }`}
-                            style={{ 
-                              fontFamily: 'Inter, sans-serif',
-                            }}
-                          >
-                            {option.id}
-                          </span>
-                        </div>
-                        
-                        {/* Content Area */}
-                        <div className="h-full flex items-center relative z-10 ml-12 md:ml-16">
-                          <div className="flex-1">
-                            <p 
-                              className={`text-base md:text-lg leading-relaxed font-medium transition-colors duration-300 ${
-                                selectedAnswer === option.value ? 'text-white' : ''
-                              }`}
-                              style={{ 
-                                color: selectedAnswer === option.value ? 'white' : 'var(--color-text)'
-                              }}
-                            >
-                              {option.label.substring(3)} {/* Remove "A) " or "B) " prefix */}
-                            </p>
-                          </div>
-                          
-                          <div className="ml-4">
-                            <ChevronRight 
-                              className={`
-                                w-5 h-5 transition-all duration-300
-                                ${selectedAnswer === option.value 
-                                  ? 'opacity-100 transform translate-x-1 text-white' 
-                                  : 'opacity-0 group-hover:opacity-100 group-hover:transform group-hover:translate-x-1 text-sky-600'
-                                }
-                              `}
-                              style={{
-                                color: selectedAnswer === option.value ? 'white' : 'var(--color-accent)'
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Slider with Extreme Labels */}
-                {currentQuestionData.type === 'slider' && (
-                  <div className="max-w-2xl mx-auto">
-                    <Card className="p-12 space-y-8">
-                      {/* Slider */}
-                      <div className="space-y-6">
-                        <input
-                          type="range"
-                          min={currentQuestionData.min}
-                          max={currentQuestionData.max}
-                          step="0.1"
-                          value={sliderValue}
-                          onChange={(e) => handleSliderChange(e.target.value)}
-                          className="w-full h-4 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                          style={{
-                            background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 100%)`
-                          }}
-                        />
-                        
-                        {/* Extreme Labels Only */}
-                        <div className="flex justify-between text-sm font-medium" style={{ color: 'var(--color-muted)' }}>
-                          <span>{currentQuestionData.extremeLabels.min}</span>
-                          <span>{currentQuestionData.extremeLabels.max}</span>
-                        </div>
-                      </div>
-
-                      {/* Submit Button */}
-                      <div className="text-center pt-4">
-                        <Button
-                          variant="accent"
-                          size="large"
-                          onClick={handleSliderSubmit}
-                          disabled={isTransitioning}
-                          className="px-12"
-                        >
-                          {isTransitioning ? 'Loading...' : 'Continue'}
-                        </Button>
-                      </div>
-                    </Card>
-                  </div>
-                )}
-
-                {/* Text Input */}
-                {currentQuestionData.type === 'textInput' && (
-                  <div className="max-w-2xl mx-auto">
-                    <Card className="p-8 space-y-6">
-                      <textarea
-                        value={textInput}
-                        onChange={handleTextInputChange}
-                        placeholder={currentQuestionData.placeholder}
-                        rows={4}
-                        maxLength={500}
-                        className="w-full px-4 py-3 border rounded-lg resize-none transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-opacity-50"
-                        style={{
-                          backgroundColor: 'var(--color-card)',
-                          borderColor: 'var(--color-border)',
-                          color: 'var(--color-text)',
-                        }}
-                        disabled={isTransitioning}
-                      />
-                      
-                      <div className="flex justify-between items-center text-xs" style={{ color: 'var(--color-muted)' }}>
-                        <span>Share what feels most important right now</span>
-                        <span>{textInput.length}/500</span>
-                      </div>
-
-                      {/* Submit Button */}
-                      <div className="text-center pt-4">
-                        <Button
-                          variant="accent"
-                          size="large"
-                          onClick={handleTextInputSubmit}
-                          disabled={isTransitioning || !textInput.trim()}
-                          className="px-12"
-                        >
-                          {isTransitioning ? 'Loading...' : 'Complete Assessment'}
-                        </Button>
-                      </div>
-                    </Card>
-                  </div>
-                )}
-              </div>
-            )}
+        {/* Progress Section */}
+        <div className="max-w-2xl mx-auto">
+          {/* Progress Label */}
+          <h2 
+            className="text-sm font-medium tracking-wide uppercase mb-2 text-center"
+            style={{ color: 'var(--color-muted)' }}
+          >
+            Motivational DNA Profile
+          </h2>
+          
+          {/* Progress Bar */}
+          <div className="w-full h-3 bg-sky-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-sky-600 rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${progress}%` }}
+            />
           </div>
-        </div>
-
-        {/* Footer Section */}
-        <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pb-6 md:pb-12">
-          <div className="text-center">
-            <Button
-              variant="ghost"
-              onClick={onSkip}
-              className="text-sm"
+          
+          {/* Progress Percentage */}
+          <div className="text-center mt-2">
+            <span 
+              className="text-sm font-medium"
+              style={{ color: 'var(--color-accent)' }}
             >
-              Skip for now & get my preliminary snapshot
-            </Button>
+              {Math.round(progress)}%
+            </span>
           </div>
         </div>
       </div>
-    </AuraProvider>
+
+      {/* Main Question Area */}
+      <div className="flex-1 flex items-start justify-center px-6 py-4 md:py-8">
+        <div className="max-w-4xl mx-auto w-full">
+          {currentQuestionData && (
+            <div 
+              className={`
+                space-y-6 md:space-y-8 transition-all duration-200 ease-in-out
+                ${questionVisible 
+                  ? 'opacity-100 transform translate-y-0' 
+                  : 'opacity-0 transform translate-y-4'
+                }
+              `}
+            >
+              {/* AI Message Card with Question */}
+              <div className="text-center">
+                <div className="max-w-2xl mx-auto">
+                  <AIMessageCard 
+                    message={currentQuestionData.message}
+                    question={currentQuestionData.question}
+                    cardType={currentQuestionData.cardType}
+                  />
+                </div>
+              </div>
+
+              {/* Choice Options */}
+              {currentQuestionData.type === 'choice' && (
+                <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                  {currentQuestionData.options.map((option) => (
+                    <div
+                      key={option.id}
+                      className={`
+                        bg-white rounded-xl shadow-sm border transition-all duration-300 ease-in-out
+                        p-6 md:p-8 group relative overflow-hidden
+                        transform shadow-lg
+                        ${isTransitioning 
+                          ? 'cursor-wait' 
+                          : 'cursor-pointer hover:scale-105 hover:shadow-xl'
+                        }
+                        ${selectedAnswer === option.value 
+                          ? 'border-2 shadow-2xl' 
+                          : 'border border-transparent hover:border-sky-300'
+                        }
+                      `}
+                      style={{
+                        backgroundColor: selectedAnswer === option.value ? 'var(--color-accent)' : 'var(--color-card)',
+                        borderColor: selectedAnswer === option.value ? 'var(--color-accent)' : 'var(--color-border)',
+                        ...(selectedAnswer === option.value && {
+                          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--color-accent)'
+                        })
+                      }}
+                      onClick={() => !isTransitioning && handleAnswerSelect(currentQuestionData.id, option.value, option)}
+                    >
+                      {/* Burned-in Letter Background */}
+                      <div className="absolute left-0 top-0 h-full flex items-center justify-start pointer-events-none">
+                        <span 
+                          className={`text-8xl md:text-9xl font-black select-none leading-none transform -translate-x-4 transition-opacity duration-300 ${
+                            selectedAnswer === option.value 
+                              ? 'text-white/20' 
+                              : 'text-gray-300/40 group-hover:text-gray-400/50'
+                          }`}
+                          style={{ 
+                            fontFamily: 'Inter, sans-serif',
+                          }}
+                        >
+                          {option.id}
+                        </span>
+                      </div>
+                      
+                      {/* Content Area */}
+                      <div className="h-full flex items-center relative z-10 ml-12 md:ml-16">
+                        <div className="flex-1">
+                          <p 
+                            className={`text-base md:text-lg leading-relaxed font-medium transition-colors duration-300 ${
+                              selectedAnswer === option.value ? 'text-white' : ''
+                            }`}
+                            style={{ 
+                              color: selectedAnswer === option.value ? 'white' : 'var(--color-text)'
+                            }}
+                          >
+                            {option.label.substring(3)} {/* Remove "A) " or "B) " prefix */}
+                          </p>
+                        </div>
+                        
+                        <div className="ml-4">
+                          <ChevronRight 
+                            className={`
+                              w-5 h-5 transition-all duration-300
+                              ${selectedAnswer === option.value 
+                                ? 'opacity-100 transform translate-x-1 text-white' 
+                                : 'opacity-0 group-hover:opacity-100 group-hover:transform group-hover:translate-x-1 text-sky-600'
+                              }
+                            `}
+                            style={{
+                              color: selectedAnswer === option.value ? 'white' : 'var(--color-accent)'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Slider with Extreme Labels */}
+              {currentQuestionData.type === 'slider' && (
+                <div className="max-w-2xl mx-auto">
+                  <Card className="p-12 space-y-8">
+                    {/* Slider */}
+                    <div className="space-y-6">
+                      <input
+                        type="range"
+                        min={currentQuestionData.min}
+                        max={currentQuestionData.max}
+                        step="0.1"
+                        value={sliderValue}
+                        onChange={(e) => handleSliderChange(e.target.value)}
+                        className="w-full h-4 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                        style={{
+                          background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 100%)`
+                        }}
+                      />
+                      
+                      {/* Extreme Labels Only */}
+                      <div className="flex justify-between text-sm font-medium" style={{ color: 'var(--color-muted)' }}>
+                        <span>{currentQuestionData.extremeLabels.min}</span>
+                        <span>{currentQuestionData.extremeLabels.max}</span>
+                      </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="text-center pt-4">
+                      <Button
+                        variant="accent"
+                        size="large"
+                        onClick={handleSliderSubmit}
+                        disabled={isTransitioning}
+                        className="px-12"
+                      >
+                        {isTransitioning ? 'Loading...' : 'Continue'}
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {/* Text Input */}
+              {currentQuestionData.type === 'textInput' && (
+                <div className="max-w-2xl mx-auto">
+                  <Card className="p-8 space-y-6">
+                    <textarea
+                      value={textInput}
+                      onChange={handleTextInputChange}
+                      placeholder={currentQuestionData.placeholder}
+                      rows={4}
+                      maxLength={500}
+                      className="w-full px-4 py-3 border rounded-lg resize-none transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-opacity-50"
+                      style={{
+                        backgroundColor: 'var(--color-card)',
+                        borderColor: 'var(--color-border)',
+                        color: 'var(--color-text)',
+                      }}
+                      disabled={isTransitioning}
+                    />
+                    
+                    <div className="flex justify-between items-center text-xs" style={{ color: 'var(--color-muted)' }}>
+                      <span>Share what feels most important right now</span>
+                      <span>{textInput.length}/500</span>
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="text-center pt-4">
+                      <Button
+                        variant="accent"
+                        size="large"
+                        onClick={handleTextInputSubmit}
+                        disabled={isTransitioning || !textInput.trim()}
+                        className="px-12"
+                      >
+                        {isTransitioning ? 'Loading...' : 'Complete Assessment'}
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer Section */}
+      <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pb-6 md:pb-12">
+        <div className="text-center">
+          <Button
+            variant="ghost"
+            onClick={onSkip}
+            className="text-sm"
+          >
+            Skip for now & get my preliminary snapshot
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 

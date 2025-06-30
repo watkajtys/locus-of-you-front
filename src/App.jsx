@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './hooks/useTheme';
 import { AuthProvider } from './hooks/useAuth';
+import { AuraProvider } from './contexts/AuraProvider';
 import { initializeRevenueCat, setRevenueCatUserId, checkSubscriptionStatus } from './lib/revenuecat';
 import { Bug, Play, User } from 'lucide-react';
 import EnhancedAuth from './components/EnhancedAuth';
@@ -221,7 +222,7 @@ function AppContent() {
   }
 
   return (
-    <>
+    <AuraProvider>
       {/* Debug Buttons - Fixed Position */}
       <div className="fixed top-4 right-4 z-50 flex flex-col space-y-2">
         {/* Login Debug Button */}
@@ -328,7 +329,7 @@ function AppContent() {
           />
         );
       })()}
-    </>
+    </AuraProvider>
   );
 }
 
