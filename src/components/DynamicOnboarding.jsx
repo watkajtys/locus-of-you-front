@@ -1,21 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ChevronRight, User, Brain } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Card from './Card';
 import Button from './Button';
-import { useOnboardingPersistence } from '../hooks/useOnboardingPersistence';
 
 const DynamicOnboarding = ({ onComplete, onSkip }) => {
-  const { 
-    loading: persistenceLoading, 
-    saveOnboardingProgress, 
-    getProgress, 
-    canResume,
-    clearOnboardingProgress
-  } = useOnboardingPersistence();
-
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [progress, setProgress] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -24,61 +15,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [textInput, setTextInput] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [questionVisible, setQuestionVisible] = useState(true);
-  const [showResumePrompt, setShowResumePrompt] = useState(false);
   
-  // Load persisted data on mount
-  useEffect(() => {
-    if (!persistenceLoading) {
-      const savedProgress = getProgress();
-      
-      if (canResume() && savedProgress.progressPercentage > 0) {
-        setShowResumePrompt(true);
-      }
-    }
-  }, [persistenceLoading, canResume, getProgress]);
-
-  // Resume from saved progress
-  const handleResume = () => {
-    const savedProgress = getProgress();
-    
-    if (savedProgress.data) {
-      setAnswers(savedProgress.data);
-      
-      // Find current question based on completed steps
-      const completedSteps = savedProgress.completedSteps || [];
-      const nextQuestionIndex = Math.min(completedSteps.length, questions.length - 1);
-      
-      setCurrentQuestion(nextQuestionIndex);
-      setProgress(savedProgress.progressPercentage);
-    }
-    
-    setShowResumePrompt(false);
-  };
-
-  // Start fresh
-  const handleStartFresh = async () => {
-    await clearOnboardingProgress();
-    setShowResumePrompt(false);
-    setCurrentQuestion(0);
-    setProgress(0);
-    setAnswers({});
-  };
-
-  // Auto-save progress whenever answers change
-  useEffect(() => {
-    if (Object.keys(answers).length > 0) {
-      const currentStepName = questions[currentQuestion]?.id || 'unknown';
-      const completedSteps = Object.keys(answers);
-      
-      // Debounce the save operation
-      const timeoutId = setTimeout(() => {
-        saveOnboardingProgress(answers, currentStepName, completedSteps);
-      }, 1000);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [answers, currentQuestion, saveOnboardingProgress]);
-
   // Updated question data structure with extreme labels
   const questions = [
     {
@@ -264,10 +201,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
 
   // Handle text input change
   const handleTextInputChange = (e) => {
-    const sanitizedValue = e.target.value
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
-      .replace(/[<>]/g, ''); // Remove < and > characters
-    setTextInput(sanitizedValue);
+    setTextInput(e.target.value);
   };
 
   // Handle text input submission
@@ -292,81 +226,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   };
 
   const currentQuestionData = questions[currentQuestion];
-
-  // Show loading state
-  if (persistenceLoading) {
-    return (
-      <AuraProvider>
-        <div 
-          className="min-h-screen flex items-center justify-center font-inter"
-          style={{ backgroundColor: 'var(--color-background)' }}
-        >
-          <div className="text-center space-y-4">
-            <AuraAvatar size={64} />
-            <p 
-              className="text-lg"
-              style={{ color: 'var(--color-muted)' }}
-            >
-              Loading your progress...
-            </p>
-          </div>
-        </div>
-      </AuraProvider>
-    );
-  }
-
-  // Show resume prompt
-  if (showResumePrompt) {
-    const savedProgress = getProgress();
-    
-    return (
-      <AuraProvider>
-        <div 
-          className="min-h-screen flex items-center justify-center font-inter p-6"
-          style={{ backgroundColor: 'var(--color-background)' }}
-        >
-          <Card className="w-full max-w-md p-8 space-y-6">
-            <div className="text-center space-y-4">
-              <AuraAvatar size={64} />
-              <h2 
-                className="text-2xl font-bold"
-                style={{ color: 'var(--color-text)' }}
-              >
-                Welcome Back!
-              </h2>
-              <p 
-                className="text-base"
-                style={{ color: 'var(--color-muted)' }}
-              >
-                You're {savedProgress.progressPercentage}% through your assessment. 
-                Would you like to continue where you left off?
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <Button
-                variant="accent"
-                size="large"
-                onClick={handleResume}
-                className="w-full"
-              >
-                Continue Assessment ({savedProgress.progressPercentage}%)
-              </Button>
-              
-              <Button
-                variant="secondary"
-                size="large"
-                onClick={handleStartFresh}
-                className="w-full"
-              >
-                Start Over
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </AuraProvider>
-    );
-  }
 
   return (
     <AuraProvider>
@@ -581,7 +440,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         onChange={handleTextInputChange}
                         placeholder={currentQuestionData.placeholder}
                         rows={4}
-                        maxLength={500}
                         className="w-full px-4 py-3 border rounded-lg resize-none transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-opacity-50"
                         style={{
                           backgroundColor: 'var(--color-card)',
@@ -590,11 +448,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         }}
                         disabled={isTransitioning}
                       />
-                      
-                      <div className="flex justify-between items-center text-xs" style={{ color: 'var(--color-muted)' }}>
-                        <span>Share what feels most important right now</span>
-                        <span>{textInput.length}/500</span>
-                      </div>
 
                       {/* Submit Button */}
                       <div className="text-center pt-4">
