@@ -16,7 +16,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [questionVisible, setQuestionVisible] = useState(true);
   
-  // Updated question data structure with new script copy
+  // Updated question data structure with fluid sliders
   const questions = [
     {
       id: 'mindset',
@@ -83,7 +83,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
       max: 5,
-      step: 1,
       labels: {
         1: "Disagree Strongly",
         5: "Agree Strongly"
@@ -97,7 +96,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
       max: 5,
-      step: 1,
       labels: {
         1: "Disagree Strongly",
         5: "Agree Strongly"
@@ -111,7 +109,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
       max: 5,
-      step: 1,
       labels: {
         1: "Disagree Strongly",
         5: "Agree Strongly"
@@ -165,9 +162,20 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     }, 500);
   };
 
-  // Handle slider input
+  // Handle fluid slider input
   const handleSliderChange = (value) => {
-    setSliderValue(value);
+    setSliderValue(parseFloat(value));
+  };
+
+  // Get natural language description for slider value
+  const getSliderDescription = (value, min, max) => {
+    const percentage = (value - min) / (max - min);
+    
+    if (percentage <= 0.1) return "Strongly Disagree";
+    if (percentage <= 0.3) return "Disagree";
+    if (percentage <= 0.7) return "Neutral";
+    if (percentage <= 0.9) return "Agree";
+    return "Strongly Agree";
   };
 
   // Handle slider submission
@@ -176,9 +184,12 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     
     setIsTransitioning(true);
     
+    // Round to one decimal place for storage
+    const roundedValue = Math.round(sliderValue * 10) / 10;
+    
     const newAnswers = {
       ...answers,
-      [currentQuestionData.id]: sliderValue
+      [currentQuestionData.id]: roundedValue
     };
     setAnswers(newAnswers);
     
@@ -389,19 +400,35 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                   </div>
                 )}
 
-                {/* Slider Input */}
+                {/* Fluid Slider Input */}
                 {currentQuestionData.type === 'slider' && (
                   <div className="max-w-2xl mx-auto">
                     <Card className="p-8 space-y-8">
+                      {/* Current Value Display */}
+                      <div className="text-center">
+                        <div 
+                          className="text-lg font-medium mb-2"
+                          style={{ color: 'var(--color-text)' }}
+                        >
+                          {getSliderDescription(sliderValue, currentQuestionData.min, currentQuestionData.max)}
+                        </div>
+                        <div 
+                          className="text-sm opacity-60"
+                          style={{ color: 'var(--color-muted)' }}
+                        >
+                          {Math.round(sliderValue * 10) / 10} / {currentQuestionData.max}
+                        </div>
+                      </div>
+
                       {/* Slider */}
                       <div className="space-y-6">
                         <input
                           type="range"
                           min={currentQuestionData.min}
                           max={currentQuestionData.max}
-                          step={currentQuestionData.step}
+                          step="0.1"
                           value={sliderValue}
-                          onChange={(e) => handleSliderChange(parseInt(e.target.value))}
+                          onChange={(e) => handleSliderChange(e.target.value)}
                           className="w-full h-4 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                           style={{
                             background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 100%)`
