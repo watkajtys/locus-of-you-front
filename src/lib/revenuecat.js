@@ -1,4 +1,13 @@
-import * as Purchases from '@revenuecat/purchases-js';
+import { 
+  configure, 
+  logIn, 
+  getOfferings, 
+  purchasePackage, 
+  restorePurchases, 
+  getCustomerInfo, 
+  addCustomerInfoUpdateListener, 
+  logOut 
+} from '@revenuecat/purchases-js';
 
 // RevenueCat configuration
 const REVENUECAT_API_KEY = import.meta.env.VITE_REVENUECAT_PUBLIC_API_KEY;
@@ -26,7 +35,7 @@ export const initializeRevenueCat = async () => {
   }
 
   try {
-    await Purchases.configure(REVENUECAT_API_KEY);
+    await configure(REVENUECAT_API_KEY);
     isConfigured = true;
     console.log('RevenueCat initialized successfully');
   } catch (error) {
@@ -44,7 +53,7 @@ export const setRevenueCatUserId = async (userId) => {
   }
 
   try {
-    await Purchases.logIn(userId);
+    await logIn(userId);
     console.log('RevenueCat user ID set:', userId);
   } catch (error) {
     console.error('Failed to set RevenueCat user ID:', error);
@@ -61,7 +70,7 @@ export const getOfferings = async () => {
   }
 
   try {
-    const offerings = await Purchases.getOfferings();
+    const offerings = await getOfferings();
     return offerings;
   } catch (error) {
     console.error('Failed to get offerings:', error);
@@ -93,7 +102,7 @@ export const purchaseSubscription = async (productId) => {
       throw new Error(`Product ${productId} not found in offerings`);
     }
 
-    const purchaseResult = await Purchases.purchasePackage(targetPackage);
+    const purchaseResult = await purchasePackage(targetPackage);
     
     return {
       success: true,
@@ -128,7 +137,7 @@ export const restorePurchases = async () => {
   }
 
   try {
-    const customerInfo = await Purchases.restorePurchases();
+    const customerInfo = await restorePurchases();
     return {
       success: true,
       customerInfo
@@ -152,7 +161,7 @@ export const checkSubscriptionStatus = async () => {
   }
 
   try {
-    const customerInfo = await Purchases.getCustomerInfo();
+    const customerInfo = await getCustomerInfo();
     const hasSubscription = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
     
     return {
@@ -175,7 +184,7 @@ export const getCustomerInfo = async () => {
   }
 
   try {
-    const customerInfo = await Purchases.getCustomerInfo();
+    const customerInfo = await getCustomerInfo();
     return customerInfo;
   } catch (error) {
     console.error('Failed to get customer info:', error);
@@ -192,7 +201,7 @@ export const setCustomerInfoUpdateListener = (callback) => {
     return;
   }
 
-  Purchases.addCustomerInfoUpdateListener(callback);
+  addCustomerInfoUpdateListener(callback);
 };
 
 /**
@@ -204,7 +213,7 @@ export const logOutRevenueCat = async () => {
   }
 
   try {
-    await Purchases.logOut();
+    await logOut();
     console.log('RevenueCat user logged out');
   } catch (error) {
     console.error('Failed to log out RevenueCat user:', error);
