@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './hooks/useTheme';
-import { Bug } from 'lucide-react';
+import { Bug, Play } from 'lucide-react';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import DynamicOnboarding from './components/DynamicOnboarding';
@@ -105,6 +105,25 @@ function App() {
     console.log('Debug: Jumped to snapshot with mock data');
   };
 
+  // Debug function to jump to first step with mock data
+  const handleDebugFirstStep = () => {
+    const mockAnswers = {
+      mindset: 'growth',
+      locus: 'internal',
+      regulatory_focus: 'promotion',
+      personality_disorganized: 2.3,
+      personality_outgoing: 4.1,
+      personality_moody: 2.8,
+      final_focus: 'Building better habits and staying consistent with my goals'
+    };
+    
+    setOnboardingAnswers(mockAnswers);
+    setShowFirstStep(true);
+    setShowSnapshot(false);
+    setShowAuth(false);
+    console.log('Debug: Jumped to first step with mock data');
+  };
+
   // Show loading state while checking authentication
   if (loading) {
     return (
@@ -130,21 +149,40 @@ function App() {
 
   return (
     <>
-      {/* Debug Button - Fixed Position */}
-      <button
-        onClick={handleDebugSnapshot}
-        className="fixed top-4 right-4 z-50 flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
-        style={{
-          backgroundColor: 'var(--color-accent)',
-          color: 'white',
-          fontSize: '0.875rem',
-          fontWeight: '600'
-        }}
-        title="Debug: Jump to Snapshot"
-      >
-        <Bug className="w-4 h-4" />
-        <span>Snapshot</span>
-      </button>
+      {/* Debug Buttons - Fixed Position */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col space-y-2">
+        {/* Snapshot Debug Button */}
+        <button
+          onClick={handleDebugSnapshot}
+          className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
+          style={{
+            backgroundColor: 'var(--color-accent)',
+            color: 'white',
+            fontSize: '0.875rem',
+            fontWeight: '600'
+          }}
+          title="Debug: Jump to Snapshot"
+        >
+          <Bug className="w-4 h-4" />
+          <span>Snapshot</span>
+        </button>
+
+        {/* First Step Debug Button */}
+        <button
+          onClick={handleDebugFirstStep}
+          className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
+          style={{
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-text)',
+            fontSize: '0.875rem',
+            fontWeight: '600'
+          }}
+          title="Debug: Jump to First Step"
+        >
+          <Play className="w-4 h-4" />
+          <span>First Step</span>
+        </button>
+      </div>
 
       {/* Main App Content */}
       {(() => {
