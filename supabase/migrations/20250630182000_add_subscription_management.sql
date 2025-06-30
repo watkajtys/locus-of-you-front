@@ -1,3 +1,12 @@
+-- Drop existing policies, functions, and table if they exist
+DROP POLICY IF EXISTS "Users can view their own subscription status" ON subscription_status;
+DROP POLICY IF EXISTS "Users can update their own subscription status" ON subscription_status;
+DROP POLICY IF EXISTS "Users can insert their own subscription status" ON subscription_status;
+
+DROP FUNCTION IF EXISTS update_subscription_status(uuid, text, boolean, text[], text, timestamptz, boolean);
+DROP FUNCTION IF EXISTS get_user_subscription_status(uuid);
+
+DROP TABLE IF EXISTS subscription_status;
 
 -- Create subscription_status table
 CREATE TABLE IF NOT EXISTS subscription_status (
