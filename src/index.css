@@ -157,57 +157,6 @@ html {
   }
 }
 
-/* Confetti Animation */
-.confetti-piece {
-  animation: confetti-explosion linear forwards;
-  transform-origin: center;
-}
-
-@keyframes confetti-explosion {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  15% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: 
-      translate(-50%, -50%) 
-      translate(
-        calc(cos(var(--angle)) * var(--distance)), 
-        calc(sin(var(--angle)) * var(--distance))
-      ) 
-      rotate(var(--rotation));
-  }
-}
-
-/* Confetti Burst Effect - Different Particle Types */
-.confetti-piece:nth-child(odd) {
-  animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.confetti-piece:nth-child(even) {
-  animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
-}
-
-/* Confetti Color Variations */
-.confetti-piece:nth-child(3n) {
-  border-radius: 2px;
-  transform: scale(1.2);
-}
-
-.confetti-piece:nth-child(4n) {
-  border-radius: 0;
-  transform: rotate(45deg);
-}
-
-.confetti-piece:nth-child(5n) {
-  border-radius: 50%;
-  transform: scale(0.8);
-}
-
 /* Custom slider styles */
 .slider::-webkit-slider-thumb {
   appearance: none;

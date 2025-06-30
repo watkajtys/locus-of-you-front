@@ -5,60 +5,91 @@ import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Button from './Button';
 
-// Confetti Component
+// Confetti Component with JavaScript-based animation
 const ConfettiExplosion = ({ isActive, onComplete }) => {
+  const [confettiPieces, setConfettiPieces] = useState([]);
+
   useEffect(() => {
     if (isActive) {
+      // Generate confetti pieces with calculated positions
+      const pieces = Array.from({ length: 50 }, (_, i) => {
+        const colors = [
+          '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', 
+          '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+          '#F8C471', '#82E0AA', '#F1948A', '#AED6F1', '#A9DFBF'
+        ];
+        
+        const angle = Math.random() * 360;
+        const distance = Math.random() * 300 + 150;
+        const angleRad = (angle * Math.PI) / 180;
+        
+        // Calculate final position using trigonometry
+        const finalX = Math.cos(angleRad) * distance;
+        const finalY = Math.sin(angleRad) * distance;
+        
+        return {
+          id: i,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: Math.random() * 8 + 4,
+          delay: Math.random() * 300, // 0-300ms delay
+          duration: Math.random() * 1500 + 2000, // 2-3.5s duration
+          finalX,
+          finalY,
+          rotation: Math.random() * 720 + 360,
+          shape: Math.random() > 0.5 ? 'circle' : 'square',
+        };
+      });
+      
+      setConfettiPieces(pieces);
+      
       // Auto-hide confetti after animation completes
       const timer = setTimeout(() => {
+        setConfettiPieces([]);
         onComplete && onComplete();
-      }, 3000);
+      }, 4000);
+      
       return () => clearTimeout(timer);
     }
   }, [isActive, onComplete]);
 
-  if (!isActive) return null;
+  const ConfettiPiece = ({ piece }) => {
+    const [isAnimating, setIsAnimating] = useState(false);
 
-  // Generate 50 confetti pieces with random properties
-  const confettiPieces = Array.from({ length: 50 }, (_, i) => {
-    const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', 
-      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
-      '#F8C471', '#82E0AA', '#F1948A', '#AED6F1', '#A9DFBF'
-    ];
-    
-    return {
-      id: i,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      size: Math.random() * 8 + 4, // 4-12px
-      delay: Math.random() * 0.5, // 0-0.5s delay
-      duration: Math.random() * 1.5 + 2, // 2-3.5s duration
-      angle: Math.random() * 360, // Random direction
-      distance: Math.random() * 300 + 150, // 150-450px distance
-      rotation: Math.random() * 720 + 360, // 360-1080 degrees rotation
-    };
-  });
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setIsAnimating(true);
+      }, piece.delay);
+      
+      return () => clearTimeout(timer);
+    }, [piece.delay]);
+
+    return (
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: '50%',
+          top: '50%',
+          width: `${piece.size}px`,
+          height: `${piece.size}px`,
+          backgroundColor: piece.color,
+          borderRadius: piece.shape === 'circle' ? '50%' : '0%',
+          transform: isAnimating 
+            ? `translate(-50%, -50%) translate(${piece.finalX}px, ${piece.finalY}px) rotate(${piece.rotation}deg)`
+            : 'translate(-50%, -50%)',
+          opacity: isAnimating ? 0 : 1,
+          transition: `all ${piece.duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`,
+          zIndex: 1000,
+        }}
+      />
+    );
+  };
+
+  if (!isActive || confettiPieces.length === 0) return null;
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {confettiPieces.map((piece) => (
-        <div
-          key={piece.id}
-          className="absolute confetti-piece"
-          style={{
-            left: '50%',
-            top: '50%',
-            width: `${piece.size}px`,
-            height: `${piece.size}px`,
-            backgroundColor: piece.color,
-            borderRadius: Math.random() > 0.5 ? '50%' : '0%',
-            animationDelay: `${piece.delay}s`,
-            animationDuration: `${piece.duration}s`,
-            '--angle': `${piece.angle}deg`,
-            '--distance': `${piece.distance}px`,
-            '--rotation': `${piece.rotation}deg`,
-          }}
-        />
+        <ConfettiPiece key={piece.id} piece={piece} />
       ))}
     </div>
   );
@@ -128,12 +159,16 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
     
     // Trigger confetti celebration when task becomes completed
     if (newCompletedState) {
+      console.log('🎉 FIRING CONFETTI!'); // Debug log
       setShowConfetti(true);
+    } else {
+      setShowConfetti(false);
     }
   };
 
   // Handle confetti completion
   const handleConfettiComplete = () => {
+    console.log('✨ Confetti animation completed'); // Debug log
     setShowConfetti(false);
   };
 
@@ -230,16 +265,20 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                   <div className="flex-shrink-0">
                     {isTaskCompleted ? (
                       <div className="relative w-8 h-8 md:w-10 md:h-10">
-                        {/* Green Circle Background */}
+                        {/* Green Circle Background with Pulse */}
                         <div 
-                          className="absolute inset-0 rounded-full bg-green-600 animate-pulse"
-                          style={{ backgroundColor: '#16a34a' }}
+                          className="absolute inset-0 rounded-full bg-green-600"
+                          style={{ 
+                            backgroundColor: '#16a34a',
+                            animation: 'celebrate-pulse 1s ease-in-out infinite'
+                          }}
                         />
-                        {/* Centered White Checkmark */}
+                        {/* Centered White Checkmark with Bounce */}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Check 
-                            className="w-5 h-5 md:w-6 md:h-6 text-white animate-bounce"
+                            className="w-5 h-5 md:w-6 md:h-6 text-white"
                             strokeWidth={3}
+                            style={{ animation: 'celebrate-bounce 0.8s ease-in-out infinite' }}
                           />
                         </div>
                       </div>
