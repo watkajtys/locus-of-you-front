@@ -386,7 +386,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
               </div>
             </div>
 
-            {/* Abstract Data Visualizations Section */}
+            {/* Abstract Data Visualizations Section - VERTICAL STACK */}
             <div className="space-y-8">
               <div className="text-center">
                 <h3 
@@ -403,7 +403,8 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {/* Changed from grid to vertical stack */}
+              <div className="space-y-8 max-w-3xl mx-auto">
                 {insights.map((insight, index) => {
                   // Spectrum Bar Visualization
                   if (insight.type === 'spectrum') {
