@@ -54,6 +54,7 @@ function App() {
     console.log('Onboarding completed with answers:', answers);
     // Store answers in localStorage and state
     localStorage.setItem('onboarding-answers', JSON.stringify(answers);
+    )
     setOnboardingAnswers(answers);
     setShowSnapshot(true);
   };
