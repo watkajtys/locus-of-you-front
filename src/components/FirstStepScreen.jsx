@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, Circle, Check } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
@@ -11,6 +11,8 @@ const ConfettiExplosion = ({ isActive, onComplete }) => {
 
   useEffect(() => {
     if (isActive) {
+      console.log('🎆 CONFETTI EFFECT TRIGGERED ONCE!'); // Debug log
+      
       // Generate confetti pieces with calculated positions
       const pieces = Array.from({ length: 50 }, (_, i) => {
         const colors = [
@@ -44,11 +46,15 @@ const ConfettiExplosion = ({ isActive, onComplete }) => {
       
       // Auto-hide confetti after animation completes
       const timer = setTimeout(() => {
+        console.log('⏰ CONFETTI CLEANUP TIMER FIRED'); // Debug log
         setConfettiPieces([]);
         onComplete && onComplete();
       }, 4000);
       
-      return () => clearTimeout(timer);
+      return () => {
+        console.log('🧹 CONFETTI CLEANUP'); // Debug log
+        clearTimeout(timer);
+      };
     }
   }, [isActive, onComplete]);
 
@@ -99,6 +105,12 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
   const [isTaskCompleted, setIsTaskCompleted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [shouldBounce, setShouldBounce] = useState(false);
+
+  // Memoize the confetti completion handler to prevent useEffect re-runs
+  const handleConfettiComplete = useCallback(() => {
+    console.log('✨ Confetti animation completed (memoized callback)'); // Debug log
+    setShowConfetti(false);
+  }, []);
 
   // Generate personalized micro-victory based on user's profile and goal
   const generateMicroVictoryContent = (answers) => {
@@ -160,7 +172,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
     
     // Trigger confetti celebration and bounce when task becomes completed
     if (newCompletedState) {
-      console.log('🎉 FIRING CONFETTI AND BOUNCE!'); // Debug log
+      console.log('🎉 TASK COMPLETED - TRIGGERING SINGLE CONFETTI & BOUNCE!'); // Debug log
       setShowConfetti(true);
       setShouldBounce(true);
       
@@ -169,15 +181,10 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
         setShouldBounce(false);
       }, 800); // Slightly longer than animation duration
     } else {
+      console.log('❌ Task uncompleted - stopping confetti'); // Debug log
       setShowConfetti(false);
       setShouldBounce(false);
     }
-  };
-
-  // Handle confetti completion
-  const handleConfettiComplete = () => {
-    console.log('✨ Confetti animation completed'); // Debug log
-    setShowConfetti(false);
   };
 
   return (
@@ -217,7 +224,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
             {/* Second Card - The Task with consistent styling and confetti */}
             <div className="relative">
-              {/* Confetti Explosion */}
+              {/* Confetti Explosion - Now with memoized callback */}
               <ConfettiExplosion 
                 isActive={showConfetti} 
                 onComplete={handleConfettiComplete}
