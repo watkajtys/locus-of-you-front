@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, User, Brain } from 'lucide-react';
+import { ChevronRight, User, Brain, LogIn } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
@@ -225,6 +225,12 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     }, 500);
   };
 
+  // Handle Log In button click
+  const handleLogIn = () => {
+    // Call onSkip to trigger showing the auth screen
+    onSkip && onSkip();
+  };
+
   const currentQuestionData = questions[currentQuestion];
 
   return (
@@ -287,7 +293,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         </div>
 
         {/* Main Question Area */}
-        <div className="flex-1 flex items-start justify-center px-6 py-4 md:py-8">
+        <div className="flex-1 flex items-start justify-center px-6 py-4 md:py-8 pb-32">
           <div className="max-w-4xl mx-auto w-full">
             {currentQuestionData && (
               <div 
@@ -469,16 +475,58 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
           </div>
         </div>
 
-        {/* Footer Section */}
-        <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pb-6 md:pb-12">
-          <div className="text-center">
-            <Button
-              variant="ghost"
-              onClick={onSkip}
-              className="text-sm"
-            >
-              Skip for now & get my preliminary snapshot
-            </Button>
+        {/* Fixed Bottom Navigation */}
+        <div 
+          className="fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-sm"
+          style={{
+            backgroundColor: 'var(--color-card)',
+            borderColor: 'var(--color-border)',
+            opacity: '0.98'
+          }}
+        >
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between space-x-4">
+              {/* Secondary - Skip for Now Button */}
+              <button
+                onClick={onSkip}
+                disabled={isTransitioning}
+                className="flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-xl transition-all duration-300 ease-in-out hover:scale-102 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                style={{
+                  backgroundColor: 'var(--color-primary)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-muted)',
+                  border: '1px solid var(--color-border)'
+                }}
+              >
+                <Brain className="w-5 h-5" />
+                <span className="text-sm font-medium">Skip for Now</span>
+              </button>
+
+              {/* Primary - Log In Button */}
+              <button
+                onClick={handleLogIn}
+                disabled={isTransitioning}
+                className="flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-xl transition-all duration-300 ease-in-out hover:scale-102 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}
+              >
+                <LogIn className="w-5 h-5" />
+                <span className="text-sm font-semibold">Log In</span>
+              </button>
+            </div>
+
+            {/* Help Text */}
+            <div className="text-center mt-3">
+              <p 
+                className="text-xs"
+                style={{ color: 'var(--color-muted)' }}
+              >
+                Already have an account? Log in to continue where you left off.
+              </p>
+            </div>
           </div>
         </div>
       </div>
