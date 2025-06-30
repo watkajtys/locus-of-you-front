@@ -1,7 +1,7 @@
 import { 
   configure, 
   logIn, 
-  getOfferings, 
+  getOfferings as rcGetOfferings, 
   purchasePackage, 
   restorePurchases, 
   getCustomerInfo, 
@@ -70,7 +70,7 @@ export const getOfferings = async () => {
   }
 
   try {
-    const offerings = await getOfferings();
+    const offerings = await rcGetOfferings();
     return offerings;
   } catch (error) {
     console.error('Failed to get offerings:', error);
@@ -87,7 +87,7 @@ export const purchaseSubscription = async (productId) => {
   }
 
   try {
-    const offerings = await getOfferings();
+    const offerings = await rcGetOfferings();
     
     if (!offerings?.current) {
       throw new Error('No current offering available');
