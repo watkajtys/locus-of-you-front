@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './hooks/useTheme';
+import { AuthProvider } from './hooks/useAuth';
 import { initializeRevenueCat, setRevenueCatUserId, checkSubscriptionStatus } from './lib/revenuecat';
 import { Bug, Play, User } from 'lucide-react';
-import Auth from './components/Auth';
+import EnhancedAuth from './components/EnhancedAuth';
+import ProtectedRoute from './components/ProtectedRoute';
 import AppShell from './components/AppShell';
 import DynamicOnboarding from './components/DynamicOnboarding';
 import SnapshotScreen from './components/SnapshotScreen';
 import FirstStepScreen from './components/FirstStepScreen';
 import Paywall from './components/Paywall';
 
-function App() {
+function AppContent() {
   const { theme } = useTheme();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -275,7 +277,11 @@ function App() {
       {(() => {
         // Conditionally render based on authentication and flow state
         if (session) {
-          return <AppShell session={session} hasSubscription={hasSubscription} />;
+          return (
+            <ProtectedRoute>
+              <AppShell session={session} hasSubscription={hasSubscription} />
+            </ProtectedRoute>
+          );
         }
 
         // Show paywall if first step is completed
@@ -311,7 +317,7 @@ function App() {
 
         // Show auth after paywall or skip
         if (showAuth) {
-          return <Auth />;
+          return <EnhancedAuth />;
         }
 
         // Show onboarding first
@@ -323,6 +329,14 @@ function App() {
         );
       })()}
     </>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

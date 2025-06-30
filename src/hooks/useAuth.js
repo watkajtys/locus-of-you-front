@@ -1,0 +1,379 @@
+import { useState, useEffect, useContext, createContext } from 'react';
+import { supabase } from '../lib/supabase';
+
+// Create Auth Context
+const AuthContext = createContext({});
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
+
+  useEffect(() => {
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Error getting session:', error);
+        setAuthError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth event:', event);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        // Handle specific auth events
+        switch (event) {
+          case 'SIGNED_IN':
+            setAuthError(null);
+            // Create user profile if doesn't exist
+            await ensureUserProfile(session.user);
+            break;
+          case 'SIGNED_OUT':
+            setAuthError(null);
+            break;
+          case 'TOKEN_REFRESHED':
+            console.log('Token refreshed successfully');
+            break;
+          case 'USER_UPDATED':
+            console.log('User updated');
+            break;
+          default:
+            break;
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Ensure user profile exists in database
+  const ensureUserProfile = async (user) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            username: user.user_metadata?.username || user.email?.split('@')[0],
+            full_name: user.user_metadata?.full_name || '',
+            avatar_url: user.user_metadata?.avatar_url || '',
+            updated_at: new Date().toISOString()
+          });
+
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+        }
+      }
+    } catch (error) {
+      console.error('Error ensuring user profile:', error);
+    }
+  };
+
+  // Enhanced sign up with better validation
+  const signUp = async (email, password, metadata = {}) => {
+    try {
+      setLoading(true);
+      setAuthError(null);
+
+      // Client-side validation
+      const validationError = validatePassword(password);
+      if (validationError) {
+        throw new Error(validationError);
+      }
+
+      if (!validateEmail(email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email.toLowerCase().trim(),
+        password,
+        options: {
+          data: metadata,
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) throw error;
+
+      return { data, error: null };
+    } catch (error) {
+      const friendlyError = mapAuthError(error);
+      setAuthError(friendlyError);
+      return { data: null, error: friendlyError };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Enhanced sign in with rate limiting
+  const signIn = async (email, password) => {
+    try {
+      setLoading(true);
+      setAuthError(null);
+
+      // Check rate limiting
+      const rateLimitKey = `auth_attempts_${email}`;
+      const attempts = parseInt(localStorage.getItem(rateLimitKey) || '0');
+      const lastAttempt = localStorage.getItem(`${rateLimitKey}_time`);
+      
+      if (attempts >= 5 && lastAttempt) {
+        const timeDiff = Date.now() - parseInt(lastAttempt);
+        if (timeDiff < 15 * 60 * 1000) { // 15 minutes
+          throw new Error('Too many failed attempts. Please try again in 15 minutes.');
+        } else {
+          // Reset attempts after cooldown
+          localStorage.removeItem(rateLimitKey);
+          localStorage.removeItem(`${rateLimitKey}_time`);
+        }
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.toLowerCase().trim(),
+        password
+      });
+
+      if (error) {
+        // Increment failed attempts
+        localStorage.setItem(rateLimitKey, (attempts + 1).toString());
+        localStorage.setItem(`${rateLimitKey}_time`, Date.now().toString());
+        throw error;
+      }
+
+      // Clear failed attempts on success
+      localStorage.removeItem(rateLimitKey);
+      localStorage.removeItem(`${rateLimitKey}_time`);
+
+      return { data, error: null };
+    } catch (error) {
+      const friendlyError = mapAuthError(error);
+      setAuthError(friendlyError);
+      return { data: null, error: friendlyError };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Password reset functionality
+  const resetPassword = async (email) => {
+    try {
+      setLoading(true);
+      setAuthError(null);
+
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`
+      });
+
+      if (error) throw error;
+
+      return { data, error: null };
+    } catch (error) {
+      const friendlyError = mapAuthError(error);
+      setAuthError(friendlyError);
+      return { data: null, error: friendlyError };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update password
+  const updatePassword = async (newPassword) => {
+    try {
+      setLoading(true);
+      setAuthError(null);
+
+      const validationError = validatePassword(newPassword);
+      if (validationError) {
+        throw new Error(validationError);
+      }
+
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      return { data, error: null };
+    } catch (error) {
+      const friendlyError = mapAuthError(error);
+      setAuthError(friendlyError);
+      return { data: null, error: friendlyError };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sign out
+  const signOut = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error signing out:', error);
+      setAuthError(mapAuthError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get current session
+  const getCurrentSession = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      return session;
+    } catch (error) {
+      console.error('Error getting current session:', error);
+      return null;
+    }
+  };
+
+  // Check if user has specific role
+  const hasRole = (role) => {
+    return user?.app_metadata?.role === role || 
+           user?.app_metadata?.roles?.includes(role);
+  };
+
+  const value = {
+    user,
+    session,
+    loading,
+    authError,
+    signUp,
+    signIn,
+    signOut,
+    resetPassword,
+    updatePassword,
+    getCurrentSession,
+    hasRole,
+    isAuthenticated: !!user,
+    isLoading: loading
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+// Validation functions
+const validateEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePassword = (password) => {
+  if (password.length < 12) {
+    return 'Password must be at least 12 characters long';
+  }
+  
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  
+  if (!hasUpperCase) {
+    return 'Password must contain at least one uppercase letter';
+  }
+  
+  if (!hasLowerCase) {
+    return 'Password must contain at least one lowercase letter';
+  }
+  
+  if (!hasNumbers) {
+    return 'Password must contain at least one number';
+  }
+  
+  if (!hasSpecialChar) {
+    return 'Password must contain at least one special character';
+  }
+  
+  // Check for common weak patterns
+  const commonPatterns = [
+    /123456/,
+    /password/i,
+    /qwerty/i,
+    /admin/i,
+    /letmein/i
+  ];
+  
+  for (const pattern of commonPatterns) {
+    if (pattern.test(password)) {
+      return 'Password contains common patterns. Please choose a more secure password.';
+    }
+  }
+  
+  return null;
+};
+
+// Map Supabase errors to user-friendly messages
+const mapAuthError = (error) => {
+  const errorMessage = error.message?.toLowerCase() || '';
+  
+  if (errorMessage.includes('invalid login credentials')) {
+    return 'Invalid email or password. Please check your credentials and try again.';
+  }
+  
+  if (errorMessage.includes('email not confirmed')) {
+    return 'Please check your email and click the confirmation link before signing in.';
+  }
+  
+  if (errorMessage.includes('signup is disabled')) {
+    return 'New account registration is currently disabled. Please contact support.';
+  }
+  
+  if (errorMessage.includes('email rate limit exceeded')) {
+    return 'Too many emails sent. Please wait before requesting another confirmation email.';
+  }
+  
+  if (errorMessage.includes('user already registered')) {
+    return 'An account with this email address already exists. Please sign in instead.';
+  }
+  
+  if (errorMessage.includes('invalid email')) {
+    return 'Please enter a valid email address.';
+  }
+  
+  if (errorMessage.includes('weak password')) {
+    return 'Password is too weak. Please choose a stronger password.';
+  }
+  
+  // Return original message if no mapping found
+  return error.message || 'An unexpected error occurred. Please try again.';
+};
