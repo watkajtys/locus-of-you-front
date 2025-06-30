@@ -98,6 +98,7 @@ const ConfettiExplosion = ({ isActive, onComplete }) => {
 const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
   const [isTaskCompleted, setIsTaskCompleted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [shouldBounce, setShouldBounce] = useState(false);
 
   // Generate personalized micro-victory based on user's profile and goal
   const generateMicroVictoryContent = (answers) => {
@@ -157,12 +158,19 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
     const newCompletedState = !isTaskCompleted;
     setIsTaskCompleted(newCompletedState);
     
-    // Trigger confetti celebration when task becomes completed
+    // Trigger confetti celebration and bounce when task becomes completed
     if (newCompletedState) {
-      console.log('🎉 FIRING CONFETTI!'); // Debug log
+      console.log('🎉 FIRING CONFETTI AND BOUNCE!'); // Debug log
       setShowConfetti(true);
+      setShouldBounce(true);
+      
+      // Reset bounce after animation completes
+      setTimeout(() => {
+        setShouldBounce(false);
+      }, 800); // Slightly longer than animation duration
     } else {
       setShowConfetti(false);
+      setShouldBounce(false);
     }
   };
 
@@ -261,14 +269,11 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
                 {/* Task Content with Checkbox */}
                 <div className="flex items-center space-x-6">
-                  {/* Large Checkbox Icon - ENTIRE ELEMENT JUMPS */}
+                  {/* Large Checkbox Icon - BOUNCES ONCE WHEN COMPLETED */}
                   <div className="flex-shrink-0">
                     {isTaskCompleted ? (
                       <div 
-                        className="relative w-8 h-8 md:w-10 md:h-10"
-                        style={{ 
-                          animation: 'celebrate-jump 0.6s ease-in-out infinite'
-                        }}
+                        className={`relative w-8 h-8 md:w-10 md:h-10 ${shouldBounce ? 'celebrate-bounce' : ''}`}
                       >
                         {/* Green Circle Background */}
                         <div 

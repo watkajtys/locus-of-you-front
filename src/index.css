@@ -191,15 +191,25 @@ html {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* Celebration Animation - ENTIRE CHECKBOX JUMPS */
-@keyframes celebrate-jump {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
+/* Single Celebration Bounce - Happens Once */
+.celebrate-bounce {
+  animation: celebrate-bounce 0.75s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes celebrate-bounce {
+  0% {
+    transform: translateY(0) scale(1);
   }
-  40% {
-    transform: translateY(-12px);
+  30% {
+    transform: translateY(-16px) scale(1.05);
   }
-  60% {
-    transform: translateY(-6px);
+  50% {
+    transform: translateY(-8px) scale(1.02);
+  }
+  70% {
+    transform: translateY(-12px) scale(1.03);
+  }
+  100% {
+    transform: translateY(0) scale(1);
   }
 }
