@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { jwtAuth, requireSubscription } from '../middleware/auth';
 import { rateLimit, rateLimitConfigs } from '../middleware/rate-limit';
-import { validateRequest, ValidationSchemas } from '../middleware/validation';
+import { validateParams, ValidationSchemas } from '../middleware/validation';
 import { ResponseHelper } from '../utils/response';
 import type { Env } from '../types';
 
@@ -45,10 +45,10 @@ sessions.get(
   '/:sessionId',
   rateLimit(rateLimitConfigs.moderate),
   jwtAuth(),
-  validateRequest({ params: ValidationSchemas.sessionId }),
+  validateParams(ValidationSchemas.sessionId),
   async (c) => {
     const user = c.get('user');
-    const params = c.get('validatedParams');
+    const params = c.req.valid('param');
     
     try {
       if (!c.env.USER_SESSIONS_KV) {
@@ -80,10 +80,10 @@ sessions.put(
   '/:sessionId/end',
   rateLimit(rateLimitConfigs.moderate),
   jwtAuth(),
-  validateRequest({ params: ValidationSchemas.sessionId }),
+  validateParams(ValidationSchemas.sessionId),
   async (c) => {
     const user = c.get('user');
-    const params = c.get('validatedParams');
+    const params = c.req.valid('param');
     
     try {
       if (!c.env.USER_SESSIONS_KV) {

@@ -4,21 +4,53 @@ A secure, scalable API for AI-powered coaching built on Cloudflare Workers with 
 
 ## Features
 
-- **🔐 Multi-layer Authentication**: JWT tokens and API keys
-- **⚡ Rate Limiting**: Configurable limits per endpoint
-- **🛡️ Security Headers**: CORS, CSP, and security middleware
-- **📊 Request Validation**: Zod schema validation
+- **🔐 Multi-layer Authentication**: JWT tokens and API keys using `@tsndr/cloudflare-worker-jwt`
+- **⚡ Rate Limiting**: Configurable limits per endpoint using KV storage
+- **🛡️ Security Headers**: CORS, CSP, and comprehensive security middleware
+- **📊 Request Validation**: Zod schema validation with Hono validators
 - **🔍 Monitoring**: Request logging and performance tracking
-- **📚 Auto Documentation**: Built-in API documentation
-- **🏥 Health Checks**: Service health monitoring
+- **📚 Auto Documentation**: Built-in API documentation at `/api/docs`
+- **🏥 Health Checks**: Service health monitoring at `/health`
+- **🤖 AI Chains**: Integrated LangChain with Google Gemini for coaching intelligence
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+cd worker
+npm install
+```
+
+### 2. Configure Environment
+
+Copy the example and set your environment variables:
+
+```bash
+# Set these in your Cloudflare Workers dashboard or wrangler.toml
+GOOGLE_API_KEY=your-google-gemini-api-key
+API_KEY=your-admin-api-key
+JWT_SECRET=your-jwt-secret-key-minimum-32-chars
+ENVIRONMENT=development
+```
+
+### 3. Deploy
+
+```bash
+# Deploy to development
+npm run deploy
+
+# Deploy to production
+npm run deploy:production
+```
 
 ## Architecture
 
 ```
-Frontend (React) → Cloudflare Workers → AI Chains → KV Storage
+Frontend (React) → Cloudflare Workers → AI Chains (Google Gemini) → KV Storage
                                    ↓
                               Rate Limiting
-                              Authentication
+                              JWT Authentication
                               Validation
                               Security Headers
 ```
@@ -28,48 +60,90 @@ Frontend (React) → Cloudflare Workers → AI Chains → KV Storage
 ### Authentication
 All endpoints except `/health` and `/api/docs` require authentication.
 
-**JWT Authentication:**
+**JWT Authentication (for users):**
 ```
 Authorization: Bearer <jwt_token>
 ```
 
-**API Key Authentication:**
+**API Key Authentication (for admin):**
 ```
 X-API-Key: <api_key>
 ```
 
-### Endpoints
+### Core Endpoints
 
 #### Health & Documentation
-- `GET /health` - Health check (no auth)
-- `GET /api/docs` - API documentation
+- `GET /health` - Health check (no auth required)
+- `GET /api/docs` - Comprehensive API documentation
 
-#### Coaching
-- `POST /api/coaching/message` - Send coaching message (JWT + Subscription)
-- `GET /api/coaching/history` - Get coaching history (JWT)
+#### Coaching (JWT + Subscription Required)
+- `POST /api/coaching/message` - Send coaching message to AI
+  ```json
+  {
+    "message": "I'm struggling with motivation",
+    "context": {
+      "urgencyLevel": "medium",
+      "sessionType": "diagnostic"
+    }
+  }
+  ```
+- `GET /api/coaching/history` - Get coaching conversation history
 
-#### Users
-- `GET /api/users/profile` - Get current user profile (JWT)
-- `PUT /api/users/profile` - Update profile (JWT)
-- `GET /api/users/:userId/profile` - Get user profile (Admin only)
+#### User Management (JWT Required)
+- `GET /api/users/profile` - Get current user profile
+- `PUT /api/users/profile` - Update user profile
+  ```json
+  {
+    "preferences": {
+      "theme": "calm",
+      "notifications": true
+    },
+    "psychologicalProfile": {
+      "mindset": "growth",
+      "locus": "internal"
+    }
+  }
+  ```
 
-#### Sessions
-- `POST /api/sessions` - Start coaching session (JWT + Subscription)
-- `GET /api/sessions/:sessionId` - Get session details (JWT)
-- `PUT /api/sessions/:sessionId/end` - End session (JWT)
+#### Session Management (JWT + Subscription Required)
+- `POST /api/sessions` - Start new coaching session
+- `GET /api/sessions/:sessionId` - Get session details
+- `PUT /api/sessions/:sessionId/end` - End coaching session
 
-#### Admin
-- `GET /api/admin/stats` - System statistics (API Key)
+#### Admin (API Key Required)
+- `GET /api/admin/stats` - System statistics and health
 
 ## Rate Limits
 
-- **Coaching Messages**: 10 requests/minute
-- **General API**: 500 requests/15 minutes
-- **Admin Endpoints**: 100 requests/15 minutes
+| Endpoint Type | Limit | Window |
+|---------------|-------|---------|
+| Coaching Messages | 10 requests | 1 minute |
+| General API | 500 requests | 15 minutes |
+| Admin Endpoints | 100 requests | 15 minutes |
+| Documentation | 1000 requests | 15 minutes |
+
+## AI Coaching Chains
+
+The API implements three specialized AI chains using Google Gemini:
+
+### 1. Guardrail Chain
+- **Purpose**: Crisis detection and safety assessment
+- **Triggers**: Automatic safety screening of all messages
+- **Response**: Crisis intervention resources if needed
+
+### 2. Diagnostic Chain  
+- **Purpose**: Psychological assessment using Self-Determination Theory
+- **Focus**: Autonomy, Competence, Relatedness evaluation
+- **Output**: Strategic questions and user insights
+
+### 3. Interventions Chain
+- **Purpose**: Personalized coaching strategies using Goal Setting Theory
+- **Input**: User profile + diagnostic assessment
+- **Output**: Evidence-based interventions and action steps
 
 ## Request/Response Format
 
-### Standard Response Format
+### Standard Success Response
 ```json
 {
   "success": true,
@@ -82,7 +156,7 @@ X-API-Key: <api_key>
 }
 ```
 
-### Error Response Format
+### Error Response
 ```json
 {
   "success": false,
@@ -98,77 +172,73 @@ X-API-Key: <api_key>
 }
 ```
 
-## Environment Variables
-
-Required environment variables in `wrangler.toml`:
-
-```toml
-[vars]
-GOOGLE_API_KEY = "your-google-api-key"
-API_KEY = "your-api-key"
-JWT_SECRET = "your-jwt-secret"
-ENVIRONMENT = "production"
-
-[[kv_namespaces]]
-binding = "RATE_LIMIT_KV"
-id = "your-kv-id"
-
-[[kv_namespaces]]
-binding = "USER_SESSIONS_KV"
-id = "your-kv-id"
-
-[[kv_namespaces]]
-binding = "COACHING_HISTORY_KV"
-id = "your-kv-id"
-```
-
 ## Security Features
 
-### Headers
+### Headers Applied
 - Content Security Policy (CSP)
 - X-Frame-Options: DENY
 - X-Content-Type-Options: nosniff
 - X-XSS-Protection: 1; mode=block
+- Referrer-Policy: strict-origin-when-cross-origin
 
-### Input Validation
-- Zod schema validation for all inputs
-- Request size limits (2MB)
-- Input sanitization
+### Input Protection
+- Request size limits (2MB default)
+- Input sanitization for XSS prevention
+- Zod schema validation
+- SQL injection prevention
 
-### Rate Limiting
-- Per-IP rate limiting using KV storage
-- Different limits per endpoint type
-- Configurable windows and limits
-
-### CORS Configuration
-```javascript
-{
-  origin: ['localhost:5173', 'your-domain.com'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  credentials: true
-}
-```
+### Authentication & Authorization
+- JWT tokens with expiration validation
+- Role-based access control (user/coach/admin)
+- Subscription requirement enforcement
+- API key authentication for admin functions
 
 ## Development
 
-### Local Development
+### Local Testing
+
 ```bash
-npm install
-npm run dev:local
+# Type checking
+npm run type-check
+
+# Linting
+npm run lint
+
+# Testing
+npm run test
+
+# Format code
+npm run format
 ```
 
-### Testing
-```bash
-npm test
+### JWT Testing
+
+The API includes JWT testing utilities:
+
+```typescript
+import { createJWT, validateJWT } from './middleware/auth';
+
+// Create token
+const token = await createJWT({
+  sub: 'user-123',
+  email: 'user@example.com',
+  role: 'user'
+}, 'your-secret', 3600);
+
+// Validate token
+const payload = await validateJWT(token, 'your-secret');
 ```
 
-### Deployment
-```bash
-# Staging
-npm run deploy:staging
+### Environment Variables
 
-# Production
-npm run deploy:production
+Required in `wrangler.toml` or Cloudflare Dashboard:
+
+```toml
+[vars]
+GOOGLE_API_KEY = "your-google-gemini-api-key"
+API_KEY = "your-admin-api-key"  
+JWT_SECRET = "your-jwt-secret-minimum-32-characters"
+ENVIRONMENT = "production"
 ```
 
 ## Error Codes
@@ -184,73 +254,58 @@ npm run deploy:production
 | RATE_LIMIT_EXCEEDED | 429 | Too many requests |
 | INTERNAL_ERROR | 500 | Server error |
 
-## Monitoring
+## Monitoring & Observability
 
 ### Health Monitoring
-The API includes comprehensive health checks:
-- Service availability
-- KV store connectivity
-- Environment validation
+- Service availability checks
+- KV store connectivity validation
+- Environment configuration verification
 
-### Request Logging
-All requests are logged with:
-- Request ID for tracing
-- Processing time
-- User context
-- Error details
+### Request Tracing
+- Unique request IDs for debugging
+- Processing time measurement  
+- Error context preservation
+- Rate limit status headers
 
 ### Performance Metrics
-- Response times
-- Error rates
-- Rate limit statistics
+- Response time tracking
+- Error rate monitoring
 - User activity patterns
+- AI chain performance
 
-## AI Chain Integration
+## Deployment Environments
 
-The API integrates with three AI chains:
+### Development
+- Relaxed rate limits
+- Verbose error messages
+- Debug logging enabled
+- Subscription checks bypassed
 
-1. **Guardrail Chain**: Crisis detection and safety
-2. **Diagnostic Chain**: User assessment and profiling
-3. **Interventions Chain**: Personalized coaching strategies
-
-Each chain implements evidence-based therapeutic approaches (ET, SDT, GST).
-
-## Data Flow
-
-1. **Authentication**: Verify JWT/API key
-2. **Rate Limiting**: Check request quotas
-3. **Validation**: Validate request format
-4. **Processing**: Execute AI chains
-5. **Storage**: Save results to KV
-6. **Response**: Return formatted response
-
-## Best Practices
-
-### Security
-- Always validate inputs
-- Use least privilege access
-- Log security events
-- Implement defense in depth
-
-### Performance
-- Use KV storage efficiently
-- Implement request deduplication
-- Cache frequently accessed data
-- Monitor response times
-
-### Reliability
-- Implement retry logic
-- Use circuit breakers
-- Monitor error rates
-- Plan for graceful degradation
+### Production  
+- Strict rate limits
+- Sanitized error responses
+- Performance optimized
+- Full security enforcement
 
 ## Support
 
-For API support or questions:
-1. Check the `/api/docs` endpoint for current documentation
-2. Review error codes and messages
-3. Check rate limit headers
-4. Verify authentication tokens
+### Troubleshooting
+1. Check `/health` endpoint for service status
+2. Verify environment variables are set
+3. Review rate limit headers (`X-RateLimit-*`)
+4. Check authentication token validity
+
+### Documentation
+- Live API docs: `GET /api/docs`
+- Error codes: See Error Codes section above
+- Rate limits: Check response headers
+
+### Best Practices
+- Use JWT tokens for user requests
+- Implement proper error handling in clients
+- Respect rate limits and implement backoff
+- Cache user profiles when possible
+- Monitor response times and error rates
 
 ## License
 

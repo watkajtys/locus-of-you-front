@@ -1,8 +1,64 @@
 import { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { zValidator } from '@hono/zod-validator';
 import { z, ZodSchema } from 'zod';
 
-// Request validation middleware
+// Enhanced validation middleware using Hono's zod validator
+export const validateBody = (schema: ZodSchema) => {
+  return zValidator('json', schema, (result, c) => {
+    if (!result.success) {
+      throw new HTTPException(400, {
+        message: 'Validation error',
+        details: {
+          code: 'VALIDATION_ERROR',
+          errors: result.error.errors.map(err => ({
+            path: err.path.join('.'),
+            message: err.message,
+            code: err.code
+          }))
+        }
+      });
+    }
+  });
+};
+
+export const validateQuery = (schema: ZodSchema) => {
+  return zValidator('query', schema, (result, c) => {
+    if (!result.success) {
+      throw new HTTPException(400, {
+        message: 'Query validation error',
+        details: {
+          code: 'VALIDATION_ERROR',
+          errors: result.error.errors.map(err => ({
+            path: err.path.join('.'),
+            message: err.message,
+            code: err.code
+          }))
+        }
+      });
+    }
+  });
+};
+
+export const validateParams = (schema: ZodSchema) => {
+  return zValidator('param', schema, (result, c) => {
+    if (!result.success) {
+      throw new HTTPException(400, {
+        message: 'Parameter validation error',
+        details: {
+          code: 'VALIDATION_ERROR',
+          errors: result.error.errors.map(err => ({
+            path: err.path.join('.'),
+            message: err.message,
+            code: err.code
+          }))
+        }
+      });
+    }
+  });
+};
+
+// Custom validation middleware for complex scenarios
 export const validateRequest = (schema: {
   body?: ZodSchema;
   query?: ZodSchema;

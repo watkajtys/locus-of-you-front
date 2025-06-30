@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { jwtAuth, requireRole } from '../middleware/auth';
 import { rateLimit, rateLimitConfigs } from '../middleware/rate-limit';
-import { validateRequest, ValidationSchemas } from '../middleware/validation';
+import { validateBody, validateParams, ValidationSchemas } from '../middleware/validation';
 import { ResponseHelper } from '../utils/response';
 import { UserProfileSchema } from '../types';
 import type { Env } from '../types';
@@ -54,10 +54,10 @@ users.put(
   '/profile',
   rateLimit(rateLimitConfigs.moderate),
   jwtAuth(),
-  validateRequest({ body: ValidationSchemas.profileUpdate }),
+  validateBody(ValidationSchemas.profileUpdate),
   async (c) => {
     const user = c.get('user');
-    const updates = c.get('validatedBody');
+    const updates = c.req.valid('json');
     
     try {
       if (!c.env.USER_SESSIONS_KV) {
@@ -108,9 +108,9 @@ users.get(
   rateLimit(rateLimitConfigs.moderate),
   jwtAuth(),
   requireRole(['admin']),
-  validateRequest({ params: ValidationSchemas.userId }),
+  validateParams(ValidationSchemas.userId),
   async (c) => {
-    const params = c.get('validatedParams');
+    const params = c.req.valid('param');
     
     try {
       if (!c.env.USER_SESSIONS_KV) {

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { jwtAuth, requireSubscription } from '../middleware/auth';
 import { rateLimit, rateLimitConfigs } from '../middleware/rate-limit';
-import { validateRequest, ValidationSchemas } from '../middleware/validation';
+import { validateBody, validateQuery, ValidationSchemas } from '../middleware/validation';
 import { ResponseHelper } from '../utils/response';
 import { GuardrailChain } from '../chains/guardrail';
 import { DiagnosticChain } from '../chains/diagnostic';
@@ -16,11 +16,11 @@ coaching.post(
   rateLimit(rateLimitConfigs.coaching),
   jwtAuth(),
   requireSubscription(),
-  validateRequest({ body: ValidationSchemas.messageBody }),
+  validateBody(ValidationSchemas.messageBody),
   async (c) => {
     const startTime = Date.now();
     const user = c.get('user');
-    const validatedBody = c.get('validatedBody');
+    const validatedBody = c.req.valid('json');
 
     try {
       // Initialize AI chains
@@ -149,10 +149,10 @@ coaching.get(
   '/history',
   rateLimit(rateLimitConfigs.moderate),
   jwtAuth(),
-  validateRequest({ query: ValidationSchemas.pagination }),
+  validateQuery(ValidationSchemas.pagination),
   async (c) => {
     const user = c.get('user');
-    const query = c.get('validatedQuery');
+    const query = c.req.valid('query');
     
     try {
       if (!c.env.COACHING_HISTORY_KV) {

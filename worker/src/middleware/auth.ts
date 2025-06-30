@@ -1,6 +1,6 @@
 import { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { verify } from '@cloudflare/workers-jwt';
+import jwt from '@tsndr/cloudflare-worker-jwt';
 import { Env } from '../types';
 
 export interface AuthUser {
@@ -25,27 +25,59 @@ export const jwtAuth = () => {
     const token = authorization.substring(7);
     
     try {
-      const payload = await verify(token, c.env.JWT_SECRET);
+      // Verify the JWT token
+      const isValid = await jwt.verify(token, c.env.JWT_SECRET);
       
-      // Verify token hasn't expired
-      if (payload.exp && payload.exp < Date.now() / 1000) {
+      if (!isValid) {
+        throw new HTTPException(401, { message: 'Invalid token' });
+      }
+
+      // Decode the payload
+      const payload = jwt.decode(token);
+      
+      if (!payload || !payload.payload) {
+        throw new HTTPException(401, { message: 'Invalid token payload' });
+      }
+
+      const tokenData = payload.payload;
+      
+      // Check if token has expired
+      if (tokenData.exp && tokenData.exp < Math.floor(Date.now() / 1000)) {
         throw new HTTPException(401, { message: 'Token expired' });
       }
 
       // Set user data in context
       c.set('user', {
-        id: payload.sub as string,
-        email: payload.email as string,
-        role: payload.role as string || 'user',
-        subscription: payload.subscription
+        id: tokenData.sub as string,
+        email: tokenData.email as string,
+        role: (tokenData.role as string) || 'user',
+        subscription: tokenData.subscription
       } as AuthUser);
 
       await next();
     } catch (error) {
       console.error('JWT verification failed:', error);
-      throw new HTTPException(401, { message: 'Invalid token' });
+      
+      if (error instanceof HTTPException) {
+        throw error;
+      }
+      
+      throw new HTTPException(401, { message: 'Token verification failed' });
     }
   };
+};
+
+// Create JWT token (utility function for testing)
+export const createJWT = async (payload: any, secret: string, expiresIn: number = 3600): Promise<string> => {
+  const now = Math.floor(Date.now() / 1000);
+  
+  const tokenPayload = {
+    ...payload,
+    iat: now,
+    exp: now + expiresIn
+  };
+
+  return jwt.sign(tokenPayload, secret);
 };
 
 // API Key Authentication Middleware
@@ -98,7 +130,10 @@ export const requireSubscription = () => {
       throw new HTTPException(401, { message: 'Authentication required' });
     }
 
-    if (!user.subscription?.active) {
+    // For development/testing, you might want to bypass this check
+    const isDevelopment = c.env.ENVIRONMENT === 'development';
+    
+    if (!isDevelopment && !user.subscription?.active) {
       throw new HTTPException(402, { 
         message: 'Active subscription required',
         details: {
@@ -110,4 +145,20 @@ export const requireSubscription = () => {
 
     await next();
   };
+};
+
+// Validate JWT token without middleware (utility function)
+export const validateJWT = async (token: string, secret: string): Promise<any> => {
+  try {
+    const isValid = await jwt.verify(token, secret);
+    
+    if (!isValid) {
+      return null;
+    }
+
+    const decoded = jwt.decode(token);
+    return decoded?.payload || null;
+  } catch {
+    return null;
+  }
 };
