@@ -493,22 +493,18 @@ const SnapshotScreen = ({ answers, onContinue }) => {
 
             {/* Narrative Summary Section - Now using AIMessageCard */}
             <div className="space-y-6 pt-8" style={{ borderTop: `1px solid var(--color-border)` }}>
-              <div className="max-w-3xl mx-auto">
-                <AIMessageCard
-                  paragraph="What this tells me is that you're a 'Visionary Achiever.' You have a powerful belief that you can grow and a natural drive toward your goals. At the same time, your focus on personal action means you likely feel the full weight of getting things done. It's a potent combination of aspiration and responsibility, and it gives us a clear picture of how to build a plan that feels both ambitious and sustainable for you."
-                  cardType="MY OBSERVATION"
-                />
-              </div>
+              <AIMessageCard
+                paragraph="What this tells me is that you're a 'Visionary Achiever.' You have a powerful belief that you can grow and a natural drive toward your goals. At the same time, your focus on personal action means you likely feel the full weight of getting things done. It's a potent combination of aspiration and responsibility, and it gives us a clear picture of how to build a plan that feels both ambitious and sustainable for you."
+                cardType="MY OBSERVATION"
+              />
             </div>
 
-            {/* AI Message Card - Conversational Call to Action (NO GLASS EFFECT) */}
+            {/* AI Message Card - Conversational Call to Action */}
             <div className="space-y-8 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
-              <div className="max-w-3xl mx-auto">
-                <AIMessageCard 
-                  paragraph="It's powerful to see how your mindset and focus connect. The logical next step is to apply this insight directly to your goal. I can guide you through creating your first 'micro-victory' right now, if you're ready."
-                  cardType="YOUR AI COACH"
-                />
-              </div>
+              <AIMessageCard 
+                paragraph="It's powerful to see how your mindset and focus connect. The logical next step is to apply this insight directly to your goal. I can guide you through creating your first 'micro-victory' right now, if you're ready."
+                cardType="YOUR AI COACH"
+              />
             </div>
 
             {/* Call to Action */}
