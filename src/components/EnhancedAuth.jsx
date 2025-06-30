@@ -122,28 +122,6 @@ const EnhancedAuth = () => {
     }
   };
 
-  const getPasswordStrength = (password) => {
-    if (!password) return { strength: 0, label: '', color: 'gray' };
-    
-    let score = 0;
-    const checks = {
-      length: password.length >= 12,
-      uppercase: /[A-Z]/.test(password),
-      lowercase: /[a-z]/.test(password),
-      numbers: /\d/.test(password),
-      special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-    };
-    
-    score = Object.values(checks).filter(Boolean).length;
-    
-    if (score < 2) return { strength: 1, label: 'Weak', color: 'red' };
-    if (score < 4) return { strength: 2, label: 'Fair', color: 'orange' };
-    if (score < 5) return { strength: 3, label: 'Good', color: 'yellow' };
-    return { strength: 4, label: 'Strong', color: 'green' };
-  };
-
-  const passwordStrength = getPasswordStrength(formData.password);
-
   return (
     <div 
       className="min-h-screen flex items-center justify-center p-6" 
@@ -319,30 +297,13 @@ const EnhancedAuth = () => {
                 </button>
               </div>
               
-              {/* Password Strength Indicator (Signup only) */}
-              {mode === 'signup' && formData.password && (
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full transition-all duration-300 bg-${passwordStrength.color}-500`}
-                        style={{ width: `${(passwordStrength.strength / 4) * 100}%` }}
-                      />
-                    </div>
-                    <span 
-                      className={`text-xs font-medium text-${passwordStrength.color}-600`}
-                    >
-                      {passwordStrength.label}
-                    </span>
-                  </div>
-                  <p 
-                    className="text-xs"
-                    style={{ color: 'var(--color-muted)' }}
-                  >
-                    Use 12+ characters with uppercase, lowercase, numbers, and symbols
-                  </p>
-                </div>
-              )}
+              {/* Simplified Password Requirements */}
+              <p 
+                className="text-xs"
+                style={{ color: 'var(--color-muted)' }}
+              >
+                Password must be at least 12 characters long
+              </p>
             </div>
           )}
 

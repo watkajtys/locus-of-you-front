@@ -303,42 +303,6 @@ const validatePassword = (password) => {
     return 'Password must be at least 12 characters long';
   }
   
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-  
-  if (!hasUpperCase) {
-    return 'Password must contain at least one uppercase letter';
-  }
-  
-  if (!hasLowerCase) {
-    return 'Password must contain at least one lowercase letter';
-  }
-  
-  if (!hasNumbers) {
-    return 'Password must contain at least one number';
-  }
-  
-  if (!hasSpecialChar) {
-    return 'Password must contain at least one special character';
-  }
-  
-  // Check for common weak patterns
-  const commonPatterns = [
-    /123456/,
-    /password/i,
-    /qwerty/i,
-    /admin/i,
-    /letmein/i
-  ];
-  
-  for (const pattern of commonPatterns) {
-    if (pattern.test(password)) {
-      return 'Password contains common patterns. Please choose a more secure password.';
-    }
-  }
-  
   return null;
 };
 
