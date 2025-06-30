@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, Circle } from 'lucide-react';
+import { CheckCircle, Circle, Check } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
@@ -149,14 +149,23 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
                 {/* Task Content with Checkbox */}
                 <div className="flex items-center space-x-6">
-                  {/* Large Checkbox Icon - Vertically Centered */}
+                  {/* Large Checkbox Icon - Perfectly Centered */}
                   <div className="flex-shrink-0">
                     {isTaskCompleted ? (
-                      <CheckCircle 
-                        className="w-8 h-8 md:w-10 md:h-10 text-green-600"
-                        strokeWidth={2}
-                        fill="currentColor"
-                      />
+                      <div className="relative w-8 h-8 md:w-10 md:h-10">
+                        {/* Green Circle Background */}
+                        <div 
+                          className="absolute inset-0 rounded-full bg-green-600"
+                          style={{ backgroundColor: '#16a34a' }}
+                        />
+                        {/* Centered White Checkmark */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Check 
+                            className="w-5 h-5 md:w-6 md:h-6 text-white"
+                            strokeWidth={3}
+                          />
+                        </div>
+                      </div>
                     ) : (
                       <Circle 
                         className="w-8 h-8 md:w-10 md:h-10"
