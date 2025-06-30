@@ -333,21 +333,30 @@ const SnapshotScreen = ({ answers, onContinue }) => {
               </div>
             </div>
 
-            {/* Bridge Text Section */}
+            {/* New Bridge Section - Turning Insight into Action */}
             <div className="text-center space-y-6 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
-              <div 
-                className="max-w-3xl mx-auto p-8 rounded-xl"
-                style={{ 
-                  backgroundColor: 'var(--color-primary)',
-                  border: `1px solid var(--color-border)`
-                }}
-              >
-                <p 
-                  className="text-lg md:text-xl leading-relaxed"
+              <div className="space-y-4">
+                <h3 
+                  className="text-3xl font-bold"
                   style={{ color: 'var(--color-text)' }}
                 >
-                  This snapshot is your <span className="font-bold">'why'</span>—the unique blueprint of what drives you and what holds you back. It's the diagnosis. The next step is the plan. This profile allows me to become your full-time adaptive coach, helping you diagnose challenges in real-time and co-creating a step-by-step plan to overcome them.
-                </p>
+                  Turning Your Insight into Action
+                </h3>
+                
+                <div 
+                  className="max-w-3xl mx-auto p-8 rounded-xl"
+                  style={{ 
+                    backgroundColor: 'var(--color-primary)',
+                    border: `2px solid var(--color-accent)`
+                  }}
+                >
+                  <p 
+                    className="text-lg md:text-xl leading-relaxed"
+                    style={{ color: 'var(--color-text)' }}
+                  >
+                    Your <span className="font-bold">'{archetype}'</span> profile tells us that the best way to approach your goal of <span className="font-bold">'{userGoal}'</span> is by turning that big plan into a clear, manageable first action. Ready to see what that looks like?
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -360,7 +369,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                   onClick={onContinue}
                   className="group flex items-center space-x-3 text-xl px-16 py-8"
                 >
-                  <span>Activate My Adaptive Coach</span>
+                  <span>Create My First Step</span>
                   <ChevronRight className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
               </div>
