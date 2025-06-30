@@ -5,7 +5,7 @@ import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Button from './Button';
 
-// Three-Cannon Confetti System
+// Three-Cannon Confetti System - FIXED
 const ThreeCannonConfetti = ({ isActive, onComplete }) => {
   const [confettiPieces, setConfettiPieces] = useState([]);
 
@@ -13,61 +13,61 @@ const ThreeCannonConfetti = ({ isActive, onComplete }) => {
     if (isActive) {
       console.log('🎊 THREE-CANNON CONFETTI SYSTEM ACTIVATED!');
       
-      // Define three cannon positions relative to the task center
-      const cannons = [
-        { name: 'LEFT', x: -100, delay: 400, color: 'left' },    // Left cannon fires after center
-        { name: 'CENTER', x: 0, delay: 0, color: 'center' },     // Center fires first
-        { name: 'RIGHT', x: 100, delay: 400, color: 'right' }    // Right fires with left
-      ];
-
       const allPieces = [];
       
-      cannons.forEach((cannon, cannonIndex) => {
-        console.log(`🎯 Setting up ${cannon.name} cannon (delay: ${cannon.delay}ms)`);
+      // Define three cannon configurations
+      const cannons = [
+        { 
+          name: 'CENTER', 
+          delay: 0, 
+          baseAngle: 270, // Straight up
+          colors: ['#4ECDC4', '#45B7D1', '#5DADE2', '#85C1E9', '#AED6F1']
+        },
+        { 
+          name: 'LEFT', 
+          delay: 400, 
+          baseAngle: 225, // Up-left
+          colors: ['#FF6B6B', '#F39C12', '#E74C3C', '#FF8C69', '#FFB6C1']
+        },
+        { 
+          name: 'RIGHT', 
+          delay: 400, 
+          baseAngle: 315, // Up-right  
+          colors: ['#96CEB4', '#FFEAA7', '#F7DC6F', '#F4D03F', '#F8C471']
+        }
+      ];
+
+      cannons.forEach((cannon) => {
+        console.log(`🎯 Setting up ${cannon.name} cannon (delay: ${cannon.delay}ms, angle: ${cannon.baseAngle}°)`);
         
-        // Generate 20 pieces per cannon (60 total)
-        const cannonPieces = Array.from({ length: 20 }, (_, i) => {
-          const colors = {
-            left: ['#FF6B6B', '#F39C12', '#E74C3C', '#FF8C69', '#FFB6C1'],
-            center: ['#4ECDC4', '#45B7D1', '#5DADE2', '#85C1E9', '#AED6F1'], 
-            right: ['#96CEB4', '#FFEAA7', '#F7DC6F', '#F4D03F', '#F8C471']
-          };
-          
-          // Explosion angle range per cannon (120 degrees each)
-          const baseAngle = cannonIndex === 0 ? 180 : cannonIndex === 1 ? 270 : 0; // Left: 180°, Center: 270° (up), Right: 0°
-          const angleSpread = 120; // 120 degrees spread per cannon
-          const angle = baseAngle + (Math.random() - 0.5) * angleSpread;
-          
-          const distance = Math.random() * 250 + 200; // 200-450px range
+        // Generate 20 pieces per cannon
+        for (let i = 0; i < 20; i++) {
+          const spread = 60; // 60-degree spread per cannon
+          const angle = cannon.baseAngle + (Math.random() - 0.5) * spread;
+          const distance = Math.random() * 300 + 150; // 150-450px
           const angleRad = (angle * Math.PI) / 180;
           
-          // Calculate final position from cannon position
-          const finalX = cannon.x + Math.cos(angleRad) * distance;
-          const finalY = Math.sin(angleRad) * distance;
-          
-          return {
-            id: `${cannon.name}-${i}`,
+          const piece = {
+            id: `${cannon.name}-${i}-${Date.now()}`,
             cannon: cannon.name,
-            color: colors[cannon.color][Math.floor(Math.random() * colors[cannon.color].length)],
-            size: Math.random() * 10 + 6, // 6-16px
-            delay: cannon.delay + Math.random() * 200, // Cannon delay + 0-200ms spread
-            duration: Math.random() * 2000 + 2500, // 2.5-4.5s duration
-            startX: cannon.x,
-            startY: 0,
-            finalX,
-            finalY,
-            rotation: Math.random() * 1080 + 720, // 2-3 full rotations
-            shape: Math.random() > 0.6 ? 'circle' : 'square',
+            color: cannon.colors[Math.floor(Math.random() * cannon.colors.length)],
+            size: Math.random() * 8 + 6, // 6-14px
+            delay: cannon.delay + Math.random() * 100, // Slight random delay within cannon
+            finalX: Math.cos(angleRad) * distance,
+            finalY: Math.sin(angleRad) * distance,
+            rotation: Math.random() * 720 + 360, // 1-2 full rotations
+            shape: Math.random() > 0.5 ? 'circle' : 'square',
+            duration: Math.random() * 1500 + 3000, // 3-4.5s duration
           };
-        });
-        
-        allPieces.push(...cannonPieces);
+          
+          allPieces.push(piece);
+        }
       });
       
+      console.log(`🎉 Generated ${allPieces.length} confetti pieces across ${cannons.length} cannons`);
       setConfettiPieces(allPieces);
-      console.log(`🎉 Generated ${allPieces.length} confetti pieces across 3 cannons`);
       
-      // Auto-cleanup after animation
+      // Cleanup after 6 seconds
       const cleanup = setTimeout(() => {
         console.log('🧹 Cleaning up confetti');
         setConfettiPieces([]);
@@ -79,16 +79,31 @@ const ThreeCannonConfetti = ({ isActive, onComplete }) => {
   }, [isActive, onComplete]);
 
   const ConfettiPiece = ({ piece }) => {
+    const [isVisible, setIsVisible] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
 
     useEffect(() => {
-      const timer = setTimeout(() => {
-        console.log(`🚀 Firing ${piece.cannon} cannon piece ${piece.id}`);
+      // First make the piece visible
+      setIsVisible(true);
+      
+      // Then start the animation after the cannon's delay
+      const fireTimer = setTimeout(() => {
+        console.log(`🚀 ${piece.cannon} cannon firing piece ${piece.id}`);
         setIsAnimating(true);
       }, piece.delay);
       
-      return () => clearTimeout(timer);
-    }, [piece.delay, piece.cannon, piece.id]);
+      // Start fading out after 70% of the animation duration
+      const fadeTimer = setTimeout(() => {
+        setIsVisible(false);
+      }, piece.delay + piece.duration * 0.7);
+      
+      return () => {
+        clearTimeout(fireTimer);
+        clearTimeout(fadeTimer);
+      };
+    }, [piece]);
+
+    if (!isVisible && !isAnimating) return null;
 
     return (
       <div
@@ -99,23 +114,28 @@ const ThreeCannonConfetti = ({ isActive, onComplete }) => {
           width: `${piece.size}px`,
           height: `${piece.size}px`,
           backgroundColor: piece.color,
-          borderRadius: piece.shape === 'circle' ? '50%' : '2px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          borderRadius: piece.shape === 'circle' ? '50%' : '20%',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
           transform: isAnimating 
-            ? `translate(-50%, -50%) translate(${piece.finalX}px, ${piece.finalY}px) rotate(${piece.rotation}deg)`
-            : `translate(-50%, -50%) translate(${piece.startX}px, ${piece.startY}px)`,
-          opacity: isAnimating ? 0 : 1,
-          transition: `all ${piece.duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`,
-          zIndex: -1, // Behind the task card
+            ? `translate(-50%, -50%) translate(${piece.finalX}px, ${piece.finalY}px) rotate(${piece.rotation}deg) scale(0.3)`
+            : `translate(-50%, -50%) translate(0px, 0px) rotate(0deg) scale(1)`,
+          opacity: isVisible ? 1 : 0,
+          transition: isAnimating 
+            ? `all ${piece.duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 1000ms ease-out`
+            : 'opacity 200ms ease-out',
+          zIndex: 1, // Above background, below task card
         }}
       />
     );
   };
 
-  if (!isActive || confettiPieces.length === 0) return null;
+  if (!isActive) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: -1 }}>
+    <div 
+      className="absolute inset-0 overflow-hidden pointer-events-none"
+      style={{ zIndex: 0 }} // Behind task card but above background
+    >
       {confettiPieces.map((piece) => (
         <ConfettiPiece key={piece.id} piece={piece} />
       ))}
@@ -187,10 +207,11 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
     
     // Trigger three-cannon confetti celebration when task becomes completed
     if (newCompletedState) {
-      console.log('🎊 ACTIVATING THREE-CANNON CONFETTI SYSTEM!');
+      console.log('🎊 TASK COMPLETED! ACTIVATING THREE-CANNON CONFETTI!');
       console.log('📋 Firing sequence: CENTER (0ms) → LEFT + RIGHT (400ms)');
       setShowConfetti(true);
     } else {
+      console.log('❌ Task unchecked, stopping confetti');
       setShowConfetti(false);
     }
   };
@@ -299,7 +320,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                       ${isTaskCompleted ? 'animate-bounce' : ''}
                     `}
                     style={{
-                      animation: isTaskCompleted ? 'celebrate-bounce 0.8s ease-in-out infinite' : 'none'
+                      animation: isTaskCompleted ? 'celebrate-bounce 0.8s ease-in-out 3' : 'none'
                     }}
                   >
                     {isTaskCompleted ? (
@@ -309,7 +330,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                           className="absolute inset-0 rounded-full bg-green-600"
                           style={{ 
                             backgroundColor: '#16a34a',
-                            animation: 'celebrate-pulse 1s ease-in-out infinite'
+                            animation: 'celebrate-pulse 1.5s ease-in-out infinite'
                           }}
                         />
                         {/* Centered White Checkmark */}
