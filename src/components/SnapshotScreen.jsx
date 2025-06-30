@@ -98,7 +98,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
     } else if (mindset === 'fixed' && locus === 'external' && focus === 'promotion') {
       return 'Opportunistic Realist';
     } else {
-      return 'Thoughtful Strategist';
+      return 'Thoughtful Planner';
     }
   };
 
@@ -354,7 +354,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                     className="text-lg md:text-xl leading-relaxed"
                     style={{ color: 'var(--color-text)' }}
                   >
-                    Your <span className="font-bold">'{archetype}'</span> profile tells us that the best way to approach your goal of <span className="font-bold">'{userGoal}'</span> is by turning that big plan into a clear, manageable first action. Ready to see what that looks like?
+                    Your <span className="font-bold">'{archetype}'</span> profile indicates that for a goal like <span className="font-bold">'{userGoal},'</span> the highest-leverage strategy is to address <span className="font-bold">'Task Complexity.'</span> We'll do this by isolating a single <span className="font-bold">'micro-victory'</span>—an infinitesimally small first step designed to build immediate momentum.
                   </p>
                 </div>
               </div>
