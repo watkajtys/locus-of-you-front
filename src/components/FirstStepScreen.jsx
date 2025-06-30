@@ -1,42 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, Circle, Check } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Button from './Button';
 
-// Pure CSS Confetti Component - No JavaScript, just beautiful colors!
-const CSSConfetti = ({ isActive }) => {
-  if (!isActive) return null;
+// Confetti Component with JavaScript-based animation
+const ConfettiExplosion = ({ isActive, onComplete }) => {
+  const [confettiPieces, setConfettiPieces] = useState([]);
+
+  useEffect(() => {
+    if (isActive) {
+      // Generate confetti pieces with calculated positions
+      const pieces = Array.from({ length: 50 }, (_, i) => {
+        const colors = [
+          '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', 
+          '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+          '#F8C471', '#82E0AA', '#F1948A', '#AED6F1', '#A9DFBF'
+        ];
+        
+        const angle = Math.random() * 360;
+        const distance = Math.random() * 300 + 150;
+        const angleRad = (angle * Math.PI) / 180;
+        
+        // Calculate final position using trigonometry
+        const finalX = Math.cos(angleRad) * distance;
+        const finalY = Math.sin(angleRad) * distance;
+        
+        return {
+          id: i,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: Math.random() * 8 + 4,
+          delay: Math.random() * 300, // 0-300ms delay
+          duration: Math.random() * 1500 + 2000, // 2-3.5s duration
+          finalX,
+          finalY,
+          rotation: Math.random() * 720 + 360,
+          shape: Math.random() > 0.5 ? 'circle' : 'square',
+        };
+      });
+      
+      setConfettiPieces(pieces);
+      
+      // Auto-hide confetti after animation completes
+      const timer = setTimeout(() => {
+        setConfettiPieces([]);
+        onComplete && onComplete();
+      }, 4000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, onComplete]);
+
+  const ConfettiPiece = ({ piece }) => {
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setIsAnimating(true);
+      }, piece.delay);
+      
+      return () => clearTimeout(timer);
+    }, [piece.delay]);
+
+    return (
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: '50%',
+          top: '50%',
+          width: `${piece.size}px`,
+          height: `${piece.size}px`,
+          backgroundColor: piece.color,
+          borderRadius: piece.shape === 'circle' ? '50%' : '0%',
+          transform: isAnimating 
+            ? `translate(-50%, -50%) translate(${piece.finalX}px, ${piece.finalY}px) rotate(${piece.rotation}deg)`
+            : 'translate(-50%, -50%)',
+          opacity: isAnimating ? 0 : 1,
+          transition: `all ${piece.duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`,
+          zIndex: 1000,
+        }}
+      />
+    );
+  };
+
+  if (!isActive || confettiPieces.length === 0) return null;
 
   return (
-    <div className="confetti-container">
-      {/* CENTER CANNON - Rainbow colors */}
-      <div className="confetti-piece confetti-center-1"></div>
-      <div className="confetti-piece confetti-center-2"></div>
-      <div className="confetti-piece confetti-center-3"></div>
-      <div className="confetti-piece confetti-center-4"></div>
-      <div className="confetti-piece confetti-center-5"></div>
-      
-      {/* LEFT CANNON - Warm colors */}
-      <div className="confetti-piece confetti-left-1"></div>
-      <div className="confetti-piece confetti-left-2"></div>
-      <div className="confetti-piece confetti-left-3"></div>
-      <div className="confetti-piece confetti-left-4"></div>
-      <div className="confetti-piece confetti-left-5"></div>
-      
-      {/* RIGHT CANNON - Cool colors */}
-      <div className="confetti-piece confetti-right-1"></div>
-      <div className="confetti-piece confetti-right-2"></div>
-      <div className="confetti-piece confetti-right-3"></div>
-      <div className="confetti-piece confetti-right-4"></div>
-      <div className="confetti-piece confetti-right-5"></div>
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {confettiPieces.map((piece) => (
+        <ConfettiPiece key={piece.id} piece={piece} />
+      ))}
     </div>
   );
 };
 
 const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
   const [isTaskCompleted, setIsTaskCompleted] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Generate personalized micro-victory based on user's profile and goal
   const generateMicroVictoryContent = (answers) => {
@@ -94,12 +155,21 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
   // Handle task completion toggle
   const handleTaskClick = () => {
     const newCompletedState = !isTaskCompleted;
-    console.log(`🎯 Task clicked! New state: ${newCompletedState ? 'COMPLETED' : 'UNCOMPLETED'}`);
     setIsTaskCompleted(newCompletedState);
     
+    // Trigger confetti celebration when task becomes completed
     if (newCompletedState) {
-      console.log('🎊 TASK COMPLETED! CSS CONFETTI ACTIVATED!');
+      console.log('🎉 FIRING CONFETTI!'); // Debug log
+      setShowConfetti(true);
+    } else {
+      setShowConfetti(false);
     }
+  };
+
+  // Handle confetti completion
+  const handleConfettiComplete = () => {
+    console.log('✨ Confetti animation completed'); // Debug log
+    setShowConfetti(false);
   };
 
   return (
@@ -137,10 +207,13 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
               cardType="YOUR AI COACH"
             />
 
-            {/* Second Card - The Task with CSS confetti */}
+            {/* Second Card - The Task with consistent styling and confetti */}
             <div className="relative">
-              {/* Pure CSS Confetti System */}
-              <CSSConfetti isActive={isTaskCompleted} />
+              {/* Confetti Explosion */}
+              <ConfettiExplosion 
+                isActive={showConfetti} 
+                onComplete={handleConfettiComplete}
+              />
               
               <div
                 className={`
@@ -157,11 +230,10 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                 style={{
                   backgroundColor: isTaskCompleted ? '#f0fdf4' : 'var(--color-card)',
                   borderColor: isTaskCompleted ? '#bbf7d0' : 'var(--color-border)',
-                  zIndex: 5,
                 }}
                 onClick={handleTaskClick}
               >
-                {/* The Tab */}
+                {/* The Tab - matching AIMessageCard style */}
                 <div 
                   className={`
                     absolute top-0 right-0 -translate-y-1/2
@@ -183,22 +255,14 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                       fontFamily: 'Inter, sans-serif',
                     }}
                   >
-                    {isTaskCompleted ? 'COMPLETED 🎉' : 'YOUR TASK'}
+                    {isTaskCompleted ? 'COMPLETED' : 'YOUR TASK'}
                   </span>
                 </div>
 
                 {/* Task Content with Checkbox */}
                 <div className="flex items-center space-x-6">
-                  {/* Large Checkbox Icon - BOUNCES WHEN COMPLETED */}
-                  <div 
-                    className={`
-                      flex-shrink-0 transition-all duration-200
-                      ${isTaskCompleted ? 'animate-bounce' : ''}
-                    `}
-                    style={{
-                      animation: isTaskCompleted ? 'celebrate-bounce 0.8s ease-in-out 3' : 'none'
-                    }}
-                  >
+                  {/* Large Checkbox Icon - Perfectly Centered */}
+                  <div className="flex-shrink-0">
                     {isTaskCompleted ? (
                       <div className="relative w-8 h-8 md:w-10 md:h-10">
                         {/* Green Circle Background with Pulse */}
@@ -206,14 +270,15 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                           className="absolute inset-0 rounded-full bg-green-600"
                           style={{ 
                             backgroundColor: '#16a34a',
-                            animation: 'celebrate-pulse 1.5s ease-in-out infinite'
+                            animation: 'celebrate-pulse 1s ease-in-out infinite'
                           }}
                         />
-                        {/* Centered White Checkmark */}
+                        {/* Centered White Checkmark with Bounce */}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Check 
                             className="w-5 h-5 md:w-6 md:h-6 text-white"
                             strokeWidth={3}
+                            style={{ animation: 'celebrate-bounce 0.8s ease-in-out infinite' }}
                           />
                         </div>
                       </div>
