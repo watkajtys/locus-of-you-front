@@ -5,6 +5,76 @@ import AuraAvatar from './AuraAvatar';
 import Card from './Card';
 import Button from './Button';
 
+// Spectrum Component for Data Visualization
+const SpectrumComponent = ({ title, description, userScore, minLabel, maxLabel }) => {
+  // Convert score to percentage (assuming scores are 1-5 or similar)
+  const percentage = ((userScore - 1) / 4) * 100;
+  
+  return (
+    <div 
+      className="p-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+      style={{ 
+        backgroundColor: 'var(--color-card)',
+        border: `1px solid var(--color-border)`
+      }}
+    >
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <h4 
+            className="text-xl font-semibold"
+            style={{ color: 'var(--color-text)' }}
+          >
+            {title}
+          </h4>
+          <p 
+            className="text-sm leading-relaxed"
+            style={{ color: 'var(--color-muted)' }}
+          >
+            {description}
+          </p>
+        </div>
+        
+        {/* Spectrum Visualization */}
+        <div className="space-y-4">
+          <div className="relative">
+            {/* Background Bar */}
+            <div 
+              className="h-3 rounded-full"
+              style={{ backgroundColor: 'var(--color-primary)' }}
+            />
+            
+            {/* Progress Bar */}
+            <div 
+              className="absolute top-0 left-0 h-3 rounded-full transition-all duration-700 ease-out"
+              style={{ 
+                backgroundColor: 'var(--color-accent)',
+                width: `${percentage}%`
+              }}
+            />
+            
+            {/* Marker */}
+            <div 
+              className="absolute top-1/2 transform -translate-y-1/2 w-6 h-6 rounded-full border-3 border-white shadow-lg transition-all duration-700 ease-out"
+              style={{ 
+                backgroundColor: 'var(--color-accent)',
+                left: `calc(${percentage}% - 12px)`,
+                borderColor: 'white',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+              }}
+            />
+          </div>
+          
+          {/* Labels */}
+          <div className="flex justify-between text-sm font-medium" style={{ color: 'var(--color-muted)' }}>
+            <span>{minLabel}</span>
+            <span>{maxLabel}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SnapshotScreen = ({ answers, onContinue }) => {
   // Determine user's archetype based on their answers
   const determineArchetype = (answers) => {
@@ -32,75 +102,56 @@ const SnapshotScreen = ({ answers, onContinue }) => {
     }
   };
 
-  // Generate insights based on answers
+  // Generate insights based on answers with display types
   const generateInsights = (answers) => {
     const insights = [];
     
-    // Mindset insight
+    // Mindset insight - HIGHLIGHT CARD
     if (answers.mindset === 'growth') {
       insights.push({
+        type: 'highlight',
         icon: Brain,
         title: 'Growth Mindset Strength',
-        description: 'You believe abilities can be developed, which is a powerful asset for learning and overcoming challenges.'
+        description: 'You believe abilities can be developed, which is a powerful asset for learning and overcoming challenges. This mindset is your foundation for continuous improvement.'
       });
     } else {
       insights.push({
+        type: 'highlight',
         icon: Brain,
-        title: 'Expertise Focus',
-        description: 'You value proven strengths and expertise. We can build on your existing capabilities while expanding your comfort zone.'
+        title: 'Expertise Focus Strength',
+        description: 'You value proven strengths and expertise. We can build on your existing capabilities while gradually expanding your comfort zone with confidence.'
       });
     }
     
-    // Locus of control insight
-    if (answers.locus === 'internal') {
-      insights.push({
-        icon: Target,
-        title: 'Personal Agency',
-        description: 'You take ownership of your outcomes, which gives you tremendous power to create positive change.'
-      });
-    } else {
-      insights.push({
-        icon: Lightbulb,
-        title: 'Contextual Awareness',
-        description: 'You recognize external factors that influence success. We can work on strategies to increase your sense of personal control.'
-      });
-    }
+    // Locus of control insight - SPECTRUM VISUALIZATION
+    const locusScore = answers.locus === 'internal' ? 4.2 : 2.3; // Simulated score for visualization
+    insights.push({
+      type: 'spectrum',
+      title: 'Personal Agency',
+      description: 'Your sense of control over outcomes shapes how you approach challenges',
+      userScore: locusScore,
+      minLabel: 'External Focus',
+      maxLabel: 'Internal Control'
+    });
     
-    // Regulatory focus insight
+    // Regulatory focus insight - STANDARD CARD
     if (answers.regulatory_focus === 'promotion') {
       insights.push({
+        type: 'standard',
         icon: TrendingUp,
         title: 'Achievement Orientation',
-        description: 'You are driven by achieving positive aspirations. Framing goals in terms of gains and opportunities will be most effective.'
+        description: 'You are driven by achieving positive aspirations. Framing goals in terms of gains and opportunities will be most effective for your motivation.'
       });
     } else {
       insights.push({
+        type: 'standard',
         icon: Users,
         title: 'Responsibility Focus',
-        description: 'You are motivated by fulfilling duties and preventing problems. Structure and security-focused approaches work best for you.'
+        description: 'You are motivated by fulfilling duties and preventing problems. Structure and security-focused approaches work best for building your confidence.'
       });
     }
     
-    // Personality insights
-    const organizationScore = answers.personality_disorganized || 3;
-    const socialScore = answers.personality_outgoing || 3;
-    const moodScore = answers.personality_moody || 3;
-    
-    if (organizationScore <= 2) {
-      insights.push({
-        icon: Zap,
-        title: 'Natural Organization',
-        description: 'Your systematic approach to life is a major strength. We can leverage this to build sustainable habits.'
-      });
-    } else if (organizationScore >= 4) {
-      insights.push({
-        icon: Zap,
-        title: 'Creative Flexibility',
-        description: 'Your flexible approach allows for creative solutions. We can add structure that supports rather than constrains your style.'
-      });
-    }
-    
-    return insights.slice(0, 3); // Return top 3 insights
+    return insights;
   };
 
   const archetype = determineArchetype(answers);
@@ -176,7 +227,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
               </div>
             </div>
 
-            {/* Insights Section */}
+            {/* Dynamic Insights Section */}
             <div className="space-y-6">
               <div className="text-center">
                 <h3 
@@ -193,38 +244,92 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-1 gap-6 max-w-3xl mx-auto">
-                {insights.map((insight, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start space-x-4 p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
-                    style={{ 
-                      backgroundColor: 'var(--color-card)',
-                      border: `1px solid var(--color-border)`
-                    }}
-                  >
-                    <div 
-                      className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--color-accent)' }}
+              <div className="space-y-6 max-w-3xl mx-auto">
+                {insights.map((insight, index) => {
+                  // Highlight Card
+                  if (insight.type === 'highlight') {
+                    return (
+                      <div
+                        key={index}
+                        className="relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                        style={{ 
+                          background: `linear-gradient(135deg, var(--color-accent), var(--color-secondary))`,
+                          border: `2px solid var(--color-accent)`
+                        }}
+                      >
+                        {/* Highlight Card Glow Effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
+                        
+                        <div className="relative flex items-start space-x-6 p-8">
+                          <div 
+                            className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center shadow-lg"
+                            style={{ backgroundColor: 'white' }}
+                          >
+                            <insight.icon 
+                              className="w-8 h-8"
+                              style={{ color: 'var(--color-accent)' }}
+                            />
+                          </div>
+                          <div className="flex-1 space-y-3">
+                            <h4 className="text-2xl font-bold text-white">
+                              {insight.title}
+                            </h4>
+                            <p className="text-lg leading-relaxed text-white/90">
+                              {insight.description}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // Spectrum Visualization
+                  if (insight.type === 'spectrum') {
+                    return (
+                      <SpectrumComponent
+                        key={index}
+                        title={insight.title}
+                        description={insight.description}
+                        userScore={insight.userScore}
+                        minLabel={insight.minLabel}
+                        maxLabel={insight.maxLabel}
+                      />
+                    );
+                  }
+                  
+                  // Standard Card
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-start space-x-4 p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                      style={{ 
+                        backgroundColor: 'var(--color-card)',
+                        border: `1px solid var(--color-border)`
+                      }}
                     >
-                      <insight.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <h4 
-                        className="text-lg font-semibold"
-                        style={{ color: 'var(--color-text)' }}
+                      <div 
+                        className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: 'var(--color-accent)' }}
                       >
-                        {insight.title}
-                      </h4>
-                      <p 
-                        className="text-base leading-relaxed"
-                        style={{ color: 'var(--color-muted)' }}
-                      >
-                        {insight.description}
-                      </p>
+                        <insight.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <h4 
+                          className="text-lg font-semibold"
+                          style={{ color: 'var(--color-text)' }}
+                        >
+                          {insight.title}
+                        </h4>
+                        <p 
+                          className="text-base leading-relaxed"
+                          style={{ color: 'var(--color-muted)' }}
+                        >
+                          {insight.description}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
