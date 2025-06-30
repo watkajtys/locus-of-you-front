@@ -101,6 +101,20 @@ html {
   }
 }
 
+/* Accent Button Color Inversion Effects */
+.accent-button:hover:not(:disabled) {
+  background-color: var(--color-accent) !important;
+  color: white !important;
+  border-color: var(--color-accent) !important;
+}
+
+.accent-button:active:not(:disabled) {
+  background-color: var(--color-accent) !important;
+  color: white !important;
+  border-color: var(--color-accent) !important;
+  transform: scale(0.95) !important;
+}
+
 /* Aura Circle Component */
 .aura-circle {
   --aura-size: 128px;

@@ -30,6 +30,7 @@ const Button = ({
       bg-white border-2 shadow-lg
       hover:scale-105 hover:shadow-xl hover:-translate-y-1
       focus:ring-opacity-50
+      accent-button
     `,
     ghost: `
       bg-transparent hover:bg-gray-100 text-gray-700
