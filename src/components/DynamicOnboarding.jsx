@@ -448,16 +448,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         }}
                         disabled={isTransitioning}
                       />
-                      
-                      {/* Character count */}
-                      <div className="text-right">
-                        <span 
-                          className="text-sm"
-                          style={{ color: 'var(--color-muted)' }}
-                        >
-                          {textInput.length} characters
-                        </span>
-                      </div>
 
                       {/* Submit Button */}
                       <div className="text-center pt-4">
