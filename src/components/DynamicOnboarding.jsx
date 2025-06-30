@@ -16,14 +16,14 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [questionVisible, setQuestionVisible] = useState(true);
   
-  // Extended question data structure
+  // Updated question data structure with new script copy
   const questions = [
     {
       id: 'mindset',
       type: 'choice',
       message: "To start, I'm curious about your take on this:",
       question: "Do you feel that a person's ability is something they're just born with, or is it a skill that can be developed?",
-      cardType: "DIAGNOSTIC QUESTION",
+      cardType: "MINDSET DIAGNOSTIC",
       options: [
         {
           id: 'A',
@@ -42,7 +42,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       type: 'choice',
       message: "That's helpful, thank you.",
       question: "Now, when things feel particularly tough, does it seem more like it's due to circumstances beyond your control, or more about the choices you've made?",
-      cardType: "DIAGNOSTIC QUESTION",
+      cardType: "PERSPECTIVE DIAGNOSTIC",
       options: [
         {
           id: 'A',
@@ -61,7 +61,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       type: 'choice',
       message: "That makes sense. Now, let's think about goals.",
       question: "When you think about achieving your goals, which of these feels more like you?",
-      cardType: "DIAGNOSTIC QUESTION",
+      cardType: "FOCUS DIAGNOSTIC",
       options: [
         {
           id: 'A',
@@ -80,7 +80,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       type: 'slider',
       message: "Okay, just a few more to get a complete picture of your style. Let's go through some quick-fire statements. Please rate how much this describes you:",
       question: "I tend to be disorganized.",
-      cardType: "PERSONALITY STYLE",
+      cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
       max: 5,
       step: 1,
@@ -97,7 +97,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       type: 'slider',
       message: "And how about this one:",
       question: "I see myself as someone who is outgoing and sociable.",
-      cardType: "PERSONALITY STYLE",
+      cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
       max: 5,
       step: 1,
@@ -114,7 +114,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       type: 'slider',
       message: "Last one for this set:",
       question: "I can be moody or have up and down mood swings.",
-      cardType: "PERSONALITY STYLE",
+      cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
       max: 5,
       step: 1,
@@ -129,9 +129,9 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     {
       id: 'final_focus',
       type: 'textInput',
-      message: "Perfect, that's everything I need. Thank you. For the final step, let's bring it all together and focus on what's important to you right now.",
+      message: "Perfect, that's everything I need. For the final step, let's focus on what's important to you right now.",
       question: "Thinking about what's on your plate, what's one thing that, if you could make even a tiny bit of progress on it, would bring a little more ease or energy into your life?",
-      cardType: "YOUR FOCUS",
+      cardType: "GOAL DIAGNOSTIC",
       placeholder: "Type your response here..."
     }
   ];
