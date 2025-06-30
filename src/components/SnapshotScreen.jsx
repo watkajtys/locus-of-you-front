@@ -491,29 +491,13 @@ const SnapshotScreen = ({ answers, onContinue }) => {
               </div>
             </div>
 
-            {/* Narrative Summary Section */}
+            {/* Narrative Summary Section - Now using AIMessageCard */}
             <div className="space-y-6 pt-8" style={{ borderTop: `1px solid var(--color-border)` }}>
-              <div className="max-w-3xl mx-auto space-y-4">
-                <h4 
-                  className="text-sm font-medium tracking-wide uppercase text-center"
-                  style={{ color: 'var(--color-muted)' }}
-                >
-                  My Observation
-                </h4>
-                <div 
-                  className="p-8 rounded-xl"
-                  style={{ 
-                    backgroundColor: 'var(--color-primary)',
-                    border: `1px solid var(--color-border)`
-                  }}
-                >
-                  <p 
-                    className="text-lg leading-relaxed text-center"
-                    style={{ color: 'var(--color-text)' }}
-                  >
-                    What this tells me is that you're a 'Visionary Achiever.' You have a powerful belief that you can grow and a natural drive toward your goals. At the same time, your focus on personal action means you likely feel the full weight of getting things done. It's a potent combination of aspiration and responsibility, and it gives us a clear picture of how to build a plan that feels both ambitious and sustainable for you.
-                  </p>
-                </div>
+              <div className="max-w-3xl mx-auto">
+                <AIMessageCard
+                  paragraph="What this tells me is that you're a 'Visionary Achiever.' You have a powerful belief that you can grow and a natural drive toward your goals. At the same time, your focus on personal action means you likely feel the full weight of getting things done. It's a potent combination of aspiration and responsibility, and it gives us a clear picture of how to build a plan that feels both ambitious and sustainable for you."
+                  cardType="MY OBSERVATION"
+                />
               </div>
             </div>
 

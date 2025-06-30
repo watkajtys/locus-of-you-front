@@ -3,6 +3,7 @@ import React from 'react';
 const AIMessageCard = ({ 
   question,
   message,
+  paragraph,
   cardType = "DIAGNOSTIC QUESTION",
   className = '' 
 }) => {
@@ -50,6 +51,20 @@ const AIMessageCard = ({
                 }}
               >
                 {message}
+              </p>
+            </div>
+          )}
+          
+          {/* Paragraph Text - Medium Size */}
+          {paragraph && (
+            <div>
+              <p 
+                className="text-lg font-normal leading-relaxed text-slate-700"
+                style={{ 
+                  fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                {paragraph}
               </p>
             </div>
           )}
