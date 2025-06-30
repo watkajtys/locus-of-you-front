@@ -95,8 +95,30 @@ export const useSubscription = (user) => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Subscription status changed:', payload);
-          refreshSubscriptionStatus();
+          console.log('Real-time subscription status change received:', payload);
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            if (payload.new) {
+              const newDbStatus = payload.new;
+              // Directly update state from the pushed DB record
+              // This assumes the 'subscription_status' table structure matches the hook's state fields
+              setSubscriptionStatus(prev => ({
+                ...prev, // Keep existing fields like customerInfo if they are separate
+                isLoading: false,
+                error: null, // Assume direct DB push is valid
+                hasSubscription: newDbStatus.has_subscription,
+                activeEntitlements: newDbStatus.active_entitlements || [],
+                currentProduct: newDbStatus.current_product || null,
+                isTrial: newDbStatus.is_trial || false,
+                subscriptionEndDate: newDbStatus.subscription_end_date || null,
+              }));
+            } else {
+              // If new data is not in payload for INSERT/UPDATE, a full refresh might be safer
+              refreshSubscriptionStatus();
+            }
+          } else if (payload.eventType === 'DELETE') {
+            // If the user's subscription record is deleted, refresh to reflect this
+            refreshSubscriptionStatus();
+          }
         }
       )
       .subscribe();
@@ -104,10 +126,11 @@ export const useSubscription = (user) => {
     // Initial load
     refreshSubscriptionStatus();
 
+    // Cleanup function to unsubscribe
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(subscription);
     };
-  }, [user?.id]);
+  }, [user?.id]); // Keep user.id as dependency to re-subscribe if user changes
 
   return {
     ...subscriptionStatus,
