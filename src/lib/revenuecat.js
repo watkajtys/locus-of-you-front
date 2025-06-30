@@ -26,6 +26,14 @@ export const initializeRevenueCat = async () => {
   }
 
   try {
+    // Clear any potentially invalid cached user ID from previous sessions
+    try {
+      await Purchases.logOut();
+    } catch (logoutError) {
+      // logOut might fail if RevenueCat is not initialized yet, which is expected
+      console.log('RevenueCat logout attempt (expected to fail on first run):', logoutError.message);
+    }
+
     await Purchases.configure({
       apiKey: REVENUECAT_API_KEY,
     });
