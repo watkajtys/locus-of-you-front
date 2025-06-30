@@ -1,37 +1,66 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Zap, Brain, Target, BarChart3, BookOpen, Sparkles, Crown, Loader2, AlertCircle } from 'lucide-react';
+import { Check, Zap, Brain, Target, BarChart3, BookOpen, Sparkles, Crown, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import Card from './Card';
 import Button from './Button';
 import { 
-  purchaseSubscription, 
+  purchaseWithRetry, 
   getOfferings, 
   PRODUCT_IDS,
-  checkSubscriptionStatus 
+  checkSubscriptionStatus,
+  isSandboxEnvironment,
+  validatePurchaseEnvironment,
+  getSubscriptionPricing
 } from '../lib/revenuecat';
 
 const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
-  const [selectedPlan, setSelectedPlan] = useState('annual'); // Default to annual (best value)
+  const [selectedPlan, setSelectedPlan] = useState('annual');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [offerings, setOfferings] = useState(null);
   const [loadingOfferings, setLoadingOfferings] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
+  const [pricing, setPricing] = useState({ monthly: null, annual: null });
 
-  // Load offerings on component mount
   useEffect(() => {
     loadOfferings();
+    
+    // Validate environment on mount
+    if (isSandboxEnvironment()) {
+      console.log('🧪 Running in sandbox environment - test purchases enabled');
+    }
   }, []);
 
   const loadOfferings = async () => {
     try {
       setLoadingOfferings(true);
-      const offeringsData = await getOfferings();
+      setError(null);
+      
+      // Load both offerings and pricing
+      const [offeringsData, pricingData] = await Promise.all([
+        getOfferings(),
+        getSubscriptionPricing()
+      ]);
+      
       setOfferings(offeringsData);
+      setPricing(pricingData);
+      
+      // Validate purchase environment
+      const validation = await validatePurchaseEnvironment();
+      if (!validation.isValid) {
+        console.warn('Purchase environment validation failed:', validation);
+      }
+      
     } catch (error) {
       console.error('Failed to load offerings:', error);
-      setError('Failed to load subscription options. Please try again.');
+      setError('Failed to load subscription options. Please check your connection and try again.');
     } finally {
       setLoadingOfferings(false);
     }
+  };
+
+  const handleRetryLoadOfferings = () => {
+    setRetryCount(prev => prev + 1);
+    loadOfferings();
   };
 
   const handleSubscribe = async () => {
@@ -41,35 +70,34 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
     setError(null);
 
     try {
-      // Determine product ID based on selected plan
       const productId = selectedPlan === 'annual' ? PRODUCT_IDS.ANNUAL : PRODUCT_IDS.MONTHLY;
       
-      // Attempt purchase through RevenueCat
-      const result = await purchaseSubscription(productId);
+      // Use retry logic for better reliability
+      const result = await purchaseWithRetry(productId, 2);
 
       if (result.success) {
-        // Purchase successful
         console.log('Subscription purchased successfully:', result);
         
-        // Check subscription status to confirm
+        // Verify subscription status
         const status = await checkSubscriptionStatus();
         
         if (status.hasSubscription) {
-          // Call success callback if provided
           onSubscriptionSuccess?.(result.customerInfo, selectedPlan);
-          
-          // Call the original callback
           onSubscribe?.(selectedPlan);
         } else {
           throw new Error('Subscription not found after purchase');
         }
       } else {
-        // Purchase failed
         if (result.userCancelled) {
-          // User cancelled, don't show error
           console.log('User cancelled subscription purchase');
+          // Don't show error for user cancellation
         } else {
           setError(result.error || 'Failed to process subscription. Please try again.');
+          
+          // Show retry button for retryable errors
+          if (result.retryable) {
+            setError(`${result.error} - You can try again.`);
+          }
         }
       }
     } catch (error) {
@@ -113,36 +141,28 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
     }
   ];
 
-  // Helper function to get pricing from offerings
-  const getPricing = () => {
-    if (!offerings?.current) {
+  // Helper function to get pricing with fallbacks
+  const getPricingDisplay = () => {
+    if (pricing.annual && pricing.monthly) {
       return {
-        annual: { price: '$119.99', monthlyEquivalent: '$9.99' },
-        monthly: { price: '$19.99' }
+        annual: {
+          price: pricing.annual.priceString || '$119.99',
+          monthlyEquivalent: `$${(pricing.annual.price / 12).toFixed(2)}`
+        },
+        monthly: {
+          price: pricing.monthly.priceString || '$19.99'
+        }
       };
     }
-
-    const annualPackage = offerings.current.availablePackages.find(
-      pkg => pkg.product.identifier === PRODUCT_IDS.ANNUAL
-    );
-    const monthlyPackage = offerings.current.availablePackages.find(
-      pkg => pkg.product.identifier === PRODUCT_IDS.MONTHLY
-    );
-
+    
+    // Fallback pricing if API fails
     return {
-      annual: {
-        price: annualPackage?.product.priceString || '$119.99',
-        monthlyEquivalent: annualPackage ? 
-          `$${(annualPackage.product.price / 12).toFixed(2)}` : 
-          '$9.99'
-      },
-      monthly: {
-        price: monthlyPackage?.product.priceString || '$19.99'
-      }
+      annual: { price: '$119.99', monthlyEquivalent: '$9.99' },
+      monthly: { price: '$19.99' }
     };
   };
 
-  const pricing = getPricing();
+  const displayPricing = getPricingDisplay();
 
   if (loadingOfferings) {
     return (
@@ -161,6 +181,54 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
           >
             Loading subscription options...
           </p>
+          {retryCount > 0 && (
+            <p 
+              className="text-sm"
+              style={{ color: '#64748b' }}
+            >
+              Retry attempt: {retryCount}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state with retry option
+  if (error && !offerings) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center font-inter p-6"
+        style={{ backgroundColor: '#0f172a' }}
+      >
+        <div className="text-center space-y-6 max-w-md">
+          <AlertCircle 
+            className="w-12 h-12 mx-auto"
+            style={{ color: '#ef4444' }}
+          />
+          <div>
+            <h2 
+              className="text-xl font-bold mb-2"
+              style={{ color: '#f1f5f9' }}
+            >
+              Unable to Load Subscription Options
+            </h2>
+            <p 
+              className="text-base mb-4"
+              style={{ color: '#94a3b8' }}
+            >
+              {error}
+            </p>
+          </div>
+          <Button
+            variant="accent"
+            onClick={handleRetryLoadOfferings}
+            className="flex items-center space-x-2"
+            style={{ backgroundColor: '#f97316' }}
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Try Again</span>
+          </Button>
         </div>
       </div>
     );
@@ -169,15 +237,31 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
   return (
     <div 
       className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
-      style={{ backgroundColor: '#0f172a' }} // Professional theme background
+      style={{ backgroundColor: '#0f172a' }}
     >
       <div className="max-w-5xl mx-auto w-full space-y-12">
+        {/* Sandbox Environment Indicator */}
+        {isSandboxEnvironment() && (
+          <div 
+            className="max-w-2xl mx-auto p-4 rounded-lg border text-center"
+            style={{ 
+              backgroundColor: '#fef3c7', 
+              borderColor: '#f59e0b',
+              color: '#92400e'
+            }}
+          >
+            <p className="text-sm font-medium">
+              🧪 Sandbox Environment - Test purchases will not be charged
+            </p>
+          </div>
+        )}
+
         {/* Header Section */}
         <div className="text-center space-y-6">
           <div className="flex justify-center mb-6">
             <div 
               className="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl"
-              style={{ backgroundColor: '#f97316' }} // orange-500 accent
+              style={{ backgroundColor: '#f97316' }}
             >
               <Crown className="w-8 h-8 text-white" />
             </div>
@@ -186,13 +270,13 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
           <div className="space-y-4">
             <h1 
               className="text-4xl md:text-6xl font-bold leading-tight"
-              style={{ color: '#f1f5f9' }} // slate-100 text
+              style={{ color: '#f1f5f9' }}
             >
               Unlock Your Full Potential
             </h1>
             <p 
               className="text-lg md:text-xl leading-relaxed max-w-3xl mx-auto"
-              style={{ color: '#94a3b8' }} // slate-400 muted
+              style={{ color: '#94a3b8' }}
             >
               The free snapshot was just the beginning. Unlock the continuous coaching relationship to diagnose why you're stuck and build a personalized plan to move forward.
             </p>
@@ -204,12 +288,12 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
           <div className="max-w-2xl mx-auto">
             <div 
               className="p-4 rounded-lg flex items-center space-x-3"
-              style={{ backgroundColor: '#dc2626', border: '1px solid #ef4444' }}
+              style={{ backgroundColor: '#fee2e2', border: '1px solid #fecaca' }}
             >
-              <AlertCircle className="w-5 h-5 text-white flex-shrink-0" />
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
               <div>
-                <p className="text-white font-medium">Subscription Error</p>
-                <p className="text-red-100 text-sm">{error}</p>
+                <p className="text-red-800 font-medium">Subscription Error</p>
+                <p className="text-red-700 text-sm">{error}</p>
               </div>
             </div>
           </div>
@@ -236,7 +320,6 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Annual Plan - Recommended */}
             <div className="relative">
-              {/* Best Value Badge */}
               <div 
                 className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10"
               >
@@ -258,7 +341,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
                   ${loading ? 'opacity-75 cursor-not-allowed' : ''}
                 `}
                 style={{
-                  backgroundColor: '#1e293b', // slate-800
+                  backgroundColor: '#1e293b',
                   border: selectedPlan === 'annual' 
                     ? '2px solid #f97316' 
                     : '1px solid #334155'
@@ -266,7 +349,6 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
                 onClick={() => !loading && setSelectedPlan('annual')}
               >
                 <div className="space-y-6">
-                  {/* Plan Name */}
                   <div className="text-center">
                     <h3 
                       className="text-2xl font-bold mb-2"
@@ -282,14 +364,13 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
                     </p>
                   </div>
 
-                  {/* Pricing */}
                   <div className="text-center space-y-2">
                     <div className="flex items-baseline justify-center space-x-2">
                       <span 
                         className="text-5xl font-bold"
                         style={{ color: '#f97316' }}
                       >
-                        {pricing.annual.price}
+                        {displayPricing.annual.price}
                       </span>
                       <span 
                         className="text-xl font-medium"
@@ -302,11 +383,10 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
                       className="text-lg font-medium"
                       style={{ color: '#f1f5f9' }}
                     >
-                      (Just {pricing.annual.monthlyEquivalent}/month)
+                      (Just {displayPricing.annual.monthlyEquivalent}/month)
                     </p>
                   </div>
 
-                  {/* Selection Indicator */}
                   <div className="text-center">
                     <div 
                       className={`
@@ -337,7 +417,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
                 ${loading ? 'opacity-75 cursor-not-allowed' : ''}
               `}
               style={{
-                backgroundColor: '#1e293b', // slate-800
+                backgroundColor: '#1e293b',
                 border: selectedPlan === 'monthly' 
                   ? '2px solid #f97316' 
                   : '1px solid #334155'
@@ -345,7 +425,6 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
               onClick={() => !loading && setSelectedPlan('monthly')}
             >
               <div className="space-y-6">
-                {/* Plan Name */}
                 <div className="text-center">
                   <h3 
                     className="text-2xl font-bold mb-2"
@@ -361,14 +440,13 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
                   </p>
                 </div>
 
-                {/* Pricing */}
                 <div className="text-center space-y-2">
                   <div className="flex items-baseline justify-center space-x-2">
                     <span 
                       className="text-5xl font-bold"
                       style={{ color: '#f97316' }}
                     >
-                      {pricing.monthly.price}
+                      {displayPricing.monthly.price}
                     </span>
                     <span 
                       className="text-xl font-medium"
@@ -391,7 +469,6 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
                   </p>
                 </div>
 
-                {/* Selection Indicator */}
                 <div className="text-center">
                   <div 
                     className={`
@@ -510,7 +587,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
                 className="text-xs"
                 style={{ color: '#64748b' }}
               >
-                After your 7-day free trial, you'll be charged {selectedPlan === 'annual' ? pricing.annual.price + '/year' : pricing.monthly.price + '/month'}. Cancel anytime.
+                After your 7-day free trial, you'll be charged {selectedPlan === 'annual' ? displayPricing.annual.price + '/year' : displayPricing.monthly.price + '/month'}. Cancel anytime.
               </p>
             </div>
           </div>
