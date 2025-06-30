@@ -118,8 +118,9 @@ export interface APIResponse<T = any> {
 
 // Environment Variables Type
 export interface Env {
+  [key: string]: any;
   // LangChain API Keys
-  OPENAI_API_KEY: string;
+  GOOGLE_API_KEY: string;
   ANTHROPIC_API_KEY?: string;
   
   // Worker Configuration
