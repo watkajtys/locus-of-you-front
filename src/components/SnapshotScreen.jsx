@@ -273,42 +273,79 @@ const SnapshotScreen = ({ answers, onContinue }) => {
     }
   };
 
-  // Generate insights based on answers with abstract visualizations
+  // Generate supportive descriptions based on user's answers
+  const generateSupportiveDescription = (answers, insight) => {
+    if (insight.type === 'spectrum') {
+      // Personal Agency - Focus on starting point, not judgment  
+      if (answers.locus === 'external') {
+        return "Your current style is to focus more on external circumstances. This is a common pattern, and it gives us a clear starting point for building your sense of personal agency.";
+      } else {
+        return "Your natural focus is on personal action and control. This internal orientation is a strong foundation we can build upon for achieving your goals.";
+      }
+    }
+    
+    if (insight.type === 'balance') {
+      // Growth Mindset - Frame as malleable belief, not fixed trait
+      if (answers.mindset === 'fixed') {
+        return "Your profile shows a current belief that abilities are mostly fixed. The great news is that this belief itself is a skill that can be developed. We'll focus on strategies that strengthen a growth-oriented perspective.";
+      } else {
+        return "Your belief in the ability to develop and grow is a powerful asset. This growth-oriented mindset will be the foundation for all the strategies we build together.";
+      }
+    }
+    
+    if (insight.type === 'ring') {
+      // Achievement Orientation - Frame both as strategic strengths
+      if (answers.regulatory_focus === 'promotion') {
+        return "Your focus leans toward pursuing new opportunities and gains. This promotion-focused approach brings energy and ambition to your goal achievement strategies.";
+      } else if (answers.regulatory_focus === 'prevention') {
+        return "Your focus leans toward ensuring stability and avoiding problems. This prevention-focused approach brings careful planning and risk awareness to your strategies.";
+      } else {
+        return "Your focus is balanced between pursuing opportunities and ensuring stability. This means you can leverage both promotional energy and preventive wisdom in your approach.";
+      }
+    }
+    
+    return insight.description;
+  };
+
+  // Generate insights with supportive, non-judgmental framing
   const generateInsights = (answers) => {
     const insights = [];
     
-    // Personal Agency insight - SPECTRUM BAR
-    const locusScore = answers.locus === 'internal' ? 4.2 : 2.3; // Simulated score for visualization
-    insights.push({
+    // Personal Agency insight - SPECTRUM BAR with reframed labels
+    const locusScore = answers.locus === 'internal' ? 4.2 : 2.3;
+    const personalAgencyInsight = {
       type: 'spectrum',
       title: 'Personal Agency',
-      description: 'Your sense of control over outcomes shapes how you approach challenges.',
       userScore: locusScore,
-      minLabel: 'External',
-      maxLabel: 'Internal'
-    });
+      minLabel: 'Focus on Circumstance',  // Changed from "External"
+      maxLabel: 'Focus on Action'         // Changed from "Internal"
+    };
+    personalAgencyInsight.description = generateSupportiveDescription(answers, personalAgencyInsight);
+    insights.push(personalAgencyInsight);
     
-    // Growth Mindset insight - BELIEF BALANCE BAR
+    // Growth Mindset insight - BELIEF BALANCE BAR with supportive framing
     const mindsetScore = answers.mindset === 'growth' ? 4.5 : 2.0;
-    insights.push({
+    const growthMindsetInsight = {
       type: 'balance',
       title: 'Growth Mindset',
-      description: 'Your beliefs about the nature of abilities and talents.',
       userScore: mindsetScore,
-      leftLabel: 'Growth',
-      rightLabel: 'Fixed'
-    });
+      leftLabel: 'Growth Belief',          // Emphasized as "belief"
+      rightLabel: 'Current Fixed Belief'   // Framed as "current" not permanent
+    };
+    growthMindsetInsight.description = generateSupportiveDescription(answers, growthMindsetInsight);
+    insights.push(growthMindsetInsight);
     
-    // Achievement Orientation insight - FOCUS RING
+    // Achievement Orientation insight - FOCUS RING with both as strengths
     const focusScore = answers.regulatory_focus === 'promotion' ? 4.0 : 2.5;
-    insights.push({
+    const achievementInsight = {
       type: 'ring',
       title: 'Achievement Orientation',
-      description: 'Your motivational focus influences how you pursue goals.',
       userScore: focusScore,
       leftLabel: 'Promotion Focus',
       rightLabel: 'Prevention Focus'
-    });
+    };
+    achievementInsight.description = generateSupportiveDescription(answers, achievementInsight);
+    insights.push(achievementInsight);
     
     return insights;
   };
@@ -340,7 +377,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                 className="text-lg md:text-xl"
                 style={{ color: 'var(--color-muted)' }}
               >
-                Based on your unique psychological profile
+                Your personalized starting point for growth
               </p>
             </div>
           </div>
@@ -386,7 +423,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
               </div>
             </div>
 
-            {/* Abstract Data Visualizations Section - VERTICAL STACK */}
+            {/* Key Insights Section - VERTICAL STACK */}
             <div className="space-y-8">
               <div className="text-center">
                 <h3 
@@ -399,11 +436,11 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                   className="text-base"
                   style={{ color: 'var(--color-muted)' }}
                 >
-                  Abstract visualizations of your psychological profile
+                  Your unique motivational profile and starting points for growth
                 </p>
               </div>
 
-              {/* Changed from grid to vertical stack */}
+              {/* Vertical stack of insights with supportive descriptions */}
               <div className="space-y-8 max-w-3xl mx-auto">
                 {insights.map((insight, index) => {
                   // Spectrum Bar Visualization
@@ -502,7 +539,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
               className="text-sm"
               style={{ color: 'var(--color-muted)' }}
             >
-              This assessment is based on validated psychological research and your individual responses
+              This is your personalized coaching starting point, not a final assessment
             </p>
           </div>
         </div>
