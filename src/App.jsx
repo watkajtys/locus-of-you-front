@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './hooks/useTheme';
+import { initializeRevenueCat, setRevenueCatUserId, checkSubscriptionStatus } from './lib/revenuecat';
 import { Bug, Play } from 'lucide-react';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
@@ -18,8 +19,12 @@ function App() {
   const [showFirstStep, setShowFirstStep] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [onboardingAnswers, setOnboardingAnswers] = useState(null);
+  const [hasSubscription, setHasSubscription] = useState(false);
 
   useEffect(() => {
+    // Initialize RevenueCat on app start
+    initializeRevenueCat();
+
     // Get initial session
     const getSession = async () => {
       try {
@@ -28,6 +33,13 @@ function App() {
           console.error('Error getting session:', error);
         } else {
           setSession(session);
+          
+          // If user is authenticated, set RevenueCat user ID and check subscription
+          if (session?.user) {
+            await setRevenueCatUserId(session.user.id);
+            const subscriptionStatus = await checkSubscriptionStatus();
+            setHasSubscription(subscriptionStatus.hasSubscription);
+          }
         }
       } catch (error) {
         console.error('Unexpected error getting session:', error);
@@ -40,10 +52,19 @@ function App() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session);
         setSession(session);
         setLoading(false);
+        
+        // Handle RevenueCat user management
+        if (session?.user) {
+          await setRevenueCatUserId(session.user.id);
+          const subscriptionStatus = await checkSubscriptionStatus();
+          setHasSubscription(subscriptionStatus.hasSubscription);
+        } else {
+          setHasSubscription(false);
+        }
       }
     );
 
@@ -91,10 +112,16 @@ function App() {
   // Handle subscription from paywall
   const handleSubscribe = (planType) => {
     console.log('User selected subscription plan:', planType);
-    // Here you would integrate with your payment processor (Stripe, etc.)
-    // For now, we'll just redirect to auth after "subscription"
+    // After successful subscription through RevenueCat, redirect to auth
     setShowAuth(true);
     setShowPaywall(false);
+  };
+
+  // Handle successful subscription (called by RevenueCat after purchase)
+  const handleSubscriptionSuccess = (customerInfo, planType) => {
+    console.log('Subscription successful:', { customerInfo, planType });
+    setHasSubscription(true);
+    // You might want to store subscription info in your database here
   };
 
   // Debug function to jump to snapshot with mock data
@@ -201,7 +228,7 @@ function App() {
       {(() => {
         // Conditionally render Auth or Dashboard based on session
         if (session) {
-          return <Dashboard session={session} />;
+          return <Dashboard session={session} hasSubscription={hasSubscription} />;
         }
 
         // Show paywall if first step is completed
@@ -209,6 +236,7 @@ function App() {
           return (
             <Paywall 
               onSubscribe={handleSubscribe}
+              onSubscriptionSuccess={handleSubscriptionSuccess}
             />
           );
         }

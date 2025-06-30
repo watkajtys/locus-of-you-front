@@ -3,15 +3,19 @@ import { useTheme } from '../hooks/useTheme';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import Header from './Header';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Crown, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { logOutRevenueCat } from '../lib/revenuecat';
 import Button from './Button';
 import Card from './Card';
 
-const Dashboard = ({ session }) => {
+const Dashboard = ({ session, hasSubscription = false }) => {
   const { theme, toggleTheme } = useTheme();
 
   const handleSignOut = async () => {
+    // Log out from RevenueCat first
+    await logOutRevenueCat();
+    // Then sign out from Supabase
     await supabase.auth.signOut();
   };
 
@@ -29,18 +33,35 @@ const Dashboard = ({ session }) => {
             <Card className="p-8">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <h1 
-                    className="text-3xl font-bold"
-                    style={{ color: 'var(--color-text)' }}
-                  >
-                    Dashboard
-                  </h1>
+                  <div className="flex items-center space-x-3">
+                    <h1 
+                      className="text-3xl font-bold"
+                      style={{ color: 'var(--color-text)' }}
+                    >
+                      Dashboard
+                    </h1>
+                    {hasSubscription && (
+                      <div className="flex items-center space-x-2 px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--color-accent)' }}>
+                        <Crown className="w-4 h-4 text-white" />
+                        <span className="text-white text-sm font-medium">Premium</span>
+                      </div>
+                    )}
+                  </div>
                   <p 
                     className="text-lg"
                     style={{ color: 'var(--color-muted)' }}
                   >
                     Welcome back, {session?.user?.email}
                   </p>
+                  {hasSubscription && (
+                    <p 
+                      className="text-sm flex items-center space-x-2"
+                      style={{ color: 'var(--color-accent)' }}
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>You have access to all premium features</span>
+                    </p>
+                  )}
                 </div>
                 
                 <div className="flex items-center space-x-4">
@@ -54,6 +75,45 @@ const Dashboard = ({ session }) => {
                     <span>Sign Out</span>
                   </Button>
                 </div>
+              </div>
+            </Card>
+
+            {/* Subscription Status Card */}
+            <Card className="p-6">
+              <div className="space-y-4">
+                <h3 
+                  className="text-lg font-semibold"
+                  style={{ color: 'var(--color-text)' }}
+                >
+                  Subscription Status
+                </h3>
+                {hasSubscription ? (
+                  <div className="flex items-center space-x-3">
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: '#10b981' }}
+                    />
+                    <span 
+                      className="font-medium"
+                      style={{ color: 'var(--color-text)' }}
+                    >
+                      Active Premium Subscription
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-3">
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: '#64748b' }}
+                    />
+                    <span 
+                      className="font-medium"
+                      style={{ color: 'var(--color-muted)' }}
+                    >
+                      Free Account
+                    </span>
+                  </div>
+                )}
               </div>
             </Card>
 

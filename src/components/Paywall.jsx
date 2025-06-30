@@ -1,13 +1,83 @@
-import React, { useState } from 'react';
-import { Check, Zap, Brain, Target, BarChart3, BookOpen, Sparkles, Crown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Check, Zap, Brain, Target, BarChart3, BookOpen, Sparkles, Crown, Loader2, AlertCircle } from 'lucide-react';
 import Card from './Card';
 import Button from './Button';
+import { 
+  purchaseSubscription, 
+  getOfferings, 
+  PRODUCT_IDS,
+  checkSubscriptionStatus 
+} from '../lib/revenuecat';
 
-const Paywall = ({ onSubscribe }) => {
+const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
   const [selectedPlan, setSelectedPlan] = useState('annual'); // Default to annual (best value)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [offerings, setOfferings] = useState(null);
+  const [loadingOfferings, setLoadingOfferings] = useState(true);
 
-  const handleSubscribe = () => {
-    onSubscribe?.(selectedPlan);
+  // Load offerings on component mount
+  useEffect(() => {
+    loadOfferings();
+  }, []);
+
+  const loadOfferings = async () => {
+    try {
+      setLoadingOfferings(true);
+      const offeringsData = await getOfferings();
+      setOfferings(offeringsData);
+    } catch (error) {
+      console.error('Failed to load offerings:', error);
+      setError('Failed to load subscription options. Please try again.');
+    } finally {
+      setLoadingOfferings(false);
+    }
+  };
+
+  const handleSubscribe = async () => {
+    if (loading) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Determine product ID based on selected plan
+      const productId = selectedPlan === 'annual' ? PRODUCT_IDS.ANNUAL : PRODUCT_IDS.MONTHLY;
+      
+      // Attempt purchase through RevenueCat
+      const result = await purchaseSubscription(productId);
+
+      if (result.success) {
+        // Purchase successful
+        console.log('Subscription purchased successfully:', result);
+        
+        // Check subscription status to confirm
+        const status = await checkSubscriptionStatus();
+        
+        if (status.hasSubscription) {
+          // Call success callback if provided
+          onSubscriptionSuccess?.(result.customerInfo, selectedPlan);
+          
+          // Call the original callback
+          onSubscribe?.(selectedPlan);
+        } else {
+          throw new Error('Subscription not found after purchase');
+        }
+      } else {
+        // Purchase failed
+        if (result.userCancelled) {
+          // User cancelled, don't show error
+          console.log('User cancelled subscription purchase');
+        } else {
+          setError(result.error || 'Failed to process subscription. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      setError(error.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const premiumFeatures = [
@@ -43,6 +113,59 @@ const Paywall = ({ onSubscribe }) => {
     }
   ];
 
+  // Helper function to get pricing from offerings
+  const getPricing = () => {
+    if (!offerings?.current) {
+      return {
+        annual: { price: '$119.99', monthlyEquivalent: '$9.99' },
+        monthly: { price: '$19.99' }
+      };
+    }
+
+    const annualPackage = offerings.current.availablePackages.find(
+      pkg => pkg.product.identifier === PRODUCT_IDS.ANNUAL
+    );
+    const monthlyPackage = offerings.current.availablePackages.find(
+      pkg => pkg.product.identifier === PRODUCT_IDS.MONTHLY
+    );
+
+    return {
+      annual: {
+        price: annualPackage?.product.priceString || '$119.99',
+        monthlyEquivalent: annualPackage ? 
+          `$${(annualPackage.product.price / 12).toFixed(2)}` : 
+          '$9.99'
+      },
+      monthly: {
+        price: monthlyPackage?.product.priceString || '$19.99'
+      }
+    };
+  };
+
+  const pricing = getPricing();
+
+  if (loadingOfferings) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center font-inter"
+        style={{ backgroundColor: '#0f172a' }}
+      >
+        <div className="text-center space-y-4">
+          <Loader2 
+            className="w-8 h-8 animate-spin mx-auto"
+            style={{ color: '#f97316' }}
+          />
+          <p 
+            className="text-lg"
+            style={{ color: '#94a3b8' }}
+          >
+            Loading subscription options...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
@@ -75,6 +198,22 @@ const Paywall = ({ onSubscribe }) => {
             </p>
           </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="max-w-2xl mx-auto">
+            <div 
+              className="p-4 rounded-lg flex items-center space-x-3"
+              style={{ backgroundColor: '#dc2626', border: '1px solid #ef4444' }}
+            >
+              <AlertCircle className="w-5 h-5 text-white flex-shrink-0" />
+              <div>
+                <p className="text-white font-medium">Subscription Error</p>
+                <p className="text-red-100 text-sm">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Subscription Plans */}
         <div className="space-y-8">
@@ -116,6 +255,7 @@ const Paywall = ({ onSubscribe }) => {
                     ? 'ring-4 ring-orange-500 shadow-2xl transform scale-105' 
                     : 'shadow-lg hover:shadow-xl hover:scale-102'
                   }
+                  ${loading ? 'opacity-75 cursor-not-allowed' : ''}
                 `}
                 style={{
                   backgroundColor: '#1e293b', // slate-800
@@ -123,7 +263,7 @@ const Paywall = ({ onSubscribe }) => {
                     ? '2px solid #f97316' 
                     : '1px solid #334155'
                 }}
-                onClick={() => setSelectedPlan('annual')}
+                onClick={() => !loading && setSelectedPlan('annual')}
               >
                 <div className="space-y-6">
                   {/* Plan Name */}
@@ -149,7 +289,7 @@ const Paywall = ({ onSubscribe }) => {
                         className="text-5xl font-bold"
                         style={{ color: '#f97316' }}
                       >
-                        $119.99
+                        {pricing.annual.price}
                       </span>
                       <span 
                         className="text-xl font-medium"
@@ -162,13 +302,7 @@ const Paywall = ({ onSubscribe }) => {
                       className="text-lg font-medium"
                       style={{ color: '#f1f5f9' }}
                     >
-                      (Just $9.99/month)
-                    </p>
-                    <p 
-                      className="text-sm line-through"
-                      style={{ color: '#64748b' }}
-                    >
-                      $239.88 if paid monthly
+                      (Just {pricing.annual.monthlyEquivalent}/month)
                     </p>
                   </div>
 
@@ -200,6 +334,7 @@ const Paywall = ({ onSubscribe }) => {
                   ? 'ring-4 ring-orange-500 shadow-2xl transform scale-105' 
                   : 'shadow-lg hover:shadow-xl hover:scale-102'
                 }
+                ${loading ? 'opacity-75 cursor-not-allowed' : ''}
               `}
               style={{
                 backgroundColor: '#1e293b', // slate-800
@@ -207,7 +342,7 @@ const Paywall = ({ onSubscribe }) => {
                   ? '2px solid #f97316' 
                   : '1px solid #334155'
               }}
-              onClick={() => setSelectedPlan('monthly')}
+              onClick={() => !loading && setSelectedPlan('monthly')}
             >
               <div className="space-y-6">
                 {/* Plan Name */}
@@ -233,7 +368,7 @@ const Paywall = ({ onSubscribe }) => {
                       className="text-5xl font-bold"
                       style={{ color: '#f97316' }}
                     >
-                      $19.99
+                      {pricing.monthly.price}
                     </span>
                     <span 
                       className="text-xl font-medium"
@@ -346,14 +481,22 @@ const Paywall = ({ onSubscribe }) => {
               variant="accent"
               size="large"
               onClick={handleSubscribe}
-              className="w-full text-xl py-8 font-bold shadow-2xl transform hover:scale-105 transition-all duration-300"
+              disabled={loading}
+              className="w-full text-xl py-8 font-bold shadow-2xl transform hover:scale-105 transition-all duration-300 disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none"
               style={{
-                backgroundColor: '#f97316',
+                backgroundColor: loading ? '#64748b' : '#f97316',
                 color: 'white',
                 border: 'none'
               }}
             >
-              🚀 Start My 7-Day Free Trial
+              {loading ? (
+                <div className="flex items-center justify-center space-x-3">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <span>Processing...</span>
+                </div>
+              ) : (
+                <>🚀 Start My 7-Day Free Trial</>
+              )}
             </Button>
             
             <div className="mt-4 space-y-2">
@@ -367,7 +510,7 @@ const Paywall = ({ onSubscribe }) => {
                 className="text-xs"
                 style={{ color: '#64748b' }}
               >
-                After your 7-day free trial, you'll be charged {selectedPlan === 'annual' ? '$119.99/year' : '$19.99/month'}. Cancel anytime.
+                After your 7-day free trial, you'll be charged {selectedPlan === 'annual' ? pricing.annual.price + '/year' : pricing.monthly.price + '/month'}. Cancel anytime.
               </p>
             </div>
           </div>
