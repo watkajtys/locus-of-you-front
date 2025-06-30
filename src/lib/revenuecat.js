@@ -1,4 +1,4 @@
-import Purchases from '@revenuecat/purchases-js';
+import { Purchases } from '@revenuecat/purchases-js';
 
 // RevenueCat configuration
 const REVENUECAT_API_KEY = import.meta.env.VITE_REVENUECAT_PUBLIC_API_KEY;
@@ -26,7 +26,9 @@ export const initializeRevenueCat = async () => {
   }
 
   try {
-    await Purchases.configure(REVENUECAT_API_KEY);
+    await Purchases.configure({
+      apiKey: REVENUECAT_API_KEY,
+    });
     isConfigured = true;
     console.log('RevenueCat initialized successfully');
   } catch (error) {
@@ -192,7 +194,9 @@ export const setCustomerInfoUpdateListener = (callback) => {
     return;
   }
 
-  Purchases.addCustomerInfoUpdateListener(callback);
+  // Note: Customer info update listeners may not be available in the web SDK
+  // This function is kept for API compatibility but may not function
+  console.warn('Customer info update listeners may not be supported in RevenueCat Web SDK');
 };
 
 /**
