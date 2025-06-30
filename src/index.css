@@ -212,3 +212,43 @@ html {
     transform: translateY(-5px);
   }
 }
+
+/* SIMPLIFIED THREE-CANNON CONFETTI ANIMATIONS - GUARANTEED TO WORK! */
+@keyframes confetti-fly-center {
+  0% {
+    transform: translate(-50%, -50%) translateY(0) rotate(0deg);
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translateY(var(--final-y)) translateX(var(--final-x)) rotate(var(--final-rotation));
+    opacity: 0;
+    scale: 0.3;
+  }
+}
+
+@keyframes confetti-fly-left {
+  0% {
+    transform: translate(-50%, -50%) translateY(0) translateX(0) rotate(0deg);
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translateY(var(--final-y)) translateX(var(--final-x)) rotate(var(--final-rotation));
+    opacity: 0;
+    scale: 0.3;
+  }
+}
+
+@keyframes confetti-fly-right {
+  0% {
+    transform: translate(-50%, -50%) translateY(0) translateX(0) rotate(0deg);
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translateY(var(--final-y)) translateX(var(--final-x)) rotate(var(--final-rotation));
+    opacity: 0;
+    scale: 0.3;
+  }
+}

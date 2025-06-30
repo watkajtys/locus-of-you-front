@@ -5,139 +5,110 @@ import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Button from './Button';
 
-// Three-Cannon Confetti System - FIXED
-const ThreeCannonConfetti = ({ isActive, onComplete }) => {
+// SIMPLIFIED Three-Cannon Confetti System - GUARANTEED TO FIRE!
+const ThreeCannonConfetti = ({ isActive }) => {
   const [confettiPieces, setConfettiPieces] = useState([]);
 
   useEffect(() => {
-    if (isActive) {
-      console.log('🎊 THREE-CANNON CONFETTI SYSTEM ACTIVATED!');
-      
-      const allPieces = [];
-      
-      // Define three cannon configurations
-      const cannons = [
-        { 
-          name: 'CENTER', 
-          delay: 0, 
-          baseAngle: 270, // Straight up
-          colors: ['#4ECDC4', '#45B7D1', '#5DADE2', '#85C1E9', '#AED6F1']
-        },
-        { 
-          name: 'LEFT', 
-          delay: 400, 
-          baseAngle: 225, // Up-left
-          colors: ['#FF6B6B', '#F39C12', '#E74C3C', '#FF8C69', '#FFB6C1']
-        },
-        { 
-          name: 'RIGHT', 
-          delay: 400, 
-          baseAngle: 315, // Up-right  
-          colors: ['#96CEB4', '#FFEAA7', '#F7DC6F', '#F4D03F', '#F8C471']
-        }
-      ];
-
-      cannons.forEach((cannon) => {
-        console.log(`🎯 Setting up ${cannon.name} cannon (delay: ${cannon.delay}ms, angle: ${cannon.baseAngle}°)`);
-        
-        // Generate 20 pieces per cannon
-        for (let i = 0; i < 20; i++) {
-          const spread = 60; // 60-degree spread per cannon
-          const angle = cannon.baseAngle + (Math.random() - 0.5) * spread;
-          const distance = Math.random() * 300 + 150; // 150-450px
-          const angleRad = (angle * Math.PI) / 180;
-          
-          const piece = {
-            id: `${cannon.name}-${i}-${Date.now()}`,
-            cannon: cannon.name,
-            color: cannon.colors[Math.floor(Math.random() * cannon.colors.length)],
-            size: Math.random() * 8 + 6, // 6-14px
-            delay: cannon.delay + Math.random() * 100, // Slight random delay within cannon
-            finalX: Math.cos(angleRad) * distance,
-            finalY: Math.sin(angleRad) * distance,
-            rotation: Math.random() * 720 + 360, // 1-2 full rotations
-            shape: Math.random() > 0.5 ? 'circle' : 'square',
-            duration: Math.random() * 1500 + 3000, // 3-4.5s duration
-          };
-          
-          allPieces.push(piece);
-        }
-      });
-      
-      console.log(`🎉 Generated ${allPieces.length} confetti pieces across ${cannons.length} cannons`);
-      setConfettiPieces(allPieces);
-      
-      // Cleanup after 6 seconds
-      const cleanup = setTimeout(() => {
-        console.log('🧹 Cleaning up confetti');
-        setConfettiPieces([]);
-        onComplete && onComplete();
-      }, 6000);
-      
-      return () => clearTimeout(cleanup);
+    if (!isActive) {
+      setConfettiPieces([]);
+      return;
     }
-  }, [isActive, onComplete]);
 
-  const ConfettiPiece = ({ piece }) => {
-    const [isVisible, setIsVisible] = useState(false);
-    const [isAnimating, setIsAnimating] = useState(false);
-
-    useEffect(() => {
-      // First make the piece visible
-      setIsVisible(true);
+    console.log('🎊 SIMPLIFIED THREE-CANNON SYSTEM ACTIVATED!');
+    
+    const createConfettiPieces = () => {
+      const pieces = [];
       
-      // Then start the animation after the cannon's delay
-      const fireTimer = setTimeout(() => {
-        console.log(`🚀 ${piece.cannon} cannon firing piece ${piece.id}`);
-        setIsAnimating(true);
-      }, piece.delay);
+      // CENTER CANNON - Fires immediately
+      console.log('🎯 CENTER CANNON: Firing 20 pieces straight up');
+      for (let i = 0; i < 20; i++) {
+        pieces.push({
+          id: `center-${i}`,
+          cannon: 'CENTER',
+          color: ['#4ECDC4', '#45B7D1', '#5DADE2'][Math.floor(Math.random() * 3)],
+          startDelay: Math.random() * 100, // 0-100ms
+          x: (Math.random() - 0.5) * 80, // Slight spread left/right
+          y: -(Math.random() * 200 + 150), // Shoot up 150-350px
+          rotation: Math.random() * 360,
+          size: Math.random() * 6 + 6, // 6-12px
+        });
+      }
       
-      // Start fading out after 70% of the animation duration
-      const fadeTimer = setTimeout(() => {
-        setIsVisible(false);
-      }, piece.delay + piece.duration * 0.7);
+      // LEFT CANNON - Fires at 400ms
+      console.log('🎯 LEFT CANNON: Firing 20 pieces up-left');
+      for (let i = 0; i < 20; i++) {
+        pieces.push({
+          id: `left-${i}`,
+          cannon: 'LEFT',
+          color: ['#FF6B6B', '#F39C12', '#E74C3C'][Math.floor(Math.random() * 3)],
+          startDelay: 400 + Math.random() * 100, // 400-500ms
+          x: -(Math.random() * 150 + 100), // Shoot left 100-250px
+          y: -(Math.random() * 150 + 100), // Shoot up 100-250px
+          rotation: Math.random() * 360,
+          size: Math.random() * 6 + 6,
+        });
+      }
       
-      return () => {
-        clearTimeout(fireTimer);
-        clearTimeout(fadeTimer);
-      };
-    }, [piece]);
+      // RIGHT CANNON - Fires at 400ms
+      console.log('🎯 RIGHT CANNON: Firing 20 pieces up-right');
+      for (let i = 0; i < 20; i++) {
+        pieces.push({
+          id: `right-${i}`,
+          cannon: 'RIGHT',
+          color: ['#96CEB4', '#FFEAA7', '#F7DC6F'][Math.floor(Math.random() * 3)],
+          startDelay: 400 + Math.random() * 100, // 400-500ms
+          x: Math.random() * 150 + 100, // Shoot right 100-250px
+          y: -(Math.random() * 150 + 100), // Shoot up 100-250px
+          rotation: Math.random() * 360,
+          size: Math.random() * 6 + 6,
+        });
+      }
+      
+      console.log(`🎉 Generated ${pieces.length} total confetti pieces`);
+      return pieces;
+    };
 
-    if (!isVisible && !isAnimating) return null;
+    // Create and set pieces immediately
+    const pieces = createConfettiPieces();
+    setConfettiPieces(pieces);
+    
+    // Clean up after 5 seconds
+    const cleanup = setTimeout(() => {
+      console.log('🧹 Cleaning up confetti pieces');
+      setConfettiPieces([]);
+    }, 5000);
+    
+    return () => clearTimeout(cleanup);
+  }, [isActive]);
 
-    return (
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          left: '50%',
-          top: '50%',
-          width: `${piece.size}px`,
-          height: `${piece.size}px`,
-          backgroundColor: piece.color,
-          borderRadius: piece.shape === 'circle' ? '50%' : '20%',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          transform: isAnimating 
-            ? `translate(-50%, -50%) translate(${piece.finalX}px, ${piece.finalY}px) rotate(${piece.rotation}deg) scale(0.3)`
-            : `translate(-50%, -50%) translate(0px, 0px) rotate(0deg) scale(1)`,
-          opacity: isVisible ? 1 : 0,
-          transition: isAnimating 
-            ? `all ${piece.duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 1000ms ease-out`
-            : 'opacity 200ms ease-out',
-          zIndex: 1, // Above background, below task card
-        }}
-      />
-    );
-  };
-
-  if (!isActive) return null;
+  if (!isActive || confettiPieces.length === 0) return null;
 
   return (
     <div 
-      className="absolute inset-0 overflow-hidden pointer-events-none"
-      style={{ zIndex: 0 }} // Behind task card but above background
+      className="absolute inset-0 pointer-events-none overflow-hidden"
+      style={{ zIndex: 1 }}
     >
       {confettiPieces.map((piece) => (
-        <ConfettiPiece key={piece.id} piece={piece} />
+        <div
+          key={piece.id}
+          className="absolute"
+          style={{
+            left: '50%',
+            top: '60%', // Start from task area
+            width: `${piece.size}px`,
+            height: `${piece.size}px`,
+            backgroundColor: piece.color,
+            borderRadius: '50%',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            transform: 'translate(-50%, -50%)',
+            animation: `confetti-fly-${piece.cannon.toLowerCase()} 3s ease-out forwards`,
+            animationDelay: `${piece.startDelay}ms`,
+            '--final-x': `${piece.x}px`,
+            '--final-y': `${piece.y}px`,
+            '--final-rotation': `${piece.rotation}deg`,
+          }}
+        />
       ))}
     </div>
   );
@@ -203,23 +174,25 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
   // Handle task completion toggle
   const handleTaskClick = () => {
     const newCompletedState = !isTaskCompleted;
+    console.log(`🎯 Task clicked! New state: ${newCompletedState ? 'COMPLETED' : 'UNCOMPLETED'}`);
+    
     setIsTaskCompleted(newCompletedState);
     
-    // Trigger three-cannon confetti celebration when task becomes completed
+    // Trigger confetti when task becomes completed
     if (newCompletedState) {
-      console.log('🎊 TASK COMPLETED! ACTIVATING THREE-CANNON CONFETTI!');
+      console.log('🎊 TASK COMPLETED! FIRING THREE-CANNON CONFETTI SYSTEM!');
       console.log('📋 Firing sequence: CENTER (0ms) → LEFT + RIGHT (400ms)');
       setShowConfetti(true);
+      
+      // Auto-stop confetti after 5 seconds
+      setTimeout(() => {
+        console.log('⏰ Auto-stopping confetti after 5 seconds');
+        setShowConfetti(false);
+      }, 5000);
     } else {
       console.log('❌ Task unchecked, stopping confetti');
       setShowConfetti(false);
     }
-  };
-
-  // Handle confetti completion
-  const handleConfettiComplete = () => {
-    console.log('✨ Three-cannon confetti celebration completed');
-    setShowConfetti(false);
   };
 
   return (
@@ -257,13 +230,10 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
               cardType="YOUR AI COACH"
             />
 
-            {/* Second Card - The Task with three-cannon confetti system */}
-            <div className="relative" style={{ zIndex: 1 }}>
-              {/* Three-Cannon Confetti System - Behind the task */}
-              <ThreeCannonConfetti 
-                isActive={showConfetti} 
-                onComplete={handleConfettiComplete}
-              />
+            {/* Second Card - The Task with simplified confetti system */}
+            <div className="relative">
+              {/* Simplified Three-Cannon Confetti System */}
+              <ThreeCannonConfetti isActive={showConfetti} />
               
               <div
                 className={`
@@ -280,12 +250,11 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                 style={{
                   backgroundColor: isTaskCompleted ? '#f0fdf4' : 'var(--color-card)',
                   borderColor: isTaskCompleted ? '#bbf7d0' : 'var(--color-border)',
-                  position: 'relative',
-                  zIndex: 2, // Above the confetti
+                  zIndex: 2, // Above confetti
                 }}
                 onClick={handleTaskClick}
               >
-                {/* The Tab - matching AIMessageCard style */}
+                {/* The Tab */}
                 <div 
                   className={`
                     absolute top-0 right-0 -translate-y-1/2
@@ -313,7 +282,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
                 {/* Task Content with Checkbox */}
                 <div className="flex items-center space-x-6">
-                  {/* Large Checkbox Icon - ENTIRE CONTAINER BOUNCES */}
+                  {/* Large Checkbox Icon - BOUNCES WHEN COMPLETED */}
                   <div 
                     className={`
                       flex-shrink-0 transition-all duration-200
