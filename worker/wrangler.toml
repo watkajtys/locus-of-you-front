@@ -43,10 +43,6 @@ preview_id = "your-coaching-history-kv-preview-id"
 ENVIRONMENT = "development"
 API_VERSION = "2.0.0"
 
-# Build configuration
-[build]
-command = "npm run build"
-
 # Triggers for scheduled events (optional)
 [triggers]
 crons = ["0 2 * * *"]  # Daily at 2 AM UTC for cleanup tasks

@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
+    "build": "tsc --noEmit",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:staging": "wrangler deploy --env staging",
@@ -23,7 +24,7 @@
     "prettier": "^3.2.1",
     "typescript": "^5.3.3",
     "vitest": "^1.2.0",
-    "wrangler": "^3.24.0"
+    "wrangler": "^4.22.0"
   },
   "dependencies": {
     "@langchain/core": "^0.1.20",
