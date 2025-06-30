@@ -24,12 +24,12 @@ function AppContent() {
   const [hasSubscription, setHasSubscription] = useState(false);
 
   useEffect(() => {
-    // Initialize RevenueCat on app start
-    initializeRevenueCat();
-
-    // Get initial session
-    const getSession = async () => {
+    const initializeApp = async () => {
       try {
+        // Initialize RevenueCat first and wait for it to complete
+        await initializeRevenueCat();
+
+        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
@@ -44,13 +44,13 @@ function AppContent() {
           }
         }
       } catch (error) {
-        console.error('Unexpected error getting session:', error);
+        console.error('Error initializing app:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    getSession();
+    initializeApp();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -61,9 +61,13 @@ function AppContent() {
         
         // Handle RevenueCat user management
         if (session?.user) {
-          await setRevenueCatUserId(session.user.id);
-          const subscriptionStatus = await checkSubscriptionStatus();
-          setHasSubscription(subscriptionStatus.hasSubscription);
+          try {
+            await setRevenueCatUserId(session.user.id);
+            const subscriptionStatus = await checkSubscriptionStatus();
+            setHasSubscription(subscriptionStatus.hasSubscription);
+          } catch (error) {
+            console.error('Error setting RevenueCat user ID:', error);
+          }
         } else {
           setHasSubscription(false);
         }
