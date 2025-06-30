@@ -12,7 +12,7 @@ const EnhancedAuth = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    fullName: ''
+    firstName: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -43,7 +43,7 @@ const EnhancedAuth = () => {
   };
 
   const validateForm = () => {
-    const { email, password, confirmPassword, fullName } = formData;
+    const { email, password, confirmPassword, firstName } = formData;
 
     if (!email.trim()) {
       showMessage('Please enter your email address', 'error');
@@ -65,8 +65,8 @@ const EnhancedAuth = () => {
     }
 
     if (mode === 'signup') {
-      if (!fullName.trim()) {
-        showMessage('Please enter your full name', 'error');
+      if (!firstName.trim()) {
+        showMessage('Please enter your first name', 'error');
         return false;
       }
 
@@ -84,14 +84,14 @@ const EnhancedAuth = () => {
     
     if (!validateForm()) return;
 
-    const { email, password, fullName } = formData;
+    const { email, password, firstName } = formData;
 
     try {
       let result;
 
       switch (mode) {
         case 'signup':
-          result = await signUp(email, password, { full_name: fullName });
+          result = await signUp(email, password, { full_name: firstName });
           if (result.data && !result.error) {
             showMessage('Account created! Please check your email for verification.', 'success');
             // Switch to signin mode after successful signup
@@ -186,15 +186,15 @@ const EnhancedAuth = () => {
 
         {/* Form */}
         <form className="space-y-4" onSubmit={handleSubmit}>
-          {/* Full Name (Signup only) */}
+          {/* First Name (Signup only) */}
           {mode === 'signup' && (
             <div className="space-y-2">
               <label 
-                htmlFor="fullName"
+                htmlFor="firstName"
                 className="block text-sm font-medium"
                 style={{ color: 'var(--color-text)' }}
               >
-                Full Name
+                First Name
               </label>
               <div className="relative">
                 <User 
@@ -202,10 +202,10 @@ const EnhancedAuth = () => {
                   style={{ color: 'var(--color-muted)' }}
                 />
                 <input
-                  id="fullName"
-                  name="fullName"
+                  id="firstName"
+                  name="firstName"
                   type="text"
-                  value={formData.fullName}
+                  value={formData.firstName}
                   onChange={handleInputChange}
                   disabled={loading}
                   className="w-full pl-10 pr-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -214,8 +214,8 @@ const EnhancedAuth = () => {
                     borderColor: 'var(--color-border)',
                     color: 'var(--color-text)',
                   }}
-                  placeholder="Enter your full name"
-                  autoComplete="name"
+                  placeholder="Enter your first name"
+                  autoComplete="given-name"
                 />
               </div>
             </div>
