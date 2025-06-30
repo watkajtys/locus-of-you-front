@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Loader2 } from 'lucide-react';
+import EnhancedAuth from './EnhancedAuth';
 
 const ProtectedRoute = ({ children, requireRole = null, fallback = null }) => {
   const { user, loading, hasRole, isAuthenticated } = useAuth();
@@ -28,45 +29,9 @@ const ProtectedRoute = ({ children, requireRole = null, fallback = null }) => {
     );
   }
 
-  // Check authentication
+  // Check authentication - render auth component directly instead of redirecting
   if (!isAuthenticated) {
-    return fallback || (
-      <div 
-        className="min-h-screen flex items-center justify-center p-6"
-        style={{ backgroundColor: 'var(--color-background)' }}
-      >
-        <div 
-          className="text-center p-8 rounded-xl max-w-md mx-auto"
-          style={{ 
-            backgroundColor: 'var(--color-card)',
-            border: '1px solid var(--color-border)'
-          }}
-        >
-          <h2 
-            className="text-2xl font-bold mb-4"
-            style={{ color: 'var(--color-text)' }}
-          >
-            Access Restricted
-          </h2>
-          <p 
-            className="text-base mb-6"
-            style={{ color: 'var(--color-muted)' }}
-          >
-            Please sign in to access this content.
-          </p>
-          <button
-            onClick={() => window.location.href = '/auth'}
-            className="px-6 py-3 rounded-lg font-medium transition-colors duration-200"
-            style={{
-              backgroundColor: 'var(--color-accent)',
-              color: 'white'
-            }}
-          >
-            Sign In
-          </button>
-        </div>
-      </div>
-    );
+    return fallback || <EnhancedAuth />;
   }
 
   // Check role-based access
