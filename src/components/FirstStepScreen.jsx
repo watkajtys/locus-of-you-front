@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CheckCircle, Circle } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
@@ -6,6 +6,8 @@ import AIMessageCard from './AIMessageCard';
 import Button from './Button';
 
 const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
+  const [isTaskCompleted, setIsTaskCompleted] = useState(false);
+
   // Generate personalized micro-victory based on user's profile and goal
   const generateMicroVictoryContent = (answers) => {
     const userGoal = answers?.final_focus || "building better habits";
@@ -59,6 +61,11 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
   const { rationale, task } = generateMicroVictoryContent(answers);
 
+  // Handle task completion toggle
+  const handleTaskClick = () => {
+    setIsTaskCompleted(!isTaskCompleted);
+  };
+
   return (
     <AuraProvider>
       <div 
@@ -97,55 +104,77 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
             {/* Second Card - The Task with consistent styling */}
             <div className="relative">
               <div
-                className="
-                  relative bg-white shadow-lg border border-gray-200
+                className={`
+                  relative shadow-lg border
                   rounded-tl-xl rounded-bl-xl rounded-br-xl
                   pt-8 px-8 pb-8 md:px-10 md:pb-10
                   transition-all duration-300 ease-in-out
-                  hover:shadow-xl hover:-translate-y-1
-                "
+                  hover:shadow-xl hover:-translate-y-1 cursor-pointer
+                  ${isTaskCompleted 
+                    ? 'bg-green-50 border-green-200 hover:bg-green-100' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                  }
+                `}
                 style={{
-                  backgroundColor: 'var(--color-card)',
-                  borderColor: 'var(--color-border)',
+                  backgroundColor: isTaskCompleted ? '#f0fdf4' : 'var(--color-card)',
+                  borderColor: isTaskCompleted ? '#bbf7d0' : 'var(--color-border)',
                 }}
+                onClick={handleTaskClick}
               >
                 {/* The Tab - matching AIMessageCard style */}
                 <div 
-                  className="
+                  className={`
                     absolute top-0 right-0 -translate-y-1/2
-                    bg-slate-100 px-4 py-0.5 
+                    px-4 py-0.5 
                     rounded-tl-lg rounded-tr-lg
-                    border border-slate-200 border-b-0
-                    shadow-sm
-                  "
+                    border border-b-0 shadow-sm
+                    ${isTaskCompleted 
+                      ? 'bg-green-100 border-green-200' 
+                      : 'bg-slate-100 border-slate-200'
+                    }
+                  `}
                 >
                   <span 
-                    className="text-xs font-semibold tracking-widest uppercase select-none text-slate-600"
+                    className={`
+                      text-xs font-semibold tracking-widest uppercase select-none
+                      ${isTaskCompleted ? 'text-green-700' : 'text-slate-600'}
+                    `}
                     style={{ 
                       fontFamily: 'Inter, sans-serif',
                     }}
                   >
-                    YOUR TASK
+                    {isTaskCompleted ? 'COMPLETED' : 'YOUR TASK'}
                   </span>
                 </div>
 
                 {/* Task Content with Checkbox */}
-                <div className="flex items-start space-x-6">
-                  {/* Large Checkbox Icon */}
-                  <div className="flex-shrink-0 pt-2">
-                    <Circle 
-                      className="w-8 h-8 md:w-10 md:h-10"
-                      style={{ color: 'var(--color-accent)' }}
-                      strokeWidth={2}
-                    />
+                <div className="flex items-center space-x-6">
+                  {/* Large Checkbox Icon - Vertically Centered */}
+                  <div className="flex-shrink-0">
+                    {isTaskCompleted ? (
+                      <CheckCircle 
+                        className="w-8 h-8 md:w-10 md:h-10 text-green-600"
+                        strokeWidth={2}
+                        fill="currentColor"
+                      />
+                    ) : (
+                      <Circle 
+                        className="w-8 h-8 md:w-10 md:h-10"
+                        style={{ color: 'var(--color-accent)' }}
+                        strokeWidth={2}
+                      />
+                    )}
                   </div>
 
                   {/* Task Text */}
                   <div className="flex-1">
                     <p 
-                      className="text-2xl md:text-3xl font-bold leading-relaxed"
+                      className={`
+                        text-2xl md:text-3xl font-bold leading-relaxed
+                        ${isTaskCompleted ? 'text-green-800 line-through' : ''}
+                      `}
                       style={{ 
-                        color: 'var(--color-text)',
+                        color: isTaskCompleted ? '#166534' : 'var(--color-text)',
                         fontFamily: 'Inter, sans-serif'
                       }}
                     >
@@ -164,10 +193,14 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                 variant="accent"
                 size="large"
                 onClick={onComplete}
-                className="group flex items-center space-x-3 text-xl px-12 py-6"
+                disabled={!isTaskCompleted}
+                className={`
+                  group flex items-center space-x-3 text-xl px-12 py-6
+                  ${!isTaskCompleted ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
               >
                 <CheckCircle className="w-6 h-6" />
-                <span>Mark as Complete</span>
+                <span>Continue to Sign Up</span>
               </Button>
             </div>
             
@@ -188,7 +221,10 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
               className="text-sm italic"
               style={{ color: 'var(--color-muted)' }}
             >
-              Remember: The goal isn't to be perfect, it's to be consistent.
+              {isTaskCompleted 
+                ? "Great job! You've taken the first step towards building consistency." 
+                : "Remember: The goal isn't to be perfect, it's to be consistent."
+              }
             </p>
           </div>
         </div>
