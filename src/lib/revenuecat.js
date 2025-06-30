@@ -4,7 +4,7 @@ import {
   getOfferings as rcGetOfferings, 
   purchasePackage, 
   restorePurchases as rcRestorePurchases, 
-  getCustomerInfo, 
+  getCustomerInfo as rcGetCustomerInfo, 
   addCustomerInfoUpdateListener, 
   logOut 
 } from '@revenuecat/purchases-js';
@@ -161,7 +161,7 @@ export const checkSubscriptionStatus = async () => {
   }
 
   try {
-    const customerInfo = await getCustomerInfo();
+    const customerInfo = await rcGetCustomerInfo();
     const hasSubscription = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
     
     return {
@@ -184,7 +184,7 @@ export const getCustomerInfo = async () => {
   }
 
   try {
-    const customerInfo = await getCustomerInfo();
+    const customerInfo = await rcGetCustomerInfo();
     return customerInfo;
   } catch (error) {
     console.error('Failed to get customer info:', error);
