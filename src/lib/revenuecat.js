@@ -20,8 +20,8 @@ let isConfigured = false;
 export const initializeRevenueCat = async () => {
   if (isConfigured) return;
   
-  if (!REVENUECAT_API_KEY) {
-    console.warn('RevenueCat API key not found. Please add VITE_REVENUECAT_PUBLIC_API_KEY to your .env file.');
+  if (!REVENUECAT_API_KEY || REVENUECAT_API_KEY.trim() === '') {
+    console.warn('RevenueCat API key not found or empty. Please add VITE_REVENUECAT_PUBLIC_API_KEY to your .env file.');
     return;
   }
 
