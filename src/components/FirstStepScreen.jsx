@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, Circle, Check } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
@@ -8,15 +8,10 @@ import Button from './Button';
 // Confetti Component with JavaScript-based animation
 const ConfettiExplosion = ({ isActive, onComplete }) => {
   const [confettiPieces, setConfettiPieces] = useState([]);
-  const hasFiredForCurrentActivation = useRef(false);
 
   useEffect(() => {
     if (isActive) {
-      if (!hasFiredForCurrentActivation.current) {
-        hasFiredForCurrentActivation.current = true;
-        console.log('🎆 CONFETTI EFFECT TRIGGERED (True Single Fire)'); // Debug log
-
-        // Generate confetti pieces with calculated positions
+      // Generate confetti pieces with calculated positions
       const pieces = Array.from({ length: 50 }, (_, i) => {
         const colors = [
           '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', 
@@ -49,22 +44,11 @@ const ConfettiExplosion = ({ isActive, onComplete }) => {
       
       // Auto-hide confetti after animation completes
       const timer = setTimeout(() => {
-        console.log('⏰ CONFETTI CLEANUP TIMER FIRED'); // Debug log
         setConfettiPieces([]);
         onComplete && onComplete();
       }, 4000);
       
-      return () => {
-        console.log('🧹 CONFETTI CLEANUP'); // Debug log
-        clearTimeout(timer);
-        // Do not reset hasFiredForCurrentActivation.current here,
-        // as this cleanup is for the current activation.
-        // It will be reset when isActive becomes false.
-      };
-      }
-    } else {
-      // If isActive becomes false, reset the ref for the next activation.
-      hasFiredForCurrentActivation.current = false;
+      return () => clearTimeout(timer);
     }
   }, [isActive, onComplete]);
 
@@ -114,13 +98,6 @@ const ConfettiExplosion = ({ isActive, onComplete }) => {
 const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
   const [isTaskCompleted, setIsTaskCompleted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [shouldBounce, setShouldBounce] = useState(false);
-
-  // Memoize the confetti completion handler to prevent useEffect re-runs
-  const handleConfettiComplete = useCallback(() => {
-    console.log('✨ Confetti animation completed (memoized callback)'); // Debug log
-    setShowConfetti(false);
-  }, []);
 
   // Generate personalized micro-victory based on user's profile and goal
   const generateMicroVictoryContent = (answers) => {
@@ -180,21 +157,19 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
     const newCompletedState = !isTaskCompleted;
     setIsTaskCompleted(newCompletedState);
     
-    // Trigger confetti celebration and bounce when task becomes completed
+    // Trigger confetti celebration when task becomes completed
     if (newCompletedState) {
-      console.log('🎉 TASK COMPLETED - TRIGGERING SINGLE CONFETTI & BOUNCE!'); // Debug log
+      console.log('🎉 FIRING CONFETTI!'); // Debug log
       setShowConfetti(true);
-      setShouldBounce(true);
-      
-      // Reset bounce after animation completes
-      setTimeout(() => {
-        setShouldBounce(false);
-      }, 800); // Slightly longer than animation duration
     } else {
-      console.log('❌ Task uncompleted - stopping confetti'); // Debug log
       setShowConfetti(false);
-      setShouldBounce(false);
     }
+  };
+
+  // Handle confetti completion
+  const handleConfettiComplete = () => {
+    console.log('✨ Confetti animation completed'); // Debug log
+    setShowConfetti(false);
   };
 
   return (
@@ -234,7 +209,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
             {/* Second Card - The Task with consistent styling and confetti */}
             <div className="relative">
-              {/* Confetti Explosion - Now with memoized callback */}
+              {/* Confetti Explosion */}
               <ConfettiExplosion 
                 isActive={showConfetti} 
                 onComplete={handleConfettiComplete}
@@ -286,11 +261,14 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
                 {/* Task Content with Checkbox */}
                 <div className="flex items-center space-x-6">
-                  {/* Large Checkbox Icon - BOUNCES ONCE WHEN COMPLETED */}
+                  {/* Large Checkbox Icon - ENTIRE ELEMENT JUMPS */}
                   <div className="flex-shrink-0">
                     {isTaskCompleted ? (
                       <div 
-                        className={`relative w-8 h-8 md:w-10 md:h-10 ${shouldBounce ? 'celebrate-bounce' : ''}`}
+                        className="relative w-8 h-8 md:w-10 md:h-10"
+                        style={{ 
+                          animation: 'celebrate-jump 0.6s ease-in-out infinite'
+                        }}
                       >
                         {/* Green Circle Background */}
                         <div 
