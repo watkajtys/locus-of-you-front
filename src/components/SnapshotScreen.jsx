@@ -505,8 +505,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
             <div className="space-y-8 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
               <div className="max-w-3xl mx-auto">
                 <AIMessageCard 
-                  message="Based on your profile, the key to your goal is to define a single, concrete first step."
-                  question="Let's build that 'micro-victory' together right now."
+                  paragraph="It's powerful to see how your mindset and focus connect. The logical next step is to apply this insight directly to your goal. I can guide you through creating your first 'micro-victory' right now, if you're ready."
                   cardType="YOUR AI COACH"
                   className="glassmorphism-card"
                 />
@@ -522,7 +521,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                   onClick={onContinue}
                   className="group flex items-center space-x-3 text-xl px-16 py-8"
                 >
-                  <span>Let's Do It</span>
+                  <span>Okay, I'm Ready</span>
                   <ChevronRight className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
               </div>
