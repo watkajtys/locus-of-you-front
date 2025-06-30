@@ -14,6 +14,7 @@ export const PRODUCT_IDS = {
 export const ENTITLEMENT_ID = 'premium_features';
 
 let isConfigured = false;
+let purchasesInstance = null; // Store the configured instance
 
 /**
  * Generate a unique anonymous user ID
@@ -46,8 +47,8 @@ export const initializeRevenueCat = async () => {
     // Generate or retrieve anonymous user ID
     const anonymousUserId = generateAnonymousUserId();
     
-    // Configure RevenueCat with anonymous user ID
-    await Purchases.configure({
+    // Configure RevenueCat with anonymous user ID and store the instance
+    purchasesInstance = await Purchases.configure({
       apiKey: REVENUECAT_API_KEY,
       appUserId: anonymousUserId // Provide the anonymous user ID
     });
@@ -63,7 +64,7 @@ export const initializeRevenueCat = async () => {
  * Set user ID for RevenueCat and sync with Supabase
  */
 export const setRevenueCatUserId = async (userId) => {
-  if (!isConfigured) {
+  if (!isConfigured || !purchasesInstance) {
     console.warn('RevenueCat not initialized');
     return;
   }
@@ -75,7 +76,7 @@ export const setRevenueCatUserId = async (userId) => {
 
   try {
     // Use logIn to identify the anonymous user
-    const result = await Purchases.logIn(userId);
+    const result = await purchasesInstance.logIn(userId);
     console.log('RevenueCat user ID set:', userId);
     
     // Clear the anonymous ID since we're now identified
@@ -161,13 +162,13 @@ const syncSubscriptionStatus = async (userId, customerInfo) => {
  * Get available offerings
  */
 export const getOfferings = async () => {
-  if (!isConfigured) {
+  if (!isConfigured || !purchasesInstance) {
     console.warn('RevenueCat not initialized');
     return null;
   }
 
   try {
-    const offerings = await Purchases.getOfferings();
+    const offerings = await purchasesInstance.getOfferings();
     return offerings;
   } catch (error) {
     console.error('Failed to get offerings:', error);
@@ -179,12 +180,12 @@ export const getOfferings = async () => {
  * Purchase a subscription
  */
 export const purchaseSubscription = async (productId) => {
-  if (!isConfigured) {
+  if (!isConfigured || !purchasesInstance) {
     throw new Error('RevenueCat not initialized');
   }
 
   try {
-    const offerings = await Purchases.getOfferings();
+    const offerings = await purchasesInstance.getOfferings();
     
     if (!offerings?.current) {
       throw new Error('No current offering available');
@@ -199,7 +200,7 @@ export const purchaseSubscription = async (productId) => {
       throw new Error(`Product ${productId} not found in offerings`);
     }
 
-    const purchaseResult = await Purchases.purchasePackage(targetPackage);
+    const purchaseResult = await purchasesInstance.purchasePackage(targetPackage);
     
     // Sync the updated subscription status with Supabase
     const { data: { user } } = await supabase.auth.getUser();
@@ -235,12 +236,12 @@ export const purchaseSubscription = async (productId) => {
  * Restore purchases
  */
 export const restorePurchases = async () => {
-  if (!isConfigured) {
+  if (!isConfigured || !purchasesInstance) {
     throw new Error('RevenueCat not initialized');
   }
 
   try {
-    const customerInfo = await Purchases.restorePurchases();
+    const customerInfo = await purchasesInstance.restorePurchases();
     
     // Sync restored subscription status with Supabase
     const { data: { user } } = await supabase.auth.getUser();
@@ -265,7 +266,7 @@ export const restorePurchases = async () => {
  * Check if user has premium subscription (from database first, then RevenueCat)
  */
 export const checkSubscriptionStatus = async () => {
-  if (!isConfigured) {
+  if (!isConfigured || !purchasesInstance) {
     console.warn('RevenueCat not initialized');
     return { hasSubscription: false };
   }
@@ -291,7 +292,7 @@ export const checkSubscriptionStatus = async () => {
     }
 
     // Fallback to RevenueCat if database lookup fails
-    const customerInfo = await Purchases.getCustomerInfo();
+    const customerInfo = await purchasesInstance.getCustomerInfo();
     const hasSubscription = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
     
     // Sync the latest status to database
@@ -314,12 +315,12 @@ export const checkSubscriptionStatus = async () => {
  * Get customer info
  */
 export const getCustomerInfo = async () => {
-  if (!isConfigured) {
+  if (!isConfigured || !purchasesInstance) {
     throw new Error('RevenueCat not initialized');
   }
 
   try {
-    const customerInfo = await Purchases.getCustomerInfo();
+    const customerInfo = await purchasesInstance.getCustomerInfo();
     return customerInfo;
   } catch (error) {
     console.error('Failed to get customer info:', error);
@@ -331,7 +332,7 @@ export const getCustomerInfo = async () => {
  * Set up listener for customer info updates
  */
 export const setCustomerInfoUpdateListener = (callback) => {
-  if (!isConfigured) {
+  if (!isConfigured || !purchasesInstance) {
     console.warn('RevenueCat not initialized');
     return;
   }
@@ -345,12 +346,12 @@ export const setCustomerInfoUpdateListener = (callback) => {
  * Log out current user (switch back to anonymous)
  */
 export const logOutRevenueCat = async () => {
-  if (!isConfigured) {
+  if (!isConfigured || !purchasesInstance) {
     return;
   }
 
   try {
-    await Purchases.logOut();
+    await purchasesInstance.logOut();
     
     // Generate a new anonymous ID for the next session
     const newAnonymousId = generateAnonymousUserId();
