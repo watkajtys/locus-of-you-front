@@ -6,6 +6,7 @@ import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import DynamicOnboarding from './components/DynamicOnboarding';
 import SnapshotScreen from './components/SnapshotScreen';
+import FirstStepScreen from './components/FirstStepScreen';
 
 function App() {
   const { theme } = useTheme();
@@ -13,6 +14,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
   const [showSnapshot, setShowSnapshot] = useState(false);
+  const [showFirstStep, setShowFirstStep] = useState(false);
   const [onboardingAnswers, setOnboardingAnswers] = useState(null);
 
   useEffect(() => {
@@ -64,10 +66,24 @@ function App() {
     setShowAuth(true);
   };
 
-  // Handle snapshot continuation
+  // Handle snapshot continuation - now goes to FirstStepScreen
   const handleSnapshotContinue = () => {
-    console.log('Continuing from snapshot to auth');
+    console.log('Continuing from snapshot to first step');
+    setShowFirstStep(true);
+  };
+
+  // Handle first step completion
+  const handleFirstStepComplete = () => {
+    console.log('First step completed, going to auth');
     setShowAuth(true);
+  };
+
+  // Handle first step change request
+  const handleFirstStepChange = () => {
+    console.log('User wants a different first step');
+    // For now, just go back to snapshot - you could implement step variation logic here
+    setShowFirstStep(false);
+    setShowSnapshot(true);
   };
 
   // Debug function to jump to snapshot with mock data
@@ -85,6 +101,7 @@ function App() {
     setOnboardingAnswers(mockAnswers);
     setShowSnapshot(true);
     setShowAuth(false);
+    setShowFirstStep(false);
     console.log('Debug: Jumped to snapshot with mock data');
   };
 
@@ -136,6 +153,17 @@ function App() {
           return <Dashboard session={session} />;
         }
 
+        // Show first step screen if user clicked "I'm Ready"
+        if (showFirstStep && onboardingAnswers) {
+          return (
+            <FirstStepScreen 
+              answers={onboardingAnswers}
+              onComplete={handleFirstStepComplete}
+              onChangeStep={handleFirstStepChange}
+            />
+          );
+        }
+
         // Show snapshot results if onboarding is completed
         if (showSnapshot && onboardingAnswers) {
           return (
@@ -146,7 +174,7 @@ function App() {
           );
         }
 
-        // Show auth after snapshot or skip
+        // Show auth after first step completion or skip
         if (showAuth) {
           return <Auth />;
         }
