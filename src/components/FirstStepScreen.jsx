@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CheckCircle, Circle, Check } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
@@ -8,12 +8,15 @@ import Button from './Button';
 // Confetti Component with JavaScript-based animation
 const ConfettiExplosion = ({ isActive, onComplete }) => {
   const [confettiPieces, setConfettiPieces] = useState([]);
+  const hasFiredForCurrentActivation = useRef(false);
 
   useEffect(() => {
     if (isActive) {
-      console.log('🎆 CONFETTI EFFECT TRIGGERED ONCE!'); // Debug log
-      
-      // Generate confetti pieces with calculated positions
+      if (!hasFiredForCurrentActivation.current) {
+        hasFiredForCurrentActivation.current = true;
+        console.log('🎆 CONFETTI EFFECT TRIGGERED (True Single Fire)'); // Debug log
+
+        // Generate confetti pieces with calculated positions
       const pieces = Array.from({ length: 50 }, (_, i) => {
         const colors = [
           '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', 
@@ -54,7 +57,14 @@ const ConfettiExplosion = ({ isActive, onComplete }) => {
       return () => {
         console.log('🧹 CONFETTI CLEANUP'); // Debug log
         clearTimeout(timer);
+        // Do not reset hasFiredForCurrentActivation.current here,
+        // as this cleanup is for the current activation.
+        // It will be reset when isActive becomes false.
       };
+      }
+    } else {
+      // If isActive becomes false, reset the ref for the next activation.
+      hasFiredForCurrentActivation.current = false;
     }
   }, [isActive, onComplete]);
 
