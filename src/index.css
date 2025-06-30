@@ -115,27 +115,6 @@ html {
   transform: scale(0.95) !important;
 }
 
-/* Glassmorphism Card Style */
-.glassmorphism-card {
-  background: rgba(255, 255, 255, 0.1) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
-}
-
-.glassmorphism-card .bg-white {
-  background: rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
-}
-
-.glassmorphism-card .bg-slate-100 {
-  background: rgba(255, 255, 255, 0.25) !important;
-  backdrop-filter: blur(5px) !important;
-  -webkit-backdrop-filter: blur(5px) !important;
-}
-
 /* Aura Circle Component */
 .aura-circle {
   --aura-size: 128px;
