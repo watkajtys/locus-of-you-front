@@ -84,16 +84,11 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
             </div>
           </div>
 
-          {/* Main AI Message Card */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-2xl">
-              <AIMessageCard 
-                paragraph={microVictory}
-                cardType="YOUR FIRST MICRO-VICTORY"
-                className="shadow-2xl"
-              />
-            </div>
-          </div>
+          {/* Main AI Message Card - No wrapper divs or glass effects */}
+          <AIMessageCard 
+            paragraph={microVictory}
+            cardType="YOUR FIRST MICRO-VICTORY"
+          />
 
           {/* Action Buttons */}
           <div className="text-center space-y-4">
