@@ -73,6 +73,24 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  // Generate a valid username that meets the database constraints
+  const generateUsername = (user) => {
+    // Try to use the username from metadata first
+    if (user.user_metadata?.username && user.user_metadata.username.length >= 3) {
+      return user.user_metadata.username;
+    }
+
+    // Generate from email
+    const emailPrefix = user.email?.split('@')[0] || 'user';
+    
+    // Ensure minimum length of 3 characters
+    if (emailPrefix.length < 3) {
+      return `${emailPrefix}${Math.random().toString(36).substring(2, 5)}`;
+    }
+    
+    return emailPrefix;
+  };
+
   // Ensure user profile exists in database
   const ensureUserProfile = async (user) => {
     try {
@@ -84,22 +102,45 @@ export const AuthProvider = ({ children }) => {
 
       if (error && error.code === 'PGRST116') {
         // Profile doesn't exist, create it
+        const username = generateUsername(user);
+        
+        // Check if username already exists and make it unique if needed
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', username)
+          .single();
+
+        let finalUsername = username;
+        if (existingUser) {
+          // Generate a unique username by appending random numbers
+          const randomSuffix = Math.random().toString(36).substring(2, 8);
+          finalUsername = `${username}${randomSuffix}`;
+        }
+
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({
             id: user.id,
-            username: user.user_metadata?.username || user.email?.split('@')[0],
+            username: finalUsername,
             full_name: user.user_metadata?.full_name || '',
             avatar_url: user.user_metadata?.avatar_url || '',
+            email_verified: user.email_confirmed_at ? true : false,
+            last_sign_in_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
 
         if (insertError) {
           console.error('Error creating profile:', insertError);
+          throw insertError;
         }
+      } else if (error) {
+        console.error('Error checking profile:', error);
+        throw error;
       }
     } catch (error) {
       console.error('Error ensuring user profile:', error);
+      throw error;
     }
   };
 
@@ -301,42 +342,6 @@ const validateEmail = (email) => {
 const validatePassword = (password) => {
   if (password.length < 12) {
     return 'Password must be at least 12 characters long';
-  }
-  
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-  
-  if (!hasUpperCase) {
-    return 'Password must contain at least one uppercase letter';
-  }
-  
-  if (!hasLowerCase) {
-    return 'Password must contain at least one lowercase letter';
-  }
-  
-  if (!hasNumbers) {
-    return 'Password must contain at least one number';
-  }
-  
-  if (!hasSpecialChar) {
-    return 'Password must contain at least one special character';
-  }
-  
-  // Check for common weak patterns
-  const commonPatterns = [
-    /123456/,
-    /password/i,
-    /qwerty/i,
-    /admin/i,
-    /letmein/i
-  ];
-  
-  for (const pattern of commonPatterns) {
-    if (pattern.test(password)) {
-      return 'Password contains common patterns. Please choose a more secure password.';
-    }
   }
   
   return null;

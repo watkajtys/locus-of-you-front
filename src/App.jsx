@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './hooks/useTheme';
 import { AuthProvider } from './hooks/useAuth';
-import { initializeRevenueCat, setRevenueCatUserId, checkSubscriptionStatus } from './lib/revenuecat';
+import { initializeRevenueCat, setRevenueCatUserId, logOutRevenueCat } from './lib/revenuecat';
+import { useSubscription } from './hooks/useSubscription';
 import { Bug, Play, User } from 'lucide-react';
 import EnhancedAuth from './components/EnhancedAuth';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -21,36 +22,40 @@ function AppContent() {
   const [showFirstStep, setShowFirstStep] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [onboardingAnswers, setOnboardingAnswers] = useState(null);
-  const [hasSubscription, setHasSubscription] = useState(false);
+
+  // Use the subscription hook for real-time subscription status
+  const { hasSubscription, isLoading: subscriptionLoading, refreshSubscriptionStatus } = useSubscription(session?.user);
 
   useEffect(() => {
-    // Initialize RevenueCat on app start
-    initializeRevenueCat();
-
-    // Get initial session
-    const getSession = async () => {
+    const initializeApp = async () => {
       try {
+        // Initialize RevenueCat first and wait for it to complete
+        await initializeRevenueCat();
+
+        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
         } else {
           setSession(session);
           
-          // If user is authenticated, set RevenueCat user ID and check subscription
+          // If user is authenticated, set RevenueCat user ID
           if (session?.user) {
-            await setRevenueCatUserId(session.user.id);
-            const subscriptionStatus = await checkSubscriptionStatus();
-            setHasSubscription(subscriptionStatus.hasSubscription);
+            try {
+              await setRevenueCatUserId(session.user.id);
+            } catch (error) {
+              console.error('Error setting RevenueCat user ID:', error);
+            }
           }
         }
       } catch (error) {
-        console.error('Unexpected error getting session:', error);
+        console.error('Error initializing app:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    getSession();
+    initializeApp();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -61,11 +66,15 @@ function AppContent() {
         
         // Handle RevenueCat user management
         if (session?.user) {
-          await setRevenueCatUserId(session.user.id);
-          const subscriptionStatus = await checkSubscriptionStatus();
-          setHasSubscription(subscriptionStatus.hasSubscription);
+          try {
+            await setRevenueCatUserId(session.user.id);
+            // The subscription status will be updated automatically through the hook
+          } catch (error) {
+            console.error('Error setting RevenueCat user ID:', error);
+          }
         } else {
-          setHasSubscription(false);
+          // User logged out
+          await logOutRevenueCat();
         }
       }
     );
@@ -114,7 +123,8 @@ function AppContent() {
   // Handle subscription from paywall
   const handleSubscribe = (planType) => {
     console.log('User selected subscription plan:', planType);
-    // After successful subscription through RevenueCat, redirect to auth
+    // After successful subscription through RevenueCat, refresh status and redirect to auth
+    refreshSubscriptionStatus();
     setShowAuth(true);
     setShowPaywall(false);
   };
@@ -122,7 +132,8 @@ function AppContent() {
   // Handle successful subscription (called by RevenueCat after purchase)
   const handleSubscriptionSuccess = (customerInfo, planType) => {
     console.log('Subscription successful:', { customerInfo, planType });
-    setHasSubscription(true);
+    // Refresh subscription status to get latest data
+    refreshSubscriptionStatus();
     // You might want to store subscription info in your database here
   };
 
@@ -189,16 +200,15 @@ function AppContent() {
     };
 
     setSession(mockSession);
-    setHasSubscription(true); // Set premium subscription for testing
     setShowAuth(false);
     setShowSnapshot(false);
     setShowFirstStep(false);
     setShowPaywall(false);
-    console.log('Debug: Simulated logged-in state with premium subscription');
+    console.log('Debug: Simulated logged-in state');
   };
 
-  // Show loading state while checking authentication
-  if (loading) {
+  // Show loading state while checking authentication or subscription
+  if (loading || (session && subscriptionLoading)) {
     return (
       <div 
         className="min-h-screen flex items-center justify-center font-inter"
@@ -213,7 +223,7 @@ function AppContent() {
             className="text-sm"
             style={{ color: 'var(--color-muted)' }}
           >
-            Loading...
+            {loading ? 'Loading...' : 'Checking subscription...'}
           </p>
         </div>
       </div>

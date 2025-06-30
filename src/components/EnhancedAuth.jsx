@@ -12,7 +12,7 @@ const EnhancedAuth = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    fullName: ''
+    firstName: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -43,7 +43,7 @@ const EnhancedAuth = () => {
   };
 
   const validateForm = () => {
-    const { email, password, confirmPassword, fullName } = formData;
+    const { email, password, confirmPassword, firstName } = formData;
 
     if (!email.trim()) {
       showMessage('Please enter your email address', 'error');
@@ -65,8 +65,8 @@ const EnhancedAuth = () => {
     }
 
     if (mode === 'signup') {
-      if (!fullName.trim()) {
-        showMessage('Please enter your full name', 'error');
+      if (!firstName.trim()) {
+        showMessage('Please enter your first name', 'error');
         return false;
       }
 
@@ -84,14 +84,14 @@ const EnhancedAuth = () => {
     
     if (!validateForm()) return;
 
-    const { email, password, fullName } = formData;
+    const { email, password, firstName } = formData;
 
     try {
       let result;
 
       switch (mode) {
         case 'signup':
-          result = await signUp(email, password, { full_name: fullName });
+          result = await signUp(email, password, { full_name: firstName });
           if (result.data && !result.error) {
             showMessage('Account created! Please check your email for verification.', 'success');
             // Switch to signin mode after successful signup
@@ -121,28 +121,6 @@ const EnhancedAuth = () => {
       console.error('Auth error:', error);
     }
   };
-
-  const getPasswordStrength = (password) => {
-    if (!password) return { strength: 0, label: '', color: 'gray' };
-    
-    let score = 0;
-    const checks = {
-      length: password.length >= 12,
-      uppercase: /[A-Z]/.test(password),
-      lowercase: /[a-z]/.test(password),
-      numbers: /\d/.test(password),
-      special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-    };
-    
-    score = Object.values(checks).filter(Boolean).length;
-    
-    if (score < 2) return { strength: 1, label: 'Weak', color: 'red' };
-    if (score < 4) return { strength: 2, label: 'Fair', color: 'orange' };
-    if (score < 5) return { strength: 3, label: 'Good', color: 'yellow' };
-    return { strength: 4, label: 'Strong', color: 'green' };
-  };
-
-  const passwordStrength = getPasswordStrength(formData.password);
 
   return (
     <div 
@@ -208,15 +186,15 @@ const EnhancedAuth = () => {
 
         {/* Form */}
         <form className="space-y-4" onSubmit={handleSubmit}>
-          {/* Full Name (Signup only) */}
+          {/* First Name (Signup only) */}
           {mode === 'signup' && (
             <div className="space-y-2">
               <label 
-                htmlFor="fullName"
+                htmlFor="firstName"
                 className="block text-sm font-medium"
                 style={{ color: 'var(--color-text)' }}
               >
-                Full Name
+                First Name
               </label>
               <div className="relative">
                 <User 
@@ -224,10 +202,10 @@ const EnhancedAuth = () => {
                   style={{ color: 'var(--color-muted)' }}
                 />
                 <input
-                  id="fullName"
-                  name="fullName"
+                  id="firstName"
+                  name="firstName"
                   type="text"
-                  value={formData.fullName}
+                  value={formData.firstName}
                   onChange={handleInputChange}
                   disabled={loading}
                   className="w-full pl-10 pr-4 py-3 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -236,8 +214,8 @@ const EnhancedAuth = () => {
                     borderColor: 'var(--color-border)',
                     color: 'var(--color-text)',
                   }}
-                  placeholder="Enter your full name"
-                  autoComplete="name"
+                  placeholder="Enter your first name"
+                  autoComplete="given-name"
                 />
               </div>
             </div>
@@ -319,30 +297,13 @@ const EnhancedAuth = () => {
                 </button>
               </div>
               
-              {/* Password Strength Indicator (Signup only) */}
-              {mode === 'signup' && formData.password && (
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full transition-all duration-300 bg-${passwordStrength.color}-500`}
-                        style={{ width: `${(passwordStrength.strength / 4) * 100}%` }}
-                      />
-                    </div>
-                    <span 
-                      className={`text-xs font-medium text-${passwordStrength.color}-600`}
-                    >
-                      {passwordStrength.label}
-                    </span>
-                  </div>
-                  <p 
-                    className="text-xs"
-                    style={{ color: 'var(--color-muted)' }}
-                  >
-                    Use 12+ characters with uppercase, lowercase, numbers, and symbols
-                  </p>
-                </div>
-              )}
+              {/* Simplified Password Requirements */}
+              <p 
+                className="text-xs"
+                style={{ color: 'var(--color-muted)' }}
+              >
+                Password must be at least 12 characters long
+              </p>
             </div>
           )}
 
