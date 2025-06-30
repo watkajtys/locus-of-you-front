@@ -1,61 +1,28 @@
-# Cloudflare Worker Configuration for AI Coaching API
 name = "ai-coaching-api"
 main = "src/index.ts"
-compatibility_date = "2024-01-15"
-compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2024-03-20"
+nodejs_compat = true
 
-# Worker settings
-workers_dev = true
-send_metrics = true
+[ai]
+binding = "AI"
 
-# Environment configurations
-[env.production]
-name = "ai-coaching-api-prod"
-route = { pattern = "api.yourapp.com/*", zone_name = "yourapp.com" }
+[[d1_databases]]
+binding = "DB"
+database_name = "locus-user-data"
+database_id = "8860a9a3-2116-4a80-b836-5f668c1a1d68"
 
-[env.staging]
-name = "ai-coaching-api-staging"
+[[vectorize]]
+binding = "VECTORIZE_INDEX"
+index_name = "user-journal-embeddings"
 
-# KV Namespaces for data storage
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
-id = "your-rate-limit-kv-id"
-preview_id = "your-rate-limit-kv-preview-id"
+id = "90eb674e2bf84eab813edbacfff6f120"
 
 [[kv_namespaces]]
 binding = "USER_SESSIONS_KV"
-id = "your-user-sessions-kv-id"
-preview_id = "your-user-sessions-kv-preview-id"
+id = "26f231f76b0949eb82a76d4f7c413d33"
 
 [[kv_namespaces]]
 binding = "COACHING_HISTORY_KV"
-id = "your-coaching-history-kv-id"
-preview_id = "your-coaching-history-kv-preview-id"
-
-# D1 Database (optional - for advanced data storage)
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "coaching-database"
-# database_id = "your-d1-database-id"
-
-# Environment variables (non-sensitive)
-[vars]
-ENVIRONMENT = "development"
-API_VERSION = "2.0.0"
-
-# Triggers for scheduled events (optional)
-[triggers]
-crons = ["0 2 * * *"]  # Daily at 2 AM UTC for cleanup tasks
-
-# Analytics and monitoring
-[observability]
-enabled = true
-
-# Durable Objects (for future session management)
-# [[durable_objects.bindings]]
-# name = "COACHING_SESSION"
-# class_name = "CoachingSession"
-
-# Worker limits and performance
-[limits]
-cpu_ms = 10000  # 10 seconds max CPU time
+id = "5845c2885c654de88998bb1e795c08a7"
