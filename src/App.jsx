@@ -22,49 +22,73 @@ function AppContent() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [onboardingAnswers, setOnboardingAnswers] = useState(null);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [revenueCatReady, setRevenueCatReady] = useState(false);
 
   useEffect(() => {
-    // Initialize RevenueCat on app start
-    initializeRevenueCat();
-
-    // Get initial session
-    const getSession = async () => {
+    const initializeApp = async () => {
       try {
+        console.log('🚀 Initializing app...');
+
+        // Initialize RevenueCat first (before auth)
+        const rcResult = await initializeRevenueCat();
+        if (rcResult.success) {
+          setRevenueCatReady(true);
+          console.log('✅ RevenueCat initialized successfully');
+        } else {
+          console.warn('⚠️ RevenueCat initialization failed:', rcResult.error);
+          // Continue without RevenueCat - don't block the app
+          setRevenueCatReady(false);
+        }
+
+        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
-          console.error('Error getting session:', error);
+          console.error('❌ Error getting session:', error);
         } else {
           setSession(session);
           
-          // If user is authenticated, set RevenueCat user ID and check subscription
-          if (session?.user) {
-            await setRevenueCatUserId(session.user.id);
-            const subscriptionStatus = await checkSubscriptionStatus();
-            setHasSubscription(subscriptionStatus.hasSubscription);
+          // If user is authenticated and RevenueCat is ready
+          if (session?.user && revenueCatReady) {
+            try {
+              await setRevenueCatUserId(session.user.id);
+              const subscriptionStatus = await checkSubscriptionStatus();
+              setHasSubscription(subscriptionStatus.hasSubscription);
+              console.log('✅ User subscription status:', subscriptionStatus.hasSubscription);
+            } catch (rcError) {
+              console.warn('⚠️ RevenueCat user setup failed:', rcError);
+              // Continue without subscription check
+              setHasSubscription(false);
+            }
           }
         }
+
       } catch (error) {
-        console.error('Unexpected error getting session:', error);
+        console.error('❌ App initialization error:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    getSession();
+    initializeApp();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
+        console.log('🔐 Auth state changed:', event, session?.user?.id);
         setSession(session);
         setLoading(false);
         
-        // Handle RevenueCat user management
-        if (session?.user) {
-          await setRevenueCatUserId(session.user.id);
-          const subscriptionStatus = await checkSubscriptionStatus();
-          setHasSubscription(subscriptionStatus.hasSubscription);
-        } else {
+        // Handle RevenueCat user management only if it's ready
+        if (session?.user && revenueCatReady) {
+          try {
+            await setRevenueCatUserId(session.user.id);
+            const subscriptionStatus = await checkSubscriptionStatus();
+            setHasSubscription(subscriptionStatus.hasSubscription);
+          } catch (rcError) {
+            console.warn('⚠️ RevenueCat user update failed:', rcError);
+            setHasSubscription(false);
+          }
+        } else if (!session) {
           setHasSubscription(false);
         }
       }
@@ -74,12 +98,11 @@ function AppContent() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [revenueCatReady]);
 
   // Handle onboarding completion
   const handleOnboardingComplete = (answers) => {
-    console.log('Onboarding completed with answers:', answers);
-    // Store answers in localStorage and state
+    console.log('✅ Onboarding completed with answers:', answers);
     localStorage.setItem('onboarding-answers', JSON.stringify(answers));
     setOnboardingAnswers(answers);
     setShowSnapshot(true);
@@ -87,47 +110,46 @@ function AppContent() {
 
   // Handle onboarding skip
   const handleOnboardingSkip = () => {
-    console.log('Onboarding skipped');
+    console.log('⏭️ Onboarding skipped');
     setShowAuth(true);
   };
 
-  // Handle snapshot continuation - now goes to FirstStepScreen
+  // Handle snapshot continuation
   const handleSnapshotContinue = () => {
-    console.log('Continuing from snapshot to first step');
+    console.log('📊 Continuing from snapshot to first step');
     setShowFirstStep(true);
   };
 
-  // Handle first step completion - now goes to Paywall
+  // Handle first step completion
   const handleFirstStepComplete = () => {
-    console.log('First step completed, going to paywall');
+    console.log('🎯 First step completed, going to paywall');
     setShowPaywall(true);
   };
 
   // Handle first step change request
   const handleFirstStepChange = () => {
-    console.log('User wants a different first step');
-    // For now, just go back to snapshot - you could implement step variation logic here
+    console.log('🔄 User wants a different first step');
     setShowFirstStep(false);
     setShowSnapshot(true);
   };
 
   // Handle subscription from paywall
   const handleSubscribe = (planType) => {
-    console.log('User selected subscription plan:', planType);
-    // After successful subscription through RevenueCat, redirect to auth
+    console.log('💰 User completed subscription:', planType);
     setShowAuth(true);
     setShowPaywall(false);
   };
 
-  // Handle successful subscription (called by RevenueCat after purchase)
+  // Handle successful subscription
   const handleSubscriptionSuccess = (customerInfo, planType) => {
-    console.log('Subscription successful:', { customerInfo, planType });
+    console.log('✅ Subscription successful:', { customerInfo, planType });
     setHasSubscription(true);
-    // You might want to store subscription info in your database here
   };
 
-  // Debug function to jump to snapshot with mock data
+  // Debug functions for development
   const handleDebugSnapshot = () => {
+    if (process.env.NODE_ENV !== 'development') return;
+    
     const mockAnswers = {
       mindset: 'growth',
       locus: 'internal',
@@ -143,11 +165,12 @@ function AppContent() {
     setShowAuth(false);
     setShowFirstStep(false);
     setShowPaywall(false);
-    console.log('Debug: Jumped to snapshot with mock data');
+    console.log('🐛 Debug: Jumped to snapshot with mock data');
   };
 
-  // Debug function to jump to first step with mock data
   const handleDebugFirstStep = () => {
+    if (process.env.NODE_ENV !== 'development') return;
+    
     const mockAnswers = {
       mindset: 'growth',
       locus: 'internal',
@@ -163,11 +186,12 @@ function AppContent() {
     setShowSnapshot(false);
     setShowAuth(false);
     setShowPaywall(false);
-    console.log('Debug: Jumped to first step with mock data');
+    console.log('🐛 Debug: Jumped to first step with mock data');
   };
 
-  // Debug function to simulate logged-in state
   const handleDebugLogin = () => {
+    if (process.env.NODE_ENV !== 'development') return;
+    
     const mockSession = {
       user: {
         id: 'debug-user-12345',
@@ -189,12 +213,12 @@ function AppContent() {
     };
 
     setSession(mockSession);
-    setHasSubscription(true); // Set premium subscription for testing
+    setHasSubscription(true);
     setShowAuth(false);
     setShowSnapshot(false);
     setShowFirstStep(false);
     setShowPaywall(false);
-    console.log('Debug: Simulated logged-in state with premium subscription');
+    console.log('🐛 Debug: Simulated logged-in state with premium subscription');
   };
 
   // Show loading state while checking authentication
@@ -213,7 +237,7 @@ function AppContent() {
             className="text-sm"
             style={{ color: 'var(--color-muted)' }}
           >
-            Loading...
+            Initializing...
           </p>
         </div>
       </div>
@@ -222,60 +246,73 @@ function AppContent() {
 
   return (
     <>
-      {/* Debug Buttons - Fixed Position */}
-      <div className="fixed top-4 right-4 z-50 flex flex-col space-y-2">
-        {/* Login Debug Button */}
-        <button
-          onClick={handleDebugLogin}
-          className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
-          style={{
-            backgroundColor: '#10b981', // emerald-500
-            color: 'white',
-            fontSize: '0.875rem',
-            fontWeight: '600'
-          }}
-          title="Debug: Simulate Logged-in State"
-        >
-          <User className="w-4 h-4" />
-          <span>Login</span>
-        </button>
+      {/* Debug Buttons - Only in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed top-4 right-4 z-50 flex flex-col space-y-2">
+          {/* RevenueCat Status Indicator */}
+          <div 
+            className={`px-2 py-1 rounded text-xs font-bold ${
+              revenueCatReady 
+                ? 'bg-green-500 text-white' 
+                : 'bg-red-500 text-white'
+            }`}
+          >
+            RC: {revenueCatReady ? 'Ready' : 'Failed'}
+          </div>
 
-        {/* Snapshot Debug Button */}
-        <button
-          onClick={handleDebugSnapshot}
-          className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
-          style={{
-            backgroundColor: 'var(--color-accent)',
-            color: 'white',
-            fontSize: '0.875rem',
-            fontWeight: '600'
-          }}
-          title="Debug: Jump to Snapshot"
-        >
-          <Bug className="w-4 h-4" />
-          <span>Snapshot</span>
-        </button>
+          {/* Login Debug Button */}
+          <button
+            onClick={handleDebugLogin}
+            className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
+            style={{
+              backgroundColor: '#10b981',
+              color: 'white',
+              fontSize: '0.875rem',
+              fontWeight: '600'
+            }}
+            title="Debug: Simulate Logged-in State"
+          >
+            <User className="w-4 h-4" />
+            <span>Login</span>
+          </button>
 
-        {/* First Step Debug Button */}
-        <button
-          onClick={handleDebugFirstStep}
-          className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
-          style={{
-            backgroundColor: 'var(--color-primary)',
-            color: 'var(--color-text)',
-            fontSize: '0.875rem',
-            fontWeight: '600'
-          }}
-          title="Debug: Jump to First Step"
-        >
-          <Play className="w-4 h-4" />
-          <span>First Step</span>
-        </button>
-      </div>
+          {/* Snapshot Debug Button */}
+          <button
+            onClick={handleDebugSnapshot}
+            className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
+            style={{
+              backgroundColor: 'var(--color-accent)',
+              color: 'white',
+              fontSize: '0.875rem',
+              fontWeight: '600'
+            }}
+            title="Debug: Jump to Snapshot"
+          >
+            <Bug className="w-4 h-4" />
+            <span>Snapshot</span>
+          </button>
+
+          {/* First Step Debug Button */}
+          <button
+            onClick={handleDebugFirstStep}
+            className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
+            style={{
+              backgroundColor: 'var(--color-primary)',
+              color: 'var(--color-text)',
+              fontSize: '0.875rem',
+              fontWeight: '600'
+            }}
+            title="Debug: Jump to First Step"
+          >
+            <Play className="w-4 h-4" />
+            <span>First Step</span>
+          </button>
+        </div>
+      )}
 
       {/* Main App Content */}
       {(() => {
-        // Conditionally render based on authentication and flow state
+        // Authenticated user - show main app
         if (session) {
           return (
             <ProtectedRoute>
@@ -320,7 +357,7 @@ function AppContent() {
           return <EnhancedAuth />;
         }
 
-        // Show onboarding first
+        // Show onboarding first (default)
         return (
           <DynamicOnboarding 
             onComplete={handleOnboardingComplete}
