@@ -1,122 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CheckCircle, Circle, Check } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Button from './Button';
 
-// SIMPLIFIED Three-Cannon Confetti System - GUARANTEED TO FIRE FROM TOP OF CARD!
-const ThreeCannonConfetti = ({ isActive }) => {
-  const [confettiPieces, setConfettiPieces] = useState([]);
-
-  useEffect(() => {
-    if (!isActive) {
-      setConfettiPieces([]);
-      return;
-    }
-
-    console.log('🎊 SIMPLIFIED THREE-CANNON SYSTEM ACTIVATED FROM TOP OF CARD!');
-    
-    const createConfettiPieces = () => {
-      const pieces = [];
-      
-      // CENTER CANNON - Fires immediately from top center
-      console.log('🎯 CENTER CANNON: Firing 20 pieces straight up from top');
-      for (let i = 0; i < 20; i++) {
-        pieces.push({
-          id: `center-${i}`,
-          cannon: 'CENTER',
-          color: ['#4ECDC4', '#45B7D1', '#5DADE2'][Math.floor(Math.random() * 3)],
-          startDelay: Math.random() * 100, // 0-100ms
-          x: (Math.random() - 0.5) * 100, // Wider spread left/right
-          y: -(Math.random() * 300 + 200), // Shoot up 200-500px
-          rotation: Math.random() * 360,
-          size: Math.random() * 8 + 8, // 8-16px - larger pieces
-        });
-      }
-      
-      // LEFT CANNON - Fires at 400ms from top left
-      console.log('🎯 LEFT CANNON: Firing 20 pieces up-left from top');
-      for (let i = 0; i < 20; i++) {
-        pieces.push({
-          id: `left-${i}`,
-          cannon: 'LEFT',
-          color: ['#FF6B6B', '#F39C12', '#E74C3C'][Math.floor(Math.random() * 3)],
-          startDelay: 400 + Math.random() * 100, // 400-500ms
-          x: -(Math.random() * 200 + 150), // Shoot left 150-350px
-          y: -(Math.random() * 250 + 150), // Shoot up 150-400px
-          rotation: Math.random() * 360,
-          size: Math.random() * 8 + 8,
-        });
-      }
-      
-      // RIGHT CANNON - Fires at 400ms from top right
-      console.log('🎯 RIGHT CANNON: Firing 20 pieces up-right from top');
-      for (let i = 0; i < 20; i++) {
-        pieces.push({
-          id: `right-${i}`,
-          cannon: 'RIGHT',
-          color: ['#96CEB4', '#FFEAA7', '#F7DC6F'][Math.floor(Math.random() * 3)],
-          startDelay: 400 + Math.random() * 100, // 400-500ms
-          x: Math.random() * 200 + 150, // Shoot right 150-350px
-          y: -(Math.random() * 250 + 150), // Shoot up 150-400px
-          rotation: Math.random() * 360,
-          size: Math.random() * 8 + 8,
-        });
-      }
-      
-      console.log(`🎉 Generated ${pieces.length} total confetti pieces from top of card`);
-      return pieces;
-    };
-
-    // Create and set pieces immediately
-    const pieces = createConfettiPieces();
-    setConfettiPieces(pieces);
-    
-    // Clean up after 5 seconds
-    const cleanup = setTimeout(() => {
-      console.log('🧹 Cleaning up confetti pieces');
-      setConfettiPieces([]);
-    }, 5000);
-    
-    return () => clearTimeout(cleanup);
-  }, [isActive]);
-
-  if (!isActive || confettiPieces.length === 0) return null;
+// Pure CSS Confetti Component - No JavaScript, just beautiful colors!
+const CSSConfetti = ({ isActive }) => {
+  if (!isActive) return null;
 
   return (
-    <div 
-      className="absolute inset-0 pointer-events-none overflow-hidden"
-      style={{ zIndex: 10 }} // Higher z-index to ensure visibility
-    >
-      {confettiPieces.map((piece) => (
-        <div
-          key={piece.id}
-          className="absolute"
-          style={{
-            left: '50%',
-            top: '8%', // START FROM TOP OF CARD - MUCH MORE VISIBLE!
-            width: `${piece.size}px`,
-            height: `${piece.size}px`,
-            backgroundColor: piece.color,
-            borderRadius: '50%',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-            transform: 'translate(-50%, -50%)',
-            animation: `confetti-fly-${piece.cannon.toLowerCase()} 4s ease-out forwards`, // Longer animation
-            animationDelay: `${piece.startDelay}ms`,
-            '--final-x': `${piece.x}px`,
-            '--final-y': `${piece.y}px`,
-            '--final-rotation': `${piece.rotation}deg`,
-          }}
-        />
-      ))}
+    <div className="confetti-container">
+      {/* CENTER CANNON - Rainbow colors */}
+      <div className="confetti-piece confetti-center-1"></div>
+      <div className="confetti-piece confetti-center-2"></div>
+      <div className="confetti-piece confetti-center-3"></div>
+      <div className="confetti-piece confetti-center-4"></div>
+      <div className="confetti-piece confetti-center-5"></div>
+      
+      {/* LEFT CANNON - Warm colors */}
+      <div className="confetti-piece confetti-left-1"></div>
+      <div className="confetti-piece confetti-left-2"></div>
+      <div className="confetti-piece confetti-left-3"></div>
+      <div className="confetti-piece confetti-left-4"></div>
+      <div className="confetti-piece confetti-left-5"></div>
+      
+      {/* RIGHT CANNON - Cool colors */}
+      <div className="confetti-piece confetti-right-1"></div>
+      <div className="confetti-piece confetti-right-2"></div>
+      <div className="confetti-piece confetti-right-3"></div>
+      <div className="confetti-piece confetti-right-4"></div>
+      <div className="confetti-piece confetti-right-5"></div>
     </div>
   );
 };
 
 const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
   const [isTaskCompleted, setIsTaskCompleted] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
 
   // Generate personalized micro-victory based on user's profile and goal
   const generateMicroVictoryContent = (answers) => {
@@ -175,23 +95,10 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
   const handleTaskClick = () => {
     const newCompletedState = !isTaskCompleted;
     console.log(`🎯 Task clicked! New state: ${newCompletedState ? 'COMPLETED' : 'UNCOMPLETED'}`);
-    
     setIsTaskCompleted(newCompletedState);
     
-    // Trigger confetti when task becomes completed
     if (newCompletedState) {
-      console.log('🎊 TASK COMPLETED! FIRING THREE-CANNON CONFETTI FROM TOP OF CARD!');
-      console.log('📋 Firing sequence: CENTER (0ms) → LEFT + RIGHT (400ms) from top at 8%');
-      setShowConfetti(true);
-      
-      // Auto-stop confetti after 6 seconds (longer to see the effect)
-      setTimeout(() => {
-        console.log('⏰ Auto-stopping confetti after 6 seconds');
-        setShowConfetti(false);
-      }, 6000);
-    } else {
-      console.log('❌ Task unchecked, stopping confetti');
-      setShowConfetti(false);
+      console.log('🎊 TASK COMPLETED! CSS CONFETTI ACTIVATED!');
     }
   };
 
@@ -230,10 +137,10 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
               cardType="YOUR AI COACH"
             />
 
-            {/* Second Card - The Task with confetti cannons positioned at TOP of card */}
+            {/* Second Card - The Task with CSS confetti */}
             <div className="relative">
-              {/* Three-Cannon Confetti System - POSITIONED AT TOP OF CARD */}
-              <ThreeCannonConfetti isActive={showConfetti} />
+              {/* Pure CSS Confetti System */}
+              <CSSConfetti isActive={isTaskCompleted} />
               
               <div
                 className={`
@@ -250,11 +157,11 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                 style={{
                   backgroundColor: isTaskCompleted ? '#f0fdf4' : 'var(--color-card)',
                   borderColor: isTaskCompleted ? '#bbf7d0' : 'var(--color-border)',
-                  zIndex: 5, // Below confetti but above background
+                  zIndex: 5,
                 }}
                 onClick={handleTaskClick}
               >
-                {/* The Tab - CONFETTI CANNONS FIRE FROM HERE! */}
+                {/* The Tab */}
                 <div 
                   className={`
                     absolute top-0 right-0 -translate-y-1/2
