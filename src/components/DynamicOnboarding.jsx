@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, User, LogIn } from 'lucide-react';
+import { ChevronRight, User, LogIn, Zap } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
@@ -241,6 +241,29 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       >
         {/* Header Section */}
         <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-6 md:pt-8 pb-2 md:pb-4">
+          {/* Bolt Hackathon Badge */}
+          <div className="flex justify-center mb-4">
+            <div 
+              className="flex items-center space-x-2 px-4 py-2 rounded-full shadow-sm"
+              style={{
+                backgroundColor: 'var(--color-card)',
+                borderColor: 'var(--color-border)',
+                border: '1px solid var(--color-border)'
+              }}
+            >
+              <Zap 
+                className="w-4 h-4"
+                style={{ color: 'var(--color-accent)' }}
+              />
+              <span 
+                className="text-sm font-medium"
+                style={{ color: 'var(--color-accent)' }}
+              >
+                Built with Bolt
+              </span>
+            </div>
+          </div>
+
           {/* Welcome Text */}
           <div className="text-center mb-2 md:mb-4">
             <div className="flex justify-center mb-2">
