@@ -16,7 +16,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [questionVisible, setQuestionVisible] = useState(true);
   
-  // Updated question data structure with minimal sliders
+  // Updated question data structure with extreme labels
   const questions = [
     {
       id: 'mindset',
@@ -82,7 +82,11 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       question: "I tend to be disorganized.",
       cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
-      max: 5
+      max: 5,
+      extremeLabels: {
+        min: "Strongly Disagree",
+        max: "Strongly Agree"
+      }
     },
     {
       id: 'personality_outgoing',
@@ -91,7 +95,11 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       question: "I see myself as someone who is outgoing and sociable.",
       cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
-      max: 5
+      max: 5,
+      extremeLabels: {
+        min: "Strongly Disagree",
+        max: "Strongly Agree"
+      }
     },
     {
       id: 'personality_moody',
@@ -100,7 +108,11 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       question: "I can be moody or have up and down mood swings.",
       cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
-      max: 5
+      max: 5,
+      extremeLabels: {
+        min: "Strongly Disagree",
+        max: "Strongly Agree"
+      }
     },
     {
       id: 'final_focus',
@@ -377,12 +389,12 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                   </div>
                 )}
 
-                {/* Minimal Slider Input */}
+                {/* Slider with Extreme Labels */}
                 {currentQuestionData.type === 'slider' && (
                   <div className="max-w-2xl mx-auto">
                     <Card className="p-12 space-y-8">
                       {/* Slider */}
-                      <div className="space-y-8">
+                      <div className="space-y-6">
                         <input
                           type="range"
                           min={currentQuestionData.min}
@@ -395,6 +407,12 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                             background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 100%)`
                           }}
                         />
+                        
+                        {/* Extreme Labels Only */}
+                        <div className="flex justify-between text-sm font-medium" style={{ color: 'var(--color-muted)' }}>
+                          <span>{currentQuestionData.extremeLabels.min}</span>
+                          <span>{currentQuestionData.extremeLabels.max}</span>
+                        </div>
                       </div>
 
                       {/* Submit Button */}
