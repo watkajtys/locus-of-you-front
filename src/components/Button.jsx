@@ -9,9 +9,10 @@ const Button = ({
 }) => {
   const baseClasses = `
     inline-flex items-center justify-center font-medium rounded-lg
-    transition-all duration-200 ease-in-out transform
+    transition-all duration-300 ease-in-out transform
     focus:outline-none focus:ring-4 focus:ring-opacity-50
     disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+    hover:scale-105 hover:shadow-lg
     active:scale-95
   `;
 
