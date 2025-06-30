@@ -5,70 +5,42 @@ import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Button from './Button';
 
-// Confetti Component with three distinct bursts from different positions
+// Confetti Component with JavaScript-based animation
 const ConfettiExplosion = ({ isActive, onComplete }) => {
   const [confettiPieces, setConfettiPieces] = useState([]);
 
   useEffect(() => {
     if (isActive) {
-      // Create three distinct bursts from different positions
-      const burstPositions = [
-        { x: -30, y: -5, delay: 0 },    // Left burst
-        { x: 0, y: 0, delay: 100 },     // Center burst  
-        { x: 30, y: -5, delay: 200 }    // Right burst
-      ];
-
-      const allPieces = [];
-      
-      burstPositions.forEach((burst, burstIndex) => {
-        // Generate 20 pieces per burst (60 total)
-        const burstPieces = Array.from({ length: 20 }, (_, i) => {
-          const colors = [
-            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', 
-            '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
-            '#F8C471', '#82E0AA', '#F1948A', '#AED6F1', '#A9DFBF'
-          ];
-          
-          // Create more focused angle ranges for each burst
-          let angleRange;
-          if (burstIndex === 0) {
-            // Left burst: 120-240 degrees (left side)
-            angleRange = { min: 120, max: 240 };
-          } else if (burstIndex === 1) {
-            // Center burst: 45-135 degrees (upward)
-            angleRange = { min: 45, max: 135 };
-          } else {
-            // Right burst: 300-420 degrees (right side, wrapping around)
-            angleRange = { min: 300, max: 420 };
-          }
-          
-          const angle = Math.random() * (angleRange.max - angleRange.min) + angleRange.min;
-          const distance = Math.random() * 250 + 120; // Slightly tighter spread
-          const angleRad = (angle * Math.PI) / 180;
-          
-          // Calculate final position from burst origin
-          const finalX = burst.x + Math.cos(angleRad) * distance;
-          const finalY = burst.y + Math.sin(angleRad) * distance;
-          
-          return {
-            id: `${burstIndex}-${i}`,
-            color: colors[Math.floor(Math.random() * colors.length)],
-            size: Math.random() * 8 + 4,
-            delay: burst.delay + Math.random() * 100, // Burst delay + small random offset
-            duration: Math.random() * 1500 + 2000, // 2-3.5s duration
-            startX: burst.x, // Starting position offset
-            startY: burst.y,
-            finalX,
-            finalY,
-            rotation: Math.random() * 720 + 360,
-            shape: Math.random() > 0.5 ? 'circle' : 'square',
-          };
-        });
+      // Generate confetti pieces with calculated positions
+      const pieces = Array.from({ length: 50 }, (_, i) => {
+        const colors = [
+          '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', 
+          '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+          '#F8C471', '#82E0AA', '#F1948A', '#AED6F1', '#A9DFBF'
+        ];
         
-        allPieces.push(...burstPieces);
+        const angle = Math.random() * 360;
+        const distance = Math.random() * 300 + 150;
+        const angleRad = (angle * Math.PI) / 180;
+        
+        // Calculate final position using trigonometry
+        const finalX = Math.cos(angleRad) * distance;
+        const finalY = Math.sin(angleRad) * distance;
+        
+        return {
+          id: i,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: Math.random() * 8 + 4,
+          delay: Math.random() * 300, // 0-300ms delay
+          duration: Math.random() * 1500 + 2000, // 2-3.5s duration
+          finalX,
+          finalY,
+          rotation: Math.random() * 720 + 360,
+          shape: Math.random() > 0.5 ? 'circle' : 'square',
+        };
       });
       
-      setConfettiPieces(allPieces);
+      setConfettiPieces(pieces);
       
       // Auto-hide confetti after animation completes
       const timer = setTimeout(() => {
@@ -102,8 +74,8 @@ const ConfettiExplosion = ({ isActive, onComplete }) => {
           backgroundColor: piece.color,
           borderRadius: piece.shape === 'circle' ? '50%' : '0%',
           transform: isAnimating 
-            ? `translate(-50%, -50%) translate(${piece.startX}px, ${piece.startY}px) translate(${piece.finalX}px, ${piece.finalY}px) rotate(${piece.rotation}deg)`
-            : `translate(-50%, -50%) translate(${piece.startX}px, ${piece.startY}px)`,
+            ? `translate(-50%, -50%) translate(${piece.finalX}px, ${piece.finalY}px) rotate(${piece.rotation}deg)`
+            : 'translate(-50%, -50%)',
           opacity: isAnimating ? 0 : 1,
           transition: `all ${piece.duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`,
           zIndex: 1000,
@@ -188,7 +160,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
     
     // Trigger confetti celebration and bounce when task becomes completed
     if (newCompletedState) {
-      console.log('🎉 FIRING THREE-BURST CONFETTI AND BOUNCE!'); // Debug log
+      console.log('🎉 FIRING CONFETTI AND BOUNCE!'); // Debug log
       setShowConfetti(true);
       setShouldBounce(true);
       
@@ -204,7 +176,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
   // Handle confetti completion
   const handleConfettiComplete = () => {
-    console.log('✨ Three-burst confetti animation completed'); // Debug log
+    console.log('✨ Confetti animation completed'); // Debug log
     setShowConfetti(false);
   };
 
@@ -245,7 +217,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
             {/* Second Card - The Task with consistent styling and confetti */}
             <div className="relative">
-              {/* Three-Burst Confetti Explosion */}
+              {/* Confetti Explosion */}
               <ConfettiExplosion 
                 isActive={showConfetti} 
                 onComplete={handleConfettiComplete}
