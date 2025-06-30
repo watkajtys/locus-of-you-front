@@ -1,5 +1,6 @@
 import React from 'react';
 import { Brain, Target, Lightbulb, TrendingUp, Users, Zap, ChevronRight } from 'lucide-react';
+import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Card from './Card';
@@ -355,183 +356,185 @@ const SnapshotScreen = ({ answers, onContinue }) => {
   const userGoal = answers.final_focus || "improving your overall well-being";
 
   return (
-    <div 
-      className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
-      style={{ backgroundColor: 'var(--color-background)' }}
-    >
-      <div className="max-w-4xl mx-auto w-full space-y-8">
-        {/* Header with Aura */}
-        <div className="text-center space-y-4">
-          <div className="flex justify-center">
-            <AuraAvatar size={80} className="hover:scale-105 transition-transform duration-500" />
+    <AuraProvider>
+      <div 
+        className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
+        style={{ backgroundColor: 'var(--color-background)' }}
+      >
+        <div className="max-w-4xl mx-auto w-full space-y-8">
+          {/* Header with Aura */}
+          <div className="text-center space-y-4">
+            <div className="flex justify-center">
+              <AuraAvatar size={80} className="hover:scale-105 transition-transform duration-500" />
+            </div>
+            <div className="space-y-2">
+              <h1 
+                className="text-4xl md:text-5xl font-bold leading-tight"
+                style={{ color: 'var(--color-text)' }}
+              >
+                Your Motivational Snapshot
+              </h1>
+              <p 
+                className="text-lg md:text-xl"
+                style={{ color: 'var(--color-muted)' }}
+              >
+                Your personalized starting point for growth
+              </p>
+            </div>
           </div>
-          <div className="space-y-2">
-            <h1 
-              className="text-4xl md:text-5xl font-bold leading-tight"
-              style={{ color: 'var(--color-text)' }}
-            >
-              Your Motivational Snapshot
-            </h1>
+
+          {/* Main Results Card */}
+          <Card className="p-8 md:p-12 space-y-10">
+            {/* Archetype Section */}
+            <div className="text-center space-y-4">
+              <div className="space-y-2">
+                <p 
+                  className="text-lg font-medium tracking-wide uppercase"
+                  style={{ color: 'var(--color-muted)' }}
+                >
+                  You are a
+                </p>
+                <h2 
+                  className="text-5xl md:text-6xl font-bold leading-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+                  style={{ 
+                    background: `linear-gradient(135deg, var(--color-accent), var(--color-primary))`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}
+                >
+                  '{archetype}'
+                </h2>
+              </div>
+              
+              {/* Goal Context */}
+              <div 
+                className="max-w-2xl mx-auto p-6 rounded-xl"
+                style={{ 
+                  backgroundColor: 'var(--color-primary)',
+                  border: `1px solid var(--color-border)`
+                }}
+              >
+                <p 
+                  className="text-lg leading-relaxed"
+                  style={{ color: 'var(--color-text)' }}
+                >
+                  <span className="font-semibold">Your focus:</span> {userGoal}
+                </p>
+              </div>
+            </div>
+
+            {/* Key Insights Section - VERTICAL STACK */}
+            <div className="space-y-8">
+              <div className="text-center">
+                <h3 
+                  className="text-2xl font-bold mb-2"
+                  style={{ color: 'var(--color-text)' }}
+                >
+                  Key Insights
+                </h3>
+                <p 
+                  className="text-base"
+                  style={{ color: 'var(--color-muted)' }}
+                >
+                  Your unique motivational profile and starting points for growth
+                </p>
+              </div>
+
+              {/* Vertical stack of insights with supportive descriptions */}
+              <div className="space-y-8 max-w-3xl mx-auto">
+                {insights.map((insight, index) => {
+                  // Spectrum Bar Visualization
+                  if (insight.type === 'spectrum') {
+                    return (
+                      <SpectrumBar
+                        key={index}
+                        title={insight.title}
+                        description={insight.description}
+                        userScore={insight.userScore}
+                        minLabel={insight.minLabel}
+                        maxLabel={insight.maxLabel}
+                      />
+                    );
+                  }
+                  
+                  // Belief Balance Bar Visualization
+                  if (insight.type === 'balance') {
+                    return (
+                      <BeliefBalanceBar
+                        key={index}
+                        title={insight.title}
+                        description={insight.description}
+                        userScore={insight.userScore}
+                        leftLabel={insight.leftLabel}
+                        rightLabel={insight.rightLabel}
+                      />
+                    );
+                  }
+                  
+                  // Focus Ring Visualization
+                  if (insight.type === 'ring') {
+                    return (
+                      <FocusRing
+                        key={index}
+                        title={insight.title}
+                        description={insight.description}
+                        userScore={insight.userScore}
+                        leftLabel={insight.leftLabel}
+                        rightLabel={insight.rightLabel}
+                      />
+                    );
+                  }
+                  
+                  return null;
+                })}
+              </div>
+            </div>
+
+            {/* Narrative Summary Section - Now using AIMessageCard */}
+            <div className="space-y-6 pt-8" style={{ borderTop: `1px solid var(--color-border)` }}>
+              <AIMessageCard
+                paragraph="What this tells me is that you're a 'Visionary Achiever.' You have a powerful belief that you can grow and a natural drive toward your goals. At the same time, your focus on personal action means you likely feel the full weight of getting things done. It's a potent combination of aspiration and responsibility, and it gives us a clear picture of how to build a plan that feels both ambitious and sustainable for you."
+                cardType="MY OBSERVATION"
+              />
+            </div>
+
+            {/* AI Message Card - Conversational Call to Action */}
+            <div className="space-y-8 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
+              <AIMessageCard 
+                paragraph="It's powerful to see how your mindset and focus connect. The logical next step is to apply this insight directly to your goal. I can guide you through creating your first 'micro-victory' right now, if you're ready."
+                cardType="YOUR AI COACH"
+              />
+            </div>
+
+            {/* Call to Action */}
+            <div className="text-center space-y-6">
+              <div className="pt-4">
+                <Button
+                  variant="accent"
+                  size="large"
+                  onClick={onContinue}
+                  className="group flex items-center space-x-3 text-xl px-16 py-8"
+                >
+                  <span>Okay, I'm Ready</span>
+                  <ChevronRight className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Footer */}
+          <div className="text-center">
             <p 
-              className="text-lg md:text-xl"
+              className="text-sm"
               style={{ color: 'var(--color-muted)' }}
             >
-              Your personalized starting point for growth
+              This is your personalized coaching starting point, not a final assessment
             </p>
           </div>
         </div>
-
-        {/* Main Results Card */}
-        <Card className="p-8 md:p-12 space-y-10">
-          {/* Archetype Section */}
-          <div className="text-center space-y-4">
-            <div className="space-y-2">
-              <p 
-                className="text-lg font-medium tracking-wide uppercase"
-                style={{ color: 'var(--color-muted)' }}
-              >
-                You are a
-              </p>
-              <h2 
-                className="text-5xl md:text-6xl font-bold leading-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-                style={{ 
-                  background: `linear-gradient(135deg, var(--color-accent), var(--color-primary))`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}
-              >
-                '{archetype}'
-              </h2>
-            </div>
-            
-            {/* Goal Context */}
-            <div 
-              className="max-w-2xl mx-auto p-6 rounded-xl"
-              style={{ 
-                backgroundColor: 'var(--color-primary)',
-                border: `1px solid var(--color-border)`
-              }}
-            >
-              <p 
-                className="text-lg leading-relaxed"
-                style={{ color: 'var(--color-text)' }}
-              >
-                <span className="font-semibold">Your focus:</span> {userGoal}
-              </p>
-            </div>
-          </div>
-
-          {/* Key Insights Section - VERTICAL STACK */}
-          <div className="space-y-8">
-            <div className="text-center">
-              <h3 
-                className="text-2xl font-bold mb-2"
-                style={{ color: 'var(--color-text)' }}
-              >
-                Key Insights
-              </h3>
-              <p 
-                className="text-base"
-                style={{ color: 'var(--color-muted)' }}
-              >
-                Your unique motivational profile and starting points for growth
-              </p>
-            </div>
-
-            {/* Vertical stack of insights with supportive descriptions */}
-            <div className="space-y-8 max-w-3xl mx-auto">
-              {insights.map((insight, index) => {
-                // Spectrum Bar Visualization
-                if (insight.type === 'spectrum') {
-                  return (
-                    <SpectrumBar
-                      key={index}
-                      title={insight.title}
-                      description={insight.description}
-                      userScore={insight.userScore}
-                      minLabel={insight.minLabel}
-                      maxLabel={insight.maxLabel}
-                    />
-                  );
-                }
-                
-                // Belief Balance Bar Visualization
-                if (insight.type === 'balance') {
-                  return (
-                    <BeliefBalanceBar
-                      key={index}
-                      title={insight.title}
-                      description={insight.description}
-                      userScore={insight.userScore}
-                      leftLabel={insight.leftLabel}
-                      rightLabel={insight.rightLabel}
-                    />
-                  );
-                }
-                
-                // Focus Ring Visualization
-                if (insight.type === 'ring') {
-                  return (
-                    <FocusRing
-                      key={index}
-                      title={insight.title}
-                      description={insight.description}
-                      userScore={insight.userScore}
-                      leftLabel={insight.leftLabel}
-                      rightLabel={insight.rightLabel}
-                    />
-                  );
-                }
-                
-                return null;
-              })}
-            </div>
-          </div>
-
-          {/* Narrative Summary Section - Now using AIMessageCard */}
-          <div className="space-y-6 pt-8" style={{ borderTop: `1px solid var(--color-border)` }}>
-            <AIMessageCard
-              paragraph="What this tells me is that you're a 'Visionary Achiever.' You have a powerful belief that you can grow and a natural drive toward your goals. At the same time, your focus on personal action means you likely feel the full weight of getting things done. It's a potent combination of aspiration and responsibility, and it gives us a clear picture of how to build a plan that feels both ambitious and sustainable for you."
-              cardType="MY OBSERVATION"
-            />
-          </div>
-
-          {/* AI Message Card - Conversational Call to Action */}
-          <div className="space-y-8 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
-            <AIMessageCard 
-              paragraph="It's powerful to see how your mindset and focus connect. The logical next step is to apply this insight directly to your goal. I can guide you through creating your first 'micro-victory' right now, if you're ready."
-              cardType="YOUR AI COACH"
-            />
-          </div>
-
-          {/* Call to Action */}
-          <div className="text-center space-y-6">
-            <div className="pt-4">
-              <Button
-                variant="accent"
-                size="large"
-                onClick={onContinue}
-                className="group flex items-center space-x-3 text-xl px-16 py-8"
-              >
-                <span>Okay, I'm Ready</span>
-                <ChevronRight className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1" />
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        {/* Footer */}
-        <div className="text-center">
-          <p 
-            className="text-sm"
-            style={{ color: 'var(--color-muted)' }}
-          >
-            This is your personalized coaching starting point, not a final assessment
-          </p>
-        </div>
       </div>
-    </div>
+    </AuraProvider>
   );
 };
 

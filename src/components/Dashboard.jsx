@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '../hooks/useTheme';
+import { AuraProvider } from '../contexts/AuraProvider';
 import DashboardHeader from './DashboardHeader';
 import CumulativeGraph from './CumulativeGraph';
 import Card from './Card';
@@ -38,107 +39,109 @@ const Dashboard = ({ session, hasSubscription = false }) => {
   ];
 
   return (
-    <div 
-      className="min-h-screen font-inter"
-      style={{ backgroundColor: 'var(--color-background)' }}
-    >
-      {/* Header Stats */}
-      <div className="px-4 py-6">
-        <DashboardHeader 
-          dailyStreak={12}
-          weeklyProgress={0.75}
-          totalWins={45}
-        />
-      </div>
+    <AuraProvider>
+      <div 
+        className="min-h-screen font-inter"
+        style={{ backgroundColor: 'var(--color-background)' }}
+      >
+        {/* Header Stats */}
+        <div className="px-4 py-6">
+          <DashboardHeader 
+            dailyStreak={12}
+            weeklyProgress={0.75}
+            totalWins={45}
+          />
+        </div>
 
-      {/* Main Content */}
-      <div className="px-4 space-y-6">
-        {/* Growth Chart */}
-        <CumulativeGraph />
+        {/* Main Content */}
+        <div className="px-4 space-y-6">
+          {/* Growth Chart */}
+          <CumulativeGraph />
 
-        {/* Insights Grid */}
-        <div className="space-y-4">
-          <h3 
-            className="text-xl font-bold px-2"
-            style={{ color: 'var(--color-text)' }}
-          >
-            Insights & Patterns
-          </h3>
-          <div className="grid gap-4">
-            {insights.map((insight, index) => {
-              const IconComponent = insight.icon;
-              return (
-                <Card key={index} className="p-6" hover>
-                  <div className="flex items-start space-x-4">
-                    <div 
-                      className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: insight.color }}
-                    >
-                      <IconComponent className="w-6 h-6 text-white" />
+          {/* Insights Grid */}
+          <div className="space-y-4">
+            <h3 
+              className="text-xl font-bold px-2"
+              style={{ color: 'var(--color-text)' }}
+            >
+              Insights & Patterns
+            </h3>
+            <div className="grid gap-4">
+              {insights.map((insight, index) => {
+                const IconComponent = insight.icon;
+                return (
+                  <Card key={index} className="p-6" hover>
+                    <div className="flex items-start space-x-4">
+                      <div 
+                        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: insight.color }}
+                      >
+                        <IconComponent className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <h4 
+                          className="font-semibold text-lg"
+                          style={{ color: 'var(--color-text)' }}
+                        >
+                          {insight.title}
+                        </h4>
+                        <p 
+                          className="text-sm leading-relaxed"
+                          style={{ color: 'var(--color-muted)' }}
+                        >
+                          {insight.description}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 space-y-2">
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Recent Wins */}
+          <div className="space-y-4">
+            <h3 
+              className="text-xl font-bold px-2"
+              style={{ color: 'var(--color-text)' }}
+            >
+              Recent Wins
+            </h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                {recentWins.map((win) => (
+                  <div key={win.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-opacity-50 transition-colors duration-200" style={{ backgroundColor: 'var(--color-primary)' }}>
+                    <div 
+                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: 'var(--color-accent)' }}
+                    >
+                      <Award className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
                       <h4 
-                        className="font-semibold text-lg"
+                        className="font-medium"
                         style={{ color: 'var(--color-text)' }}
                       >
-                        {insight.title}
+                        {win.title}
                       </h4>
-                      <p 
-                        className="text-sm leading-relaxed"
-                        style={{ color: 'var(--color-muted)' }}
-                      >
-                        {insight.description}
-                      </p>
+                      <div className="flex items-center space-x-2 text-sm" style={{ color: 'var(--color-muted)' }}>
+                        <Calendar className="w-4 h-4" />
+                        <span>{win.date}</span>
+                        <span>•</span>
+                        <span>{win.category}</span>
+                      </div>
                     </div>
                   </div>
-                </Card>
-              );
-            })}
+                ))}
+              </div>
+            </Card>
           </div>
-        </div>
 
-        {/* Recent Wins */}
-        <div className="space-y-4">
-          <h3 
-            className="text-xl font-bold px-2"
-            style={{ color: 'var(--color-text)' }}
-          >
-            Recent Wins
-          </h3>
-          <Card className="p-6">
-            <div className="space-y-4">
-              {recentWins.map((win) => (
-                <div key={win.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-opacity-50 transition-colors duration-200" style={{ backgroundColor: 'var(--color-primary)' }}>
-                  <div 
-                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: 'var(--color-accent)' }}
-                  >
-                    <Award className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 
-                      className="font-medium"
-                      style={{ color: 'var(--color-text)' }}
-                    >
-                      {win.title}
-                    </h4>
-                    <div className="flex items-center space-x-2 text-sm" style={{ color: 'var(--color-muted)' }}>
-                      <Calendar className="w-4 h-4" />
-                      <span>{win.date}</span>
-                      <span>•</span>
-                      <span>{win.category}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+          {/* Bottom Padding for Navigation */}
+          <div className="h-20"></div>
         </div>
-
-        {/* Bottom Padding for Navigation */}
-        <div className="h-20"></div>
       </div>
-    </div>
+    </AuraProvider>
   );
 };
 
