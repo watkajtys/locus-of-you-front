@@ -261,24 +261,25 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
                 {/* Task Content with Checkbox */}
                 <div className="flex items-center space-x-6">
-                  {/* Large Checkbox Icon - Perfectly Centered */}
+                  {/* Large Checkbox Icon - ENTIRE ELEMENT JUMPS */}
                   <div className="flex-shrink-0">
                     {isTaskCompleted ? (
-                      <div className="relative w-8 h-8 md:w-10 md:h-10">
-                        {/* Green Circle Background with Pulse */}
+                      <div 
+                        className="relative w-8 h-8 md:w-10 md:h-10"
+                        style={{ 
+                          animation: 'celebrate-jump 0.6s ease-in-out infinite'
+                        }}
+                      >
+                        {/* Green Circle Background */}
                         <div 
                           className="absolute inset-0 rounded-full bg-green-600"
-                          style={{ 
-                            backgroundColor: '#16a34a',
-                            animation: 'celebrate-pulse 1s ease-in-out infinite'
-                          }}
+                          style={{ backgroundColor: '#16a34a' }}
                         />
-                        {/* Centered White Checkmark with Bounce */}
+                        {/* Centered White Checkmark */}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Check 
                             className="w-5 h-5 md:w-6 md:h-6 text-white"
                             strokeWidth={3}
-                            style={{ animation: 'celebrate-bounce 0.8s ease-in-out infinite' }}
                           />
                         </div>
                       </div>
