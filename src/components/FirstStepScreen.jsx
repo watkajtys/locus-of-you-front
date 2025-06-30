@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Circle } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
@@ -94,43 +94,65 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
               cardType="YOUR AI COACH"
             />
 
-            {/* Second Card - The Task */}
-            <div
-              className="
-                relative bg-white shadow-xl border-2 rounded-xl
-                p-8 md:p-12
-                transition-all duration-300 ease-in-out
-                hover:shadow-2xl hover:-translate-y-1
-              "
-              style={{
-                backgroundColor: 'var(--color-card)',
-                borderColor: 'var(--color-accent)',
-              }}
-            >
-              {/* Task Label */}
-              <div className="text-center mb-6">
-                <span 
-                  className="inline-block px-4 py-2 rounded-lg text-sm font-semibold tracking-wide uppercase"
-                  style={{ 
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'white'
-                  }}
+            {/* Second Card - The Task with consistent styling */}
+            <div className="relative">
+              <div
+                className="
+                  relative bg-white shadow-lg border border-gray-200
+                  rounded-tl-xl rounded-bl-xl rounded-br-xl
+                  pt-8 px-8 pb-8 md:px-10 md:pb-10
+                  transition-all duration-300 ease-in-out
+                  hover:shadow-xl hover:-translate-y-1
+                "
+                style={{
+                  backgroundColor: 'var(--color-card)',
+                  borderColor: 'var(--color-border)',
+                }}
+              >
+                {/* The Tab - matching AIMessageCard style */}
+                <div 
+                  className="
+                    absolute top-0 right-0 -translate-y-1/2
+                    bg-slate-100 px-4 py-0.5 
+                    rounded-tl-lg rounded-tr-lg
+                    border border-slate-200 border-b-0
+                    shadow-sm
+                  "
                 >
-                  Your Task
-                </span>
-              </div>
+                  <span 
+                    className="text-xs font-semibold tracking-widest uppercase select-none text-slate-600"
+                    style={{ 
+                      fontFamily: 'Inter, sans-serif',
+                    }}
+                  >
+                    YOUR TASK
+                  </span>
+                </div>
 
-              {/* Task Content */}
-              <div className="text-center">
-                <p 
-                  className="text-2xl md:text-3xl font-bold leading-relaxed"
-                  style={{ 
-                    color: 'var(--color-text)',
-                    fontFamily: 'Inter, sans-serif'
-                  }}
-                >
-                  {task}
-                </p>
+                {/* Task Content with Checkbox */}
+                <div className="flex items-start space-x-6">
+                  {/* Large Checkbox Icon */}
+                  <div className="flex-shrink-0 pt-2">
+                    <Circle 
+                      className="w-8 h-8 md:w-10 md:h-10"
+                      style={{ color: 'var(--color-accent)' }}
+                      strokeWidth={2}
+                    />
+                  </div>
+
+                  {/* Task Text */}
+                  <div className="flex-1">
+                    <p 
+                      className="text-2xl md:text-3xl font-bold leading-relaxed"
+                      style={{ 
+                        color: 'var(--color-text)',
+                        fontFamily: 'Inter, sans-serif'
+                      }}
+                    >
+                      {task}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
