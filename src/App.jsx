@@ -4,12 +4,15 @@ import { useTheme } from './hooks/useTheme';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import DynamicOnboarding from './components/DynamicOnboarding';
+import SnapshotScreen from './components/SnapshotScreen';
 
 function App() {
   const { theme } = useTheme();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
+  const [showSnapshot, setShowSnapshot] = useState(false);
+  const [onboardingAnswers, setOnboardingAnswers] = useState(null);
 
   useEffect(() => {
     // Get initial session
@@ -48,9 +51,10 @@ function App() {
   // Handle onboarding completion
   const handleOnboardingComplete = (answers) => {
     console.log('Onboarding completed with answers:', answers);
-    // Store answers in localStorage for later use
+    // Store answers in localStorage and state
     localStorage.setItem('onboarding-answers', JSON.stringify(answers));
-    setShowAuth(true);
+    setOnboardingAnswers(answers);
+    setShowSnapshot(true);
   };
 
   // Handle onboarding skip
@@ -58,6 +62,13 @@ function App() {
     console.log('Onboarding skipped');
     setShowAuth(true);
   };
+
+  // Handle snapshot continuation
+  const handleSnapshotContinue = () => {
+    console.log('Continuing from snapshot to auth');
+    setShowAuth(true);
+  };
+
   // Show loading state while checking authentication
   if (loading) {
     return (
@@ -86,17 +97,28 @@ function App() {
     return <Dashboard session={session} />;
   }
 
-  // Show onboarding first, then auth
-  if (!showAuth) {
+  // Show snapshot results if onboarding is completed
+  if (showSnapshot && onboardingAnswers) {
     return (
-      <DynamicOnboarding 
-        onComplete={handleOnboardingComplete}
-        onSkip={handleOnboardingSkip}
+      <SnapshotScreen 
+        answers={onboardingAnswers}
+        onContinue={handleSnapshotContinue}
       />
     );
   }
 
-  return <Auth />;
+  // Show auth after snapshot or skip
+  if (showAuth) {
+    return <Auth />;
+  }
+
+  // Show onboarding first
+  return (
+    <DynamicOnboarding 
+      onComplete={handleOnboardingComplete}
+      onSkip={handleOnboardingSkip}
+    />
+  );
 }
 
 export default App;
