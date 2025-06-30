@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './hooks/useTheme';
+import { Bug } from 'lucide-react';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import DynamicOnboarding from './components/DynamicOnboarding';
@@ -52,7 +53,7 @@ function App() {
   const handleOnboardingComplete = (answers) => {
     console.log('Onboarding completed with answers:', answers);
     // Store answers in localStorage and state
-    localStorage.setItem('onboarding-answers', JSON.stringify(answers));
+    localStorage.setItem('onboarding-answers', JSON.stringify(answers);
     setOnboardingAnswers(answers);
     setShowSnapshot(true);
   };
@@ -67,6 +68,24 @@ function App() {
   const handleSnapshotContinue = () => {
     console.log('Continuing from snapshot to auth');
     setShowAuth(true);
+  };
+
+  // Debug function to jump to snapshot with mock data
+  const handleDebugSnapshot = () => {
+    const mockAnswers = {
+      mindset: 'growth',
+      locus: 'internal',
+      regulatory_focus: 'promotion',
+      personality_disorganized: 2.3,
+      personality_outgoing: 4.1,
+      personality_moody: 2.8,
+      final_focus: 'Building better habits and staying consistent with my goals'
+    };
+    
+    setOnboardingAnswers(mockAnswers);
+    setShowSnapshot(true);
+    setShowAuth(false);
+    console.log('Debug: Jumped to snapshot with mock data');
   };
 
   // Show loading state while checking authentication
@@ -92,32 +111,55 @@ function App() {
     );
   }
 
-  // Conditionally render Auth or Dashboard based on session
-  if (session) {
-    return <Dashboard session={session} />;
-  }
-
-  // Show snapshot results if onboarding is completed
-  if (showSnapshot && onboardingAnswers) {
-    return (
-      <SnapshotScreen 
-        answers={onboardingAnswers}
-        onContinue={handleSnapshotContinue}
-      />
-    );
-  }
-
-  // Show auth after snapshot or skip
-  if (showAuth) {
-    return <Auth />;
-  }
-
-  // Show onboarding first
   return (
-    <DynamicOnboarding 
-      onComplete={handleOnboardingComplete}
-      onSkip={handleOnboardingSkip}
-    />
+    <>
+      {/* Debug Button - Fixed Position */}
+      <button
+        onClick={handleDebugSnapshot}
+        className="fixed top-4 right-4 z-50 flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
+        style={{
+          backgroundColor: 'var(--color-accent)',
+          color: 'white',
+          fontSize: '0.875rem',
+          fontWeight: '600'
+        }}
+        title="Debug: Jump to Snapshot"
+      >
+        <Bug className="w-4 h-4" />
+        <span>Snapshot</span>
+      </button>
+
+      {/* Main App Content */}
+      {(() => {
+        // Conditionally render Auth or Dashboard based on session
+        if (session) {
+          return <Dashboard session={session} />;
+        }
+
+        // Show snapshot results if onboarding is completed
+        if (showSnapshot && onboardingAnswers) {
+          return (
+            <SnapshotScreen 
+              answers={onboardingAnswers}
+              onContinue={handleSnapshotContinue}
+            />
+          );
+        }
+
+        // Show auth after snapshot or skip
+        if (showAuth) {
+          return <Auth />;
+        }
+
+        // Show onboarding first
+        return (
+          <DynamicOnboarding 
+            onComplete={handleOnboardingComplete}
+            onSkip={handleOnboardingSkip}
+          />
+        );
+      })()}
+    </>
   );
 }
 
