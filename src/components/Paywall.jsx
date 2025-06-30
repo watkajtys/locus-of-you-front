@@ -123,10 +123,10 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
     }
 
     const annualPackage = offerings.current.availablePackages.find(
-      pkg => pkg.product.identifier === PRODUCT_IDS.ANNUAL
+      pkg => pkg.product?.identifier === PRODUCT_IDS.ANNUAL
     );
     const monthlyPackage = offerings.current.availablePackages.find(
-      pkg => pkg.product.identifier === PRODUCT_IDS.MONTHLY
+      pkg => pkg.product?.identifier === PRODUCT_IDS.MONTHLY
     );
 
     return {
