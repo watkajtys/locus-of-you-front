@@ -1,181 +1,334 @@
-# Coaching API - Cloudflare Worker
+# AI Coaching API - LangChain + Cloudflare Workers
 
-A production-ready Cloudflare Worker that serves as an API backend for the coaching application.
+A sophisticated AI coaching API built with LangChain and deployed on Cloudflare Workers. This system implements evidence-based therapeutic frameworks including Evidence-based Therapy (ET), Self-Determination Theory (SDT), and Goal Setting Theory (GST).
 
-## Features
+## 🏗️ Architecture
 
-- ✅ Modern ES6+ JavaScript with full Cloudflare Workers compatibility
-- ✅ Comprehensive error handling with proper HTTP status codes
-- ✅ CORS support for cross-origin requests
-- ✅ Request validation and input sanitization
-- ✅ Rate limiting using Cloudflare KV storage
-- ✅ Authentication middleware (API key & Bearer token)
-- ✅ Security headers and best practices
-- ✅ Performance optimizations for edge deployment
-- ✅ JSON responses with proper Content-Type headers
-- ✅ Environment variable configuration
-- ✅ Structured logging and monitoring
+### Chain-Based Processing
+The API uses three specialized LangChain chains for comprehensive coaching:
 
-## API Endpoints
+1. **Guardrail Chain** (`src/chains/guardrail.ts`)
+   - Crisis detection and safety assessment
+   - Suicide/self-harm screening
+   - Risk level evaluation
+   - Emergency response protocols
 
-### Health & Info
-- `GET /health` - Health check endpoint
-- `GET /api/info` - API information and available endpoints
+2. **Diagnostic Chain** (`src/chains/diagnostic.ts`)
+   - Evidence-based psychological assessment
+   - Self-Determination Theory evaluation
+   - Motivational interviewing principles
+   - User profiling and insight generation
 
-### Coaching
-- `POST /api/coaching/message` - Send a message to the AI coach
+3. **Interventions Chain** (`src/chains/interventions.ts`)
+   - Goal Setting Theory-based prescriptions
+   - Personalized strategy recommendations
+   - Behavioral, cognitive, and motivational interventions
+   - Progress tracking and adaptation
 
-### User Management
-- `GET /api/user/profile/:userId` - Get user profile
-- `POST /api/user/profile/:userId` - Update user profile
+### Technology Stack
+- **Runtime**: Cloudflare Workers (Edge computing)
+- **Framework**: Hono (Fast web framework)
+- **AI/ML**: LangChain with OpenAI GPT-4
+- **Validation**: Zod schemas
+- **Storage**: Cloudflare KV (Key-Value store)
+- **Language**: TypeScript
 
-## Setup
+## 🚀 Features
 
-1. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+### Core Capabilities
+- ✅ **Crisis Detection**: Real-time safety screening with emergency protocols
+- ✅ **Psychological Assessment**: Evidence-based user profiling and needs analysis
+- ✅ **Personalized Interventions**: Tailored strategies based on psychological profile
+- ✅ **Session Management**: Conversation history and context preservation
+- ✅ **Rate Limiting**: Protection against abuse with KV-based tracking
+- ✅ **Authentication**: Multiple auth methods (API key, Bearer token)
+- ✅ **Monitoring**: Comprehensive logging and performance metrics
 
-2. **Configure Environment Variables**
-   Set these secrets using Wrangler:
-   ```bash
-   wrangler secret put API_KEY
-   wrangler secret put JWT_SECRET
-   ```
+### Psychological Frameworks
+- **Evidence-based Therapy (ET)**: Validated assessment techniques and interventions
+- **Self-Determination Theory (SDT)**: Autonomy, competence, and relatedness evaluation
+- **Goal Setting Theory (GST)**: Specific, challenging, committed goal framework
+- **Motivational Interviewing**: Empathetic, non-confrontational approach
 
-3. **Configure KV Namespace** (Optional - for rate limiting)
-   ```bash
-   wrangler kv:namespace create "RATE_LIMIT_KV"
-   ```
-   Update the namespace ID in `wrangler.toml`
+## 📁 Project Structure
 
-4. **Development**
-   ```bash
-   npm run dev
-   ```
+```
+worker/
+├── src/
+│   ├── chains/
+│   │   ├── guardrail.ts       # Crisis detection safety chain
+│   │   ├── diagnostic.ts      # Main diagnostic (ET → SDT) chain
+│   │   └── interventions.ts   # Prescriptive GST-based chains
+│   ├── index.ts               # Main API router (Hono)
+│   └── types.ts               # API request/response type definitions
+├── package.json
+├── wrangler.toml
+├── tsconfig.json
+└── README.md
+```
 
-5. **Deployment**
-   ```bash
-   # Staging
-   npm run deploy:staging
-   
-   # Production
-   npm run deploy:production
-   ```
+## 🛠️ Setup & Development
 
-## Configuration
+### Prerequisites
+- Node.js 18+ and npm
+- Cloudflare account with Workers enabled
+- OpenAI API key
 
-### Environment Variables
+### Installation
+```bash
+# Install dependencies
+npm install
 
-**Required Secrets:**
-- `API_KEY` - API key for service-to-service authentication
-- `JWT_SECRET` - Secret for JWT token validation (if using JWT auth)
+# Install Wrangler CLI globally (if not already installed)
+npm install -g wrangler
 
-**Optional Variables:**
-- `ENVIRONMENT` - Deployment environment (production/staging/development)
-- `API_VERSION` - API version string
+# Authenticate with Cloudflare
+wrangler login
+```
 
-### wrangler.toml
+### Environment Configuration
+Set up your secrets using Wrangler:
 
-Update the following in `wrangler.toml`:
-- `name` - Your worker name
-- `route` - Custom domain route (for production)
-- KV namespace IDs
-- Cron triggers (if needed)
+```bash
+# Required: OpenAI API key for LangChain
+wrangler secret put OPENAI_API_KEY
 
-## Authentication
+# Required: API key for service authentication
+wrangler secret put API_KEY
 
-The API supports two authentication methods:
+# Required: JWT secret for token validation
+wrangler secret put JWT_SECRET
 
-1. **API Key Authentication**
-   ```bash
-   curl -H "X-API-Key: your-api-key" https://your-worker.your-subdomain.workers.dev/api/user/profile/123
-   ```
+# Optional: Anthropic API key for alternative LLM
+wrangler secret put ANTHROPIC_API_KEY
+```
 
-2. **Bearer Token Authentication**
-   ```bash
-   curl -H "Authorization: Bearer your-jwt-token" https://your-worker.your-subdomain.workers.dev/api/user/profile/123
-   ```
+### KV Namespace Setup
+Create KV namespaces for data storage:
 
-## Rate Limiting
+```bash
+# Create KV namespaces
+wrangler kv:namespace create "RATE_LIMIT_KV"
+wrangler kv:namespace create "USER_SESSIONS_KV"
+wrangler kv:namespace create "COACHING_HISTORY_KV"
 
-Rate limiting is implemented using Cloudflare KV storage:
-- **Window**: 1 minute
-- **Limit**: 100 requests per IP per minute
-- **Storage**: Automatic cleanup of expired entries
+# Create preview namespaces for development
+wrangler kv:namespace create "RATE_LIMIT_KV" --preview
+wrangler kv:namespace create "USER_SESSIONS_KV" --preview
+wrangler kv:namespace create "COACHING_HISTORY_KV" --preview
+```
 
-## Error Handling
+Update the namespace IDs in `wrangler.toml` with the generated IDs.
 
-All errors return a consistent JSON format:
+### Development
+```bash
+# Start local development server
+npm run dev
 
-```json
+# Type checking
+npm run type-check
+
+# Linting
+npm run lint
+
+# Format code
+npm run format
+```
+
+### Deployment
+```bash
+# Deploy to staging
+npm run deploy:staging
+
+# Deploy to production
+npm run deploy:production
+```
+
+## 📚 API Reference
+
+### Base URL
+- **Development**: `http://localhost:8787`
+- **Production**: `https://your-worker.your-subdomain.workers.dev`
+
+### Authentication
+Include one of the following in your requests:
+
+```bash
+# API Key Authentication
+curl -H "X-API-Key: your-api-key" ...
+
+# Bearer Token Authentication
+curl -H "Authorization: Bearer your-jwt-token" ...
+```
+
+### Endpoints
+
+#### Health Check
+```http
+GET /health
+```
+Returns API status and chain availability.
+
+#### Coaching Message
+```http
+POST /api/coaching/message
+Content-Type: application/json
+
 {
-  "error": true,
-  "message": "Error description",
-  "code": "ERROR_CODE",
-  "timestamp": "2024-01-15T10:30:00.000Z"
+  "message": "I'm feeling stuck with my goals",
+  "userId": "user123",
+  "context": {
+    "sessionType": "diagnostic",
+    "currentGoal": "Build better habits",
+    "urgencyLevel": "medium"
+  }
 }
 ```
 
-## Security Features
+Response flows through the chain system:
+1. **Guardrail Assessment**: Checks for crisis indicators
+2. **Chain Selection**: Chooses diagnostic or intervention based on user profile
+3. **Personalized Response**: Returns tailored coaching guidance
 
-- **CORS Headers**: Configurable cross-origin resource sharing
-- **Security Headers**: X-Content-Type-Options, X-Frame-Options, etc.
-- **Input Validation**: Sanitization of all user inputs
-- **Rate Limiting**: Protection against abuse
-- **Authentication**: Multiple auth methods supported
+#### User Profile Management
+```http
+# Get user profile
+GET /api/user/profile/{userId}
 
-## Performance Optimizations
+# Update user profile
+POST /api/user/profile/{userId}
+Content-Type: application/json
 
-- **Edge Deployment**: Runs on Cloudflare's global edge network
-- **Minimal Cold Starts**: Optimized for fast startup
-- **Efficient Routing**: Uses itty-router for lightweight routing
-- **Streaming**: Supports streaming responses for large data
-- **Caching**: Leverages Cloudflare's caching infrastructure
+{
+  "preferences": {
+    "theme": "calm",
+    "coachingStyle": "supportive"
+  },
+  "psychologicalProfile": {
+    "mindset": "growth",
+    "locus": "internal",
+    "regulatory_focus": "promotion"
+  }
+}
+```
 
-## Monitoring
+## 🧠 Psychological Assessment System
 
-The worker includes built-in monitoring features:
-- Response time headers (`X-Response-Time`)
-- Structured logging for debugging
-- Error tracking with context
-- Performance metrics
+### Self-Determination Theory (SDT) Factors
+- **Autonomy**: Feeling of volition and self-direction
+- **Competence**: Sense of effectiveness and mastery  
+- **Relatedness**: Connection and belonging with others
 
-## Integration with React App
+### Goal Setting Theory (GST) Principles
+- **Specificity**: Clear, unambiguous objectives
+- **Difficulty**: Appropriately challenging but achievable
+- **Commitment**: User acceptance and dedication to goals
+- **Feedback**: Regular progress monitoring and adjustment
 
-To integrate with your React application:
+### Crisis Detection Protocol
+- **Risk Levels**: None, Low, Medium, High, Immediate
+- **Indicators**: Suicidal ideation, self-harm, abuse, psychosis
+- **Response**: Escalation to crisis resources and emergency services
+- **Resources**: 988 Lifeline, Crisis Text Line, emergency contacts
 
-1. **Update API Base URL**
-   ```javascript
-   // In your React app
-   const API_BASE_URL = 'https://your-worker.your-subdomain.workers.dev';
-   ```
+## 🔒 Security & Safety
 
-2. **Add Authentication Headers**
-   ```javascript
-   const response = await fetch(`${API_BASE_URL}/api/coaching/message`, {
-     method: 'POST',
-     headers: {
-       'Content-Type': 'application/json',
-       'Authorization': `Bearer ${userToken}`,
-     },
-     body: JSON.stringify({ message, userId }),
-   });
-   ```
+### Crisis Prevention
+- Real-time message screening for safety concerns
+- Immediate escalation protocols for high-risk situations
+- Crisis resource provision and emergency contact facilitation
+- False positive tolerance (better safe than sorry)
 
-## Development Tips
+### Data Protection
+- No persistent storage of sensitive conversation content
+- KV-based session management with automatic expiration
+- Rate limiting to prevent abuse
+- Input validation and sanitization
 
-- Use `wrangler dev` for local development with hot reload
-- Check logs with `wrangler tail` for debugging
-- Test different environments using `--env` flag
-- Use Cloudflare Analytics to monitor production usage
+### Authentication & Authorization
+- Multiple authentication methods supported
+- API key validation for service-to-service communication
+- Bearer token support for user authentication
+- Request validation using Zod schemas
 
-## Deployment
+## 📊 Monitoring & Analytics
 
-The worker supports multiple deployment environments:
+### Performance Metrics
+- Response time tracking per request
+- Chain processing time measurement
+- Token usage monitoring (when available)
+- Error rate and type tracking
 
-- **Development**: Local testing with `wrangler dev`
-- **Staging**: Preview deployment for testing
-- **Production**: Live deployment with custom domain
+### Usage Analytics
+- Conversation patterns and user engagement
+- Chain utilization statistics
+- Crisis detection frequency and accuracy
+- User profile evolution tracking
 
-Each environment can have different configuration values and secrets.
+## 🚀 Production Considerations
+
+### Scaling
+- Edge deployment across Cloudflare's global network
+- Automatic scaling based on demand
+- KV storage for session persistence across regions
+- Minimal cold start latency
+
+### Reliability
+- Graceful error handling and fallback responses
+- Chain failure recovery mechanisms
+- Input validation and sanitization
+- Comprehensive logging for debugging
+
+### Cost Optimization
+- Efficient token usage with targeted prompts
+- KV storage optimization with TTL
+- Request batching where applicable
+- Model selection based on complexity needs
+
+## 🔧 Customization
+
+### Adding New Chains
+1. Create new chain file in `src/chains/`
+2. Implement LangChain integration
+3. Add to chain initialization in `index.ts`
+4. Update routing logic for chain selection
+
+### Extending Assessment Frameworks
+1. Update psychological profile types in `types.ts`
+2. Enhance diagnostic chain prompts
+3. Add new intervention categories
+4. Update user profile validation schemas
+
+### Integration Examples
+```typescript
+// Custom intervention integration
+const customIntervention = await interventionsChain.prescribeIntervention(
+  message,
+  userProfile,
+  assessmentData,
+  currentGoals
+);
+
+// Adaptation based on feedback
+const adaptedStrategy = await interventionsChain.adaptIntervention(
+  originalIntervention,
+  userFeedback,
+  'easier'
+);
+```
+
+## 📝 Contributing
+
+1. Follow TypeScript best practices
+2. Add comprehensive tests for new chains
+3. Update documentation for API changes
+4. Ensure crisis detection remains robust
+5. Validate psychological framework implementation
+
+## 📄 License
+
+MIT License - see LICENSE file for details.
+
+---
+
+Built with ❤️ using LangChain and Cloudflare Workers for intelligent, scalable AI coaching.
