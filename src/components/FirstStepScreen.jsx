@@ -261,13 +261,13 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
                 {/* Task Content with Checkbox */}
                 <div className="flex items-center space-x-6">
-                  {/* Large Checkbox Icon - ENTIRE ELEMENT JUMPS */}
+                  {/* Large Checkbox Icon - BOUNCES ONCE WHEN COMPLETED */}
                   <div className="flex-shrink-0">
                     {isTaskCompleted ? (
                       <div 
                         className="relative w-8 h-8 md:w-10 md:h-10"
                         style={{ 
-                          animation: 'celebrate-jump 0.6s ease-in-out infinite'
+                          animation: 'celebrate-jump 0.6s ease-in-out'
                         }}
                       >
                         {/* Green Circle Background */}
