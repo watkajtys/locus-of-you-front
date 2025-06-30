@@ -15,6 +15,22 @@ export const ENTITLEMENT_ID = 'premium_features';
 let isConfigured = false;
 
 /**
+ * Generate a unique anonymous user ID
+ */
+const generateAnonymousUserId = () => {
+  // Check if we already have an anonymous ID stored
+  let anonymousId = localStorage.getItem('revenuecat_anonymous_id');
+  
+  if (!anonymousId) {
+    // Generate a new anonymous ID
+    anonymousId = `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('revenuecat_anonymous_id', anonymousId);
+  }
+  
+  return anonymousId;
+};
+
+/**
  * Initialize RevenueCat with anonymous user
  */
 export const initializeRevenueCat = async () => {
@@ -26,12 +42,17 @@ export const initializeRevenueCat = async () => {
   }
 
   try {
-    // Configure RevenueCat without user ID (anonymous mode)
+    // Generate or retrieve anonymous user ID
+    const anonymousUserId = generateAnonymousUserId();
+    
+    // Configure RevenueCat with anonymous user ID
     await Purchases.configure({
       apiKey: REVENUECAT_API_KEY,
+      appUserId: anonymousUserId // Provide the anonymous user ID
     });
+    
     isConfigured = true;
-    console.log('RevenueCat initialized successfully in anonymous mode');
+    console.log('RevenueCat initialized successfully with anonymous user:', anonymousUserId);
   } catch (error) {
     console.error('Failed to initialize RevenueCat:', error);
   }
@@ -55,6 +76,10 @@ export const setRevenueCatUserId = async (userId) => {
     // Use logIn to identify the anonymous user
     const result = await Purchases.logIn(userId);
     console.log('RevenueCat user ID set:', userId);
+    
+    // Clear the anonymous ID since we're now identified
+    localStorage.removeItem('revenuecat_anonymous_id');
+    
     return result;
   } catch (error) {
     console.error('Failed to set RevenueCat user ID:', error);
@@ -218,7 +243,10 @@ export const logOutRevenueCat = async () => {
 
   try {
     await Purchases.logOut();
-    console.log('RevenueCat user logged out (switched to anonymous)');
+    
+    // Generate a new anonymous ID for the next session
+    const newAnonymousId = generateAnonymousUserId();
+    console.log('RevenueCat user logged out, new anonymous ID:', newAnonymousId);
   } catch (error) {
     console.error('Failed to log out RevenueCat user:', error);
   }
