@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Zap, Brain, Target, BarChart3, BookOpen, Sparkles, Crown, Loader2, AlertCircle } from 'lucide-react';
+import { Check, Zap, Brain, Target, BarChart3, BookOpen, Sparkles, Crown, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import Card from './Card';
 import Button from './Button';
 import { 
@@ -9,7 +9,7 @@ import {
   checkSubscriptionStatus 
 } from '../lib/revenuecat';
 
-const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
+const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = false }) => {
   const [selectedPlan, setSelectedPlan] = useState('annual'); // Default to annual (best value)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -123,10 +123,10 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
     }
 
     const annualPackage = offerings.current.availablePackages.find(
-      pkg => pkg.product.identifier === PRODUCT_IDS.ANNUAL
+      pkg => pkg.product?.identifier === PRODUCT_IDS.ANNUAL
     );
     const monthlyPackage = offerings.current.availablePackages.find(
-      pkg => pkg.product.identifier === PRODUCT_IDS.MONTHLY
+      pkg => pkg.product?.identifier === PRODUCT_IDS.MONTHLY
     );
 
     return {
@@ -188,16 +188,64 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
               className="text-4xl md:text-6xl font-bold leading-tight"
               style={{ color: '#f1f5f9' }} // slate-100 text
             >
-              Unlock Your Full Potential
+              {isAuthenticatedUser ? 'Unlock Premium Features' : 'Unlock Your Full Potential'}
             </h1>
             <p 
               className="text-lg md:text-xl leading-relaxed max-w-3xl mx-auto"
               style={{ color: '#94a3b8' }} // slate-400 muted
             >
-              The free snapshot was just the beginning. Unlock the continuous coaching relationship to diagnose why you're stuck and build a personalized plan to move forward.
+              {isAuthenticatedUser 
+                ? 'You need an active subscription to access premium coaching features. Choose your plan below to continue your growth journey.'
+                : 'The free snapshot was just the beginning. Unlock the continuous coaching relationship to diagnose why you\'re stuck and build a personalized plan to move forward.'
+              }
             </p>
           </div>
+
+          {/* Back to Limited Access (for authenticated users only) */}
+          {isAuthenticatedUser && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => window.history.back()}
+                className="flex items-center space-x-2 text-sm transition-colors duration-200 hover:underline"
+                style={{ color: '#94a3b8' }}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to limited access</span>
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* Subscription Required Notice (for authenticated users) */}
+        {isAuthenticatedUser && (
+          <div className="max-w-2xl mx-auto">
+            <div 
+              className="p-6 rounded-xl border-l-4 border-orange-500"
+              style={{ backgroundColor: '#1e293b', borderLeftColor: '#f97316' }}
+            >
+              <div className="flex items-start space-x-3">
+                <Crown 
+                  className="w-6 h-6 mt-1 flex-shrink-0"
+                  style={{ color: '#f97316' }}
+                />
+                <div>
+                  <h3 
+                    className="text-lg font-semibold mb-2"
+                    style={{ color: '#f1f5f9' }}
+                  >
+                    Premium Subscription Required
+                  </h3>
+                  <p 
+                    className="text-sm leading-relaxed"
+                    style={{ color: '#94a3b8' }}
+                  >
+                    You're logged in, but you'll need an active subscription to access coaching features, goal tracking, and personalized interventions. Choose a plan below to unlock your full potential.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Error Display */}
         {error && (
@@ -228,7 +276,10 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
               className="text-base"
               style={{ color: '#64748b' }}
             >
-              Start your 7-day free trial, then continue with the plan that works for you
+              {isAuthenticatedUser 
+                ? 'Select a subscription plan to unlock premium features'
+                : 'Start your 7-day free trial, then continue with the plan that works for you'
+              }
             </p>
           </div>
 
@@ -495,7 +546,12 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
                   <span>Processing...</span>
                 </div>
               ) : (
-                <>🚀 Start My 7-Day Free Trial</>
+                <>
+                  {isAuthenticatedUser 
+                    ? `🚀 Subscribe to ${selectedPlan === 'annual' ? 'Annual' : 'Monthly'} Plan`
+                    : '🚀 Start My 7-Day Free Trial'
+                  }
+                </>
               )}
             </Button>
             
@@ -504,13 +560,19 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess }) => {
                 className="text-sm font-medium"
                 style={{ color: '#f1f5f9' }}
               >
-                No commitment during your free trial
+                {isAuthenticatedUser 
+                  ? 'Instant access to all premium features'
+                  : 'No commitment during your free trial'
+                }
               </p>
               <p 
                 className="text-xs"
                 style={{ color: '#64748b' }}
               >
-                After your 7-day free trial, you'll be charged {selectedPlan === 'annual' ? pricing.annual.price + '/year' : pricing.monthly.price + '/month'}. Cancel anytime.
+                {isAuthenticatedUser 
+                  ? `You'll be charged ${selectedPlan === 'annual' ? pricing.annual.price + '/year' : pricing.monthly.price + '/month'}. Cancel anytime.`
+                  : `After your 7-day free trial, you'll be charged ${selectedPlan === 'annual' ? pricing.annual.price + '/year' : pricing.monthly.price + '/month'}. Cancel anytime.`
+                }
               </p>
             </div>
           </div>
