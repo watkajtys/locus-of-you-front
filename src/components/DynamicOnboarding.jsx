@@ -78,8 +78,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     {
       id: 'personality_disorganized',
       type: 'slider',
-      message: "Okay, just a few more to get a complete picture of your style. Let's go through some quick-fire statements.",
-      question: "Please rate how much this describes you: 'I tend to be disorganized.'",
+      message: "Okay, just a few more to get a complete picture of your style. Let's go through some quick-fire statements. Please rate how much this describes you:",
+      question: "I tend to be disorganized.",
       cardType: "PERSONALITY STYLE",
       min: 1,
       max: 5,
@@ -95,8 +95,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     {
       id: 'personality_outgoing',
       type: 'slider',
-      message: "Great, thank you.",
-      question: "And how about this one: 'I see myself as someone who is outgoing and sociable.'",
+      message: "And how about this one:",
+      question: "I see myself as someone who is outgoing and sociable.",
       cardType: "PERSONALITY STYLE",
       min: 1,
       max: 5,
@@ -112,8 +112,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     {
       id: 'personality_moody',
       type: 'slider',
-      message: "Perfect.",
-      question: "Last one for this set: 'I can be moody or have up and down mood swings.'",
+      message: "Last one for this set:",
+      question: "I can be moody or have up and down mood swings.",
       cardType: "PERSONALITY STYLE",
       min: 1,
       max: 5,
