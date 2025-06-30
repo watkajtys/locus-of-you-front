@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
-    "dev": "wrangler dev",
+    "dev": "echo '⚠️  wrangler dev is not supported in WebContainer environment. Please use wrangler dev in a local environment or deploy directly to test.' && exit 1",
+    "dev:local": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy --env production",
