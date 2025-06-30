@@ -124,10 +124,9 @@ function AppContent() {
   // Handle subscription from paywall
   const handleSubscribe = (planType) => {
     console.log('User selected subscription plan:', planType);
-    // After successful subscription through RevenueCat, refresh status and redirect to auth
+    // After successful subscription through RevenueCat, refresh status
     refreshSubscriptionStatus();
-    setShowAuth(true);
-    setShowPaywall(false);
+    // The subscription gate will automatically redirect to AppShell once subscription is detected
   };
 
   // Handle successful subscription (called by RevenueCat after purchase)
@@ -289,21 +288,61 @@ function AppContent() {
 
       {/* Main App Content */}
       {(() => {
-        // Conditionally render based on authentication and flow state
+        // 🔒 SUBSCRIPTION GATE: Check authentication and subscription status
         if (session) {
+          // User is authenticated - now check subscription status
+          if (!subscriptionLoading && !hasSubscription) {
+            // User is authenticated but has no active subscription
+            console.log('🔒 Subscription gate: Redirecting to paywall - no active subscription');
+            return (
+              <Paywall 
+                onSubscribe={handleSubscribe}
+                onSubscriptionSuccess={handleSubscriptionSuccess}
+                isAuthenticatedUser={true} // Pass flag to indicate user is already logged in
+              />
+            );
+          }
+          
+          // User is authenticated AND has active subscription - allow access to app
+          if (hasSubscription) {
+            return (
+              <ProtectedRoute>
+                <AppShell session={session} hasSubscription={hasSubscription} />
+              </ProtectedRoute>
+            );
+          }
+          
+          // Still loading subscription status - show loading
           return (
-            <ProtectedRoute>
-              <AppShell session={session} hasSubscription={hasSubscription} />
-            </ProtectedRoute>
+            <div 
+              className="min-h-screen flex items-center justify-center font-inter"
+              style={{ backgroundColor: 'var(--color-background)' }}
+            >
+              <div className="text-center space-y-4">
+                <div 
+                  className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto"
+                  style={{ borderColor: 'var(--color-accent)' }}
+                />
+                <p 
+                  className="text-sm"
+                  style={{ color: 'var(--color-muted)' }}
+                >
+                  Verifying subscription status...
+                </p>
+              </div>
+            </div>
           );
         }
 
-        // Show paywall if first step is completed
+        // User is NOT authenticated - show onboarding/auth flow
+        
+        // Show paywall if first step is completed (during onboarding)
         if (showPaywall && onboardingAnswers) {
           return (
             <Paywall 
               onSubscribe={handleSubscribe}
               onSubscriptionSuccess={handleSubscriptionSuccess}
+              isAuthenticatedUser={false} // User is in onboarding flow
             />
           );
         }
