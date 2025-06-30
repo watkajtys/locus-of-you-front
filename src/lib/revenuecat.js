@@ -1,13 +1,4 @@
-import { 
-  configure, 
-  logIn, 
-  getOfferings as rcGetOfferings, 
-  purchasePackage, 
-  restorePurchases as rcRestorePurchases, 
-  getCustomerInfo as rcGetCustomerInfo, 
-  addCustomerInfoUpdateListener, 
-  logOut 
-} from '@revenuecat/purchases-js';
+import Purchases from '@revenuecat/purchases-js';
 
 // RevenueCat configuration
 const REVENUECAT_API_KEY = import.meta.env.VITE_REVENUECAT_PUBLIC_API_KEY;
@@ -35,7 +26,7 @@ export const initializeRevenueCat = async () => {
   }
 
   try {
-    await configure(REVENUECAT_API_KEY);
+    await Purchases.configure(REVENUECAT_API_KEY);
     isConfigured = true;
     console.log('RevenueCat initialized successfully');
   } catch (error) {
@@ -53,7 +44,7 @@ export const setRevenueCatUserId = async (userId) => {
   }
 
   try {
-    await logIn(userId);
+    await Purchases.logIn(userId);
     console.log('RevenueCat user ID set:', userId);
   } catch (error) {
     console.error('Failed to set RevenueCat user ID:', error);
@@ -70,7 +61,7 @@ export const getOfferings = async () => {
   }
 
   try {
-    const offerings = await rcGetOfferings();
+    const offerings = await Purchases.getOfferings();
     return offerings;
   } catch (error) {
     console.error('Failed to get offerings:', error);
@@ -87,7 +78,7 @@ export const purchaseSubscription = async (productId) => {
   }
 
   try {
-    const offerings = await rcGetOfferings();
+    const offerings = await Purchases.getOfferings();
     
     if (!offerings?.current) {
       throw new Error('No current offering available');
@@ -102,7 +93,7 @@ export const purchaseSubscription = async (productId) => {
       throw new Error(`Product ${productId} not found in offerings`);
     }
 
-    const purchaseResult = await purchasePackage(targetPackage);
+    const purchaseResult = await Purchases.purchasePackage(targetPackage);
     
     return {
       success: true,
@@ -137,7 +128,7 @@ export const restorePurchases = async () => {
   }
 
   try {
-    const customerInfo = await rcRestorePurchases();
+    const customerInfo = await Purchases.restorePurchases();
     return {
       success: true,
       customerInfo
@@ -161,7 +152,7 @@ export const checkSubscriptionStatus = async () => {
   }
 
   try {
-    const customerInfo = await rcGetCustomerInfo();
+    const customerInfo = await Purchases.getCustomerInfo();
     const hasSubscription = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
     
     return {
@@ -184,7 +175,7 @@ export const getCustomerInfo = async () => {
   }
 
   try {
-    const customerInfo = await rcGetCustomerInfo();
+    const customerInfo = await Purchases.getCustomerInfo();
     return customerInfo;
   } catch (error) {
     console.error('Failed to get customer info:', error);
@@ -201,7 +192,7 @@ export const setCustomerInfoUpdateListener = (callback) => {
     return;
   }
 
-  addCustomerInfoUpdateListener(callback);
+  Purchases.addCustomerInfoUpdateListener(callback);
 };
 
 /**
@@ -213,7 +204,7 @@ export const logOutRevenueCat = async () => {
   }
 
   try {
-    await logOut();
+    await Purchases.logOut();
     console.log('RevenueCat user logged out');
   } catch (error) {
     console.error('Failed to log out RevenueCat user:', error);
