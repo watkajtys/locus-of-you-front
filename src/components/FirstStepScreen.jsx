@@ -1,12 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, Circle, Check } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Button from './Button';
 
+// Confetti Component
+const ConfettiExplosion = ({ isActive, onComplete }) => {
+  useEffect(() => {
+    if (isActive) {
+      // Auto-hide confetti after animation completes
+      const timer = setTimeout(() => {
+        onComplete && onComplete();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, onComplete]);
+
+  if (!isActive) return null;
+
+  // Generate 50 confetti pieces with random properties
+  const confettiPieces = Array.from({ length: 50 }, (_, i) => {
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', 
+      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+      '#F8C471', '#82E0AA', '#F1948A', '#AED6F1', '#A9DFBF'
+    ];
+    
+    return {
+      id: i,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: Math.random() * 8 + 4, // 4-12px
+      delay: Math.random() * 0.5, // 0-0.5s delay
+      duration: Math.random() * 1.5 + 2, // 2-3.5s duration
+      angle: Math.random() * 360, // Random direction
+      distance: Math.random() * 300 + 150, // 150-450px distance
+      rotation: Math.random() * 720 + 360, // 360-1080 degrees rotation
+    };
+  });
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {confettiPieces.map((piece) => (
+        <div
+          key={piece.id}
+          className="absolute confetti-piece"
+          style={{
+            left: '50%',
+            top: '50%',
+            width: `${piece.size}px`,
+            height: `${piece.size}px`,
+            backgroundColor: piece.color,
+            borderRadius: Math.random() > 0.5 ? '50%' : '0%',
+            animationDelay: `${piece.delay}s`,
+            animationDuration: `${piece.duration}s`,
+            '--angle': `${piece.angle}deg`,
+            '--distance': `${piece.distance}px`,
+            '--rotation': `${piece.rotation}deg`,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
   const [isTaskCompleted, setIsTaskCompleted] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Generate personalized micro-victory based on user's profile and goal
   const generateMicroVictoryContent = (answers) => {
@@ -63,7 +123,18 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
 
   // Handle task completion toggle
   const handleTaskClick = () => {
-    setIsTaskCompleted(!isTaskCompleted);
+    const newCompletedState = !isTaskCompleted;
+    setIsTaskCompleted(newCompletedState);
+    
+    // Trigger confetti celebration when task becomes completed
+    if (newCompletedState) {
+      setShowConfetti(true);
+    }
+  };
+
+  // Handle confetti completion
+  const handleConfettiComplete = () => {
+    setShowConfetti(false);
   };
 
   return (
@@ -101,8 +172,14 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
               cardType="YOUR AI COACH"
             />
 
-            {/* Second Card - The Task with consistent styling */}
+            {/* Second Card - The Task with consistent styling and confetti */}
             <div className="relative">
+              {/* Confetti Explosion */}
+              <ConfettiExplosion 
+                isActive={showConfetti} 
+                onComplete={handleConfettiComplete}
+              />
+              
               <div
                 className={`
                   relative shadow-lg border
@@ -155,13 +232,13 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                       <div className="relative w-8 h-8 md:w-10 md:h-10">
                         {/* Green Circle Background */}
                         <div 
-                          className="absolute inset-0 rounded-full bg-green-600"
+                          className="absolute inset-0 rounded-full bg-green-600 animate-pulse"
                           style={{ backgroundColor: '#16a34a' }}
                         />
                         {/* Centered White Checkmark */}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Check 
-                            className="w-5 h-5 md:w-6 md:h-6 text-white"
+                            className="w-5 h-5 md:w-6 md:h-6 text-white animate-bounce"
                             strokeWidth={3}
                           />
                         </div>
@@ -231,7 +308,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
               style={{ color: 'var(--color-muted)' }}
             >
               {isTaskCompleted 
-                ? "Great job! You've taken the first step towards building consistency." 
+                ? "🎉 Amazing! You've taken the first step towards building consistency!" 
                 : "Remember: The goal isn't to be perfect, it's to be consistent."
               }
             </p>
