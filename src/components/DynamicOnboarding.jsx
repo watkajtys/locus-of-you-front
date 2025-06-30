@@ -296,20 +296,22 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   // Show loading state
   if (persistenceLoading) {
     return (
-      <div 
-        className="min-h-screen flex items-center justify-center font-inter"
-        style={{ backgroundColor: 'var(--color-background)' }}
-      >
-        <div className="text-center space-y-4">
-          <AuraAvatar size={64} />
-          <p 
-            className="text-lg"
-            style={{ color: 'var(--color-muted)' }}
-          >
-            Loading your progress...
-          </p>
+      <AuraProvider>
+        <div 
+          className="min-h-screen flex items-center justify-center font-inter"
+          style={{ backgroundColor: 'var(--color-background)' }}
+        >
+          <div className="text-center space-y-4">
+            <AuraAvatar size={64} />
+            <p 
+              className="text-lg"
+              style={{ color: 'var(--color-muted)' }}
+            >
+              Loading your progress...
+            </p>
+          </div>
         </div>
-      </div>
+      </AuraProvider>
     );
   }
 
@@ -318,49 +320,51 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     const savedProgress = getProgress();
     
     return (
-      <div 
-        className="min-h-screen flex items-center justify-center font-inter p-6"
-        style={{ backgroundColor: 'var(--color-background)' }}
-      >
-        <Card className="w-full max-w-md p-8 space-y-6">
-          <div className="text-center space-y-4">
-            <AuraAvatar size={64} />
-            <h2 
-              className="text-2xl font-bold"
-              style={{ color: 'var(--color-text)' }}
-            >
-              Welcome Back!
-            </h2>
-            <p 
-              className="text-base"
-              style={{ color: 'var(--color-muted)' }}
-            >
-              You're {savedProgress.progressPercentage}% through your assessment. 
-              Would you like to continue where you left off?
-            </p>
-          </div>
+      <AuraProvider>
+        <div 
+          className="min-h-screen flex items-center justify-center font-inter p-6"
+          style={{ backgroundColor: 'var(--color-background)' }}
+        >
+          <Card className="w-full max-w-md p-8 space-y-6">
+            <div className="text-center space-y-4">
+              <AuraAvatar size={64} />
+              <h2 
+                className="text-2xl font-bold"
+                style={{ color: 'var(--color-text)' }}
+              >
+                Welcome Back!
+              </h2>
+              <p 
+                className="text-base"
+                style={{ color: 'var(--color-muted)' }}
+              >
+                You're {savedProgress.progressPercentage}% through your assessment. 
+                Would you like to continue where you left off?
+              </p>
+            </div>
 
-          <div className="space-y-3">
-            <Button
-              variant="accent"
-              size="large"
-              onClick={handleResume}
-              className="w-full"
-            >
-              Continue Assessment ({savedProgress.progressPercentage}%)
-            </Button>
-            
-            <Button
-              variant="secondary"
-              size="large"
-              onClick={handleStartFresh}
-              className="w-full"
-            >
-              Start Over
-            </Button>
-          </div>
-        </Card>
-      </div>
+            <div className="space-y-3">
+              <Button
+                variant="accent"
+                size="large"
+                onClick={handleResume}
+                className="w-full"
+              >
+                Continue Assessment ({savedProgress.progressPercentage}%)
+              </Button>
+              
+              <Button
+                variant="secondary"
+                size="large"
+                onClick={handleStartFresh}
+                className="w-full"
+              >
+                Start Over
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </AuraProvider>
     );
   }
 
