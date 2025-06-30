@@ -139,8 +139,8 @@ const CoachingInterface = ({ session, hasSubscription }) => {
           </div>
         </header>
 
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+        {/* Messages Area - Updated with max-width and centering */}
+        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 max-w-4xl mx-auto w-full">
           {messages.map((message) => (
             <div key={message.id} className="space-y-4">
               {message.type === 'user' ? (
