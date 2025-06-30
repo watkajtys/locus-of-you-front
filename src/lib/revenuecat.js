@@ -73,8 +73,8 @@ export const setRevenueCatUserId = async (userId) => {
   }
 
   try {
-    // Use logIn to identify the anonymous user
-    const result = await Purchases.logIn(userId);
+    // Use identify to associate the user ID with RevenueCat
+    const result = await Purchases.identify(userId);
     console.log('RevenueCat user ID set:', userId);
     
     // Clear the anonymous ID since we're now identified
