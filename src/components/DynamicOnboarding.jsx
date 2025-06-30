@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, User, Brain, LogIn } from 'lucide-react';
+import { ChevronRight, User, LogIn } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
@@ -293,7 +293,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         </div>
 
         {/* Main Question Area */}
-        <div className="flex-1 flex items-start justify-center px-6 py-4 md:py-8 pb-32">
+        <div className="flex-1 flex items-start justify-center px-6 py-4 md:py-8">
           <div className="max-w-4xl mx-auto w-full">
             {currentQuestionData && (
               <div 
@@ -475,9 +475,9 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
           </div>
         </div>
 
-        {/* Fixed Bottom Navigation */}
+        {/* Bottom Navigation */}
         <div 
-          className="fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-sm"
+          className="flex-shrink-0 border-t backdrop-blur-sm"
           style={{
             backgroundColor: 'var(--color-card)',
             borderColor: 'var(--color-border)',
@@ -498,7 +498,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                   border: '1px solid var(--color-border)'
                 }}
               >
-                <Brain className="w-5 h-5" />
                 <span className="text-sm font-medium">Skip for Now</span>
               </button>
 
