@@ -3,7 +3,7 @@ import {
   logIn, 
   getOfferings as rcGetOfferings, 
   purchasePackage, 
-  restorePurchases, 
+  restorePurchases as rcRestorePurchases, 
   getCustomerInfo, 
   addCustomerInfoUpdateListener, 
   logOut 
@@ -137,7 +137,7 @@ export const restorePurchases = async () => {
   }
 
   try {
-    const customerInfo = await restorePurchases();
+    const customerInfo = await rcRestorePurchases();
     return {
       success: true,
       customerInfo
