@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './hooks/useTheme';
 import { initializeRevenueCat, setRevenueCatUserId, checkSubscriptionStatus } from './lib/revenuecat';
-import { Bug, Play } from 'lucide-react';
+import { Bug, Play, User } from 'lucide-react';
 import Auth from './components/Auth';
 import AppShell from './components/AppShell';
 import DynamicOnboarding from './components/DynamicOnboarding';
@@ -164,6 +164,37 @@ function App() {
     console.log('Debug: Jumped to first step with mock data');
   };
 
+  // Debug function to simulate logged-in state
+  const handleDebugLogin = () => {
+    const mockSession = {
+      user: {
+        id: 'debug-user-12345',
+        email: 'debug@example.com',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        email_confirmed_at: new Date().toISOString(),
+        last_sign_in_at: new Date().toISOString(),
+        app_metadata: {},
+        user_metadata: {},
+        aud: 'authenticated',
+        role: 'authenticated'
+      },
+      access_token: 'debug-access-token',
+      refresh_token: 'debug-refresh-token',
+      expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      token_type: 'bearer'
+    };
+
+    setSession(mockSession);
+    setHasSubscription(true); // Set premium subscription for testing
+    setShowAuth(false);
+    setShowSnapshot(false);
+    setShowFirstStep(false);
+    setShowPaywall(false);
+    console.log('Debug: Simulated logged-in state with premium subscription');
+  };
+
   // Show loading state while checking authentication
   if (loading) {
     return (
@@ -191,6 +222,22 @@ function App() {
     <>
       {/* Debug Buttons - Fixed Position */}
       <div className="fixed top-4 right-4 z-50 flex flex-col space-y-2">
+        {/* Login Debug Button */}
+        <button
+          onClick={handleDebugLogin}
+          className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
+          style={{
+            backgroundColor: '#10b981', // emerald-500
+            color: 'white',
+            fontSize: '0.875rem',
+            fontWeight: '600'
+          }}
+          title="Debug: Simulate Logged-in State"
+        >
+          <User className="w-4 h-4" />
+          <span>Login</span>
+        </button>
+
         {/* Snapshot Debug Button */}
         <button
           onClick={handleDebugSnapshot}
