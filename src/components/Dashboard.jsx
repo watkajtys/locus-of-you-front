@@ -1,193 +1,145 @@
 import React from 'react';
 import { useTheme } from '../hooks/useTheme';
 import { AuraProvider } from '../contexts/AuraProvider';
-import AuraAvatar from './AuraAvatar';
-import Header from './Header';
-import { LogOut, User, Crown, Check } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { logOutRevenueCat } from '../lib/revenuecat';
-import Button from './Button';
+import DashboardHeader from './DashboardHeader';
+import CumulativeGraph from './CumulativeGraph';
 import Card from './Card';
+import { Brain, Target, TrendingUp, Calendar, Award, Zap } from 'lucide-react';
 
 const Dashboard = ({ session, hasSubscription = false }) => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
-  const handleSignOut = async () => {
-    // Log out from RevenueCat first
-    await logOutRevenueCat();
-    // Then sign out from Supabase
-    await supabase.auth.signOut();
-  };
+  // Sample data for dashboard
+  const recentWins = [
+    { id: 1, title: 'Completed morning routine', date: '2025-01-26', category: 'Habits' },
+    { id: 2, title: 'Finished project milestone', date: '2025-01-25', category: 'Work' },
+    { id: 3, title: 'Meditated for 10 minutes', date: '2025-01-25', category: 'Wellness' },
+    { id: 4, title: 'Reached out to a friend', date: '2025-01-24', category: 'Social' }
+  ];
+
+  const insights = [
+    {
+      icon: Brain,
+      title: 'Your Pattern',
+      description: 'You\'re most productive in the morning hours. Consider scheduling important tasks before 11 AM.',
+      color: 'var(--color-accent)'
+    },
+    {
+      icon: Target,
+      title: 'Focus Area',
+      description: 'Building consistency in your morning routine is showing great results. Keep it up!',
+      color: 'var(--color-primary)'
+    },
+    {
+      icon: TrendingUp,
+      title: 'Growth Trend',
+      description: 'Your goal completion rate has improved by 40% over the past month.',
+      color: '#10b981'
+    }
+  ];
 
   return (
     <AuraProvider>
       <div 
-        className="min-h-screen font-inter transition-colors duration-300"
+        className="min-h-screen font-inter"
         style={{ backgroundColor: 'var(--color-background)' }}
       >
-        <Header theme={theme} onThemeToggle={toggleTheme} />
-        
-        <main className="max-w-7xl mx-auto px-6 py-8">
-          <div className="space-y-8">
-            {/* Welcome Section */}
-            <Card className="p-8">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <h1 
-                      className="text-3xl font-bold"
-                      style={{ color: 'var(--color-text)' }}
-                    >
-                      Dashboard
-                    </h1>
-                    {hasSubscription && (
-                      <div className="flex items-center space-x-2 px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--color-accent)' }}>
-                        <Crown className="w-4 h-4 text-white" />
-                        <span className="text-white text-sm font-medium">Premium</span>
+        {/* Header Stats */}
+        <div className="px-4 py-6">
+          <DashboardHeader 
+            dailyStreak={12}
+            weeklyProgress={0.75}
+            totalWins={45}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="px-4 space-y-6">
+          {/* Growth Chart */}
+          <CumulativeGraph />
+
+          {/* Insights Grid */}
+          <div className="space-y-4">
+            <h3 
+              className="text-xl font-bold px-2"
+              style={{ color: 'var(--color-text)' }}
+            >
+              Insights & Patterns
+            </h3>
+            <div className="grid gap-4">
+              {insights.map((insight, index) => {
+                const IconComponent = insight.icon;
+                return (
+                  <Card key={index} className="p-6" hover>
+                    <div className="flex items-start space-x-4">
+                      <div 
+                        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: insight.color }}
+                      >
+                        <IconComponent className="w-6 h-6 text-white" />
                       </div>
-                    )}
-                  </div>
-                  <p 
-                    className="text-lg"
-                    style={{ color: 'var(--color-muted)' }}
-                  >
-                    Welcome back, {session?.user?.email}
-                  </p>
-                  {hasSubscription && (
-                    <p 
-                      className="text-sm flex items-center space-x-2"
-                      style={{ color: 'var(--color-accent)' }}
-                    >
-                      <Check className="w-4 h-4" />
-                      <span>You have access to all premium features</span>
-                    </p>
-                  )}
-                </div>
-                
-                <div className="flex items-center space-x-4">
-                  <AuraAvatar size={64} />
-                  <Button
-                    variant="ghost"
-                    onClick={handleSignOut}
-                    className="flex items-center space-x-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Sign Out</span>
-                  </Button>
-                </div>
-              </div>
-            </Card>
-
-            {/* Subscription Status Card */}
-            <Card className="p-6">
-              <div className="space-y-4">
-                <h3 
-                  className="text-lg font-semibold"
-                  style={{ color: 'var(--color-text)' }}
-                >
-                  Subscription Status
-                </h3>
-                {hasSubscription ? (
-                  <div className="flex items-center space-x-3">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: '#10b981' }}
-                    />
-                    <span 
-                      className="font-medium"
-                      style={{ color: 'var(--color-text)' }}
-                    >
-                      Active Premium Subscription
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-3">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: '#64748b' }}
-                    />
-                    <span 
-                      className="font-medium"
-                      style={{ color: 'var(--color-muted)' }}
-                    >
-                      Free Account
-                    </span>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Placeholder Content */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card className="p-6">
-                <div className="space-y-3">
-                  <div 
-                    className="w-10 h-10 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: 'var(--color-accent)' }}
-                  >
-                    <User className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 
-                    className="text-lg font-semibold"
-                    style={{ color: 'var(--color-text)' }}
-                  >
-                    Profile
-                  </h3>
-                  <p 
-                    className="text-sm"
-                    style={{ color: 'var(--color-muted)' }}
-                  >
-                    Manage your account settings and preferences.
-                  </p>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="space-y-3">
-                  <AuraAvatar size={40} />
-                  <h3 
-                    className="text-lg font-semibold"
-                    style={{ color: 'var(--color-text)' }}
-                  >
-                    Aura Status
-                  </h3>
-                  <p 
-                    className="text-sm"
-                    style={{ color: 'var(--color-muted)' }}
-                  >
-                    Your digital aura is currently in idle state.
-                  </p>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="space-y-3">
-                  <div 
-                    className="w-10 h-10 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: 'var(--color-primary)' }}
-                  >
-                    <div 
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: 'var(--color-accent)' }}
-                    />
-                  </div>
-                  <h3 
-                    className="text-lg font-semibold"
-                    style={{ color: 'var(--color-text)' }}
-                  >
-                    Activities
-                  </h3>
-                  <p 
-                    className="text-sm"
-                    style={{ color: 'var(--color-muted)' }}
-                  >
-                    View your recent activities and interactions.
-                  </p>
-                </div>
-              </Card>
+                      <div className="flex-1 space-y-2">
+                        <h4 
+                          className="font-semibold text-lg"
+                          style={{ color: 'var(--color-text)' }}
+                        >
+                          {insight.title}
+                        </h4>
+                        <p 
+                          className="text-sm leading-relaxed"
+                          style={{ color: 'var(--color-muted)' }}
+                        >
+                          {insight.description}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           </div>
-        </main>
+
+          {/* Recent Wins */}
+          <div className="space-y-4">
+            <h3 
+              className="text-xl font-bold px-2"
+              style={{ color: 'var(--color-text)' }}
+            >
+              Recent Wins
+            </h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                {recentWins.map((win) => (
+                  <div key={win.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-opacity-50 transition-colors duration-200" style={{ backgroundColor: 'var(--color-primary)' }}>
+                    <div 
+                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: 'var(--color-accent)' }}
+                    >
+                      <Award className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 
+                        className="font-medium"
+                        style={{ color: 'var(--color-text)' }}
+                      >
+                        {win.title}
+                      </h4>
+                      <div className="flex items-center space-x-2 text-sm" style={{ color: 'var(--color-muted)' }}>
+                        <Calendar className="w-4 h-4" />
+                        <span>{win.date}</span>
+                        <span>•</span>
+                        <span>{win.category}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          {/* Bottom Padding for Navigation */}
+          <div className="h-20"></div>
+        </div>
       </div>
     </AuraProvider>
   );

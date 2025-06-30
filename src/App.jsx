@@ -4,7 +4,7 @@ import { useTheme } from './hooks/useTheme';
 import { initializeRevenueCat, setRevenueCatUserId, checkSubscriptionStatus } from './lib/revenuecat';
 import { Bug, Play } from 'lucide-react';
 import Auth from './components/Auth';
-import Dashboard from './components/Dashboard';
+import AppShell from './components/AppShell';
 import DynamicOnboarding from './components/DynamicOnboarding';
 import SnapshotScreen from './components/SnapshotScreen';
 import FirstStepScreen from './components/FirstStepScreen';
@@ -226,9 +226,9 @@ function App() {
 
       {/* Main App Content */}
       {(() => {
-        // Conditionally render Auth or Dashboard based on session
+        // Conditionally render based on authentication and flow state
         if (session) {
-          return <Dashboard session={session} hasSubscription={hasSubscription} />;
+          return <AppShell session={session} hasSubscription={hasSubscription} />;
         }
 
         // Show paywall if first step is completed
