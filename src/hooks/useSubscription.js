@@ -27,50 +27,55 @@ export const useSubscription = (user) => {
       return;
     }
 
-    try {
-      setSubscriptionStatus(prev => ({ ...prev, isLoading: true, error: null }));
-      
-      const status = await checkSubscriptionStatus();
-      
-      setSubscriptionStatus({
-        hasSubscription: status.hasSubscription || false,
-        isLoading: false,
-        error: null,
-        activeEntitlements: status.activeEntitlements || [],
-        currentProduct: status.currentProduct || null,
-        isTrial: status.isTrial || false,
-        subscriptionEndDate: status.subscriptionEndDate || null
-      });
-    } catch (error) {
-      console.error('Error checking subscription status:', error);
-      setSubscriptionStatus(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error.message
-      }));
-    }
+    // Set loading state
+    setSubscriptionStatus(prev => ({ ...prev, isLoading: true, error: null }));
+
+    // checkSubscriptionStatus now catches its own errors and returns an error property.
+    const status = await checkSubscriptionStatus();
+
+    setSubscriptionStatus({
+      hasSubscription: status.hasSubscription || false,
+      isLoading: false,
+      error: status.error || null, // Use the error from status object
+      // Ensure all fields from the initial state are covered, using defaults if not in status
+      activeEntitlements: status.activeEntitlements || [],
+      currentProduct: status.currentProduct || null,
+      isTrial: status.isTrial || false,
+      subscriptionEndDate: status.subscriptionEndDate || null,
+      // customerInfo can also be part of the state if needed by components
+      // customerInfo: status.customerInfo || null,
+    });
+    // The old catch block for checkSubscriptionStatus is no longer strictly necessary here
+    // if checkSubscriptionStatus itself handles errors and populates status.error.
   };
 
   const handleRestorePurchases = async () => {
     try {
-      setSubscriptionStatus(prev => ({ ...prev, isLoading: true }));
+      setSubscriptionStatus(prev => ({ ...prev, isLoading: true, error: null }));
       
-      const result = await restorePurchases();
+      const result = await restorePurchases(); // restorePurchases returns { success, error?, customerInfo? }
       
       if (result.success) {
+        // refreshSubscriptionStatus will use the latest customerInfo from restore
         await refreshSubscriptionStatus();
         return { success: true };
       } else {
-        throw new Error(result.error);
+        // Set error state from restorePurchases result
+        setSubscriptionStatus(prev => ({
+          ...prev,
+          isLoading: false,
+          error: result.error || 'Failed to restore purchases.'
+        }));
+        return { success: false, error: result.error || 'Failed to restore purchases.' };
       }
-    } catch (error) {
+    } catch (error) { // Catch unexpected errors from restorePurchases itself
       console.error('Error restoring purchases:', error);
       setSubscriptionStatus(prev => ({
         ...prev,
         isLoading: false,
-        error: error.message
+        error: error.message || 'An unexpected error occurred while restoring purchases.'
       }));
-      return { success: false, error: error.message };
+      return { success: false, error: error.message || 'An unexpected error occurred while restoring purchases.' };
     }
   };
 

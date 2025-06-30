@@ -22,18 +22,25 @@ function AppContent() {
   const [showFirstStep, setShowFirstStep] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [onboardingAnswers, setOnboardingAnswers] = useState(null);
+  const [revenueCatError, setRevenueCatError] = useState(null);
 
   // Use the subscription hook for real-time subscription status
-  const { hasSubscription, isLoading: subscriptionLoading, refreshSubscriptionStatus } = useSubscription(session?.user);
+  // The hook now also returns `error` for subscription status checks
+  const { hasSubscription, isLoading: subscriptionLoading, error: subscriptionError, refreshSubscriptionStatus } = useSubscription(session?.user);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
         // Initialize RevenueCat first and wait for it to complete
-        await initializeRevenueCat();
+        const rcInitialized = await initializeRevenueCat();
+        if (!rcInitialized) {
+          console.error('Critical: RevenueCat SDK failed to initialize.');
+          setRevenueCatError('Failed to initialize payment system. Some features may be unavailable.');
+          // Decide if loading should stop or if app can proceed in a degraded state
+        }
 
         // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
         } else {
@@ -69,12 +76,15 @@ function AppContent() {
           try {
             await setRevenueCatUserId(session.user.id);
             // The subscription status will be updated automatically through the hook
+            setRevenueCatError(null); // Clear previous errors on successful binding
           } catch (error) {
-            console.error('Error setting RevenueCat user ID:', error);
+            console.error('Critical: Error setting RevenueCat user ID:', error);
+            setRevenueCatError('Could not link user to payment system. Subscription status might be inaccurate.');
           }
         } else {
           // User logged out
           await logOutRevenueCat();
+          setRevenueCatError(null); // Clear errors on logout
         }
       }
     );
@@ -232,8 +242,21 @@ function AppContent() {
 
   return (
     <>
+      {/* Display RevenueCat critical errors */}
+      {revenueCatError && (
+        <div style={{ backgroundColor: 'red', color: 'white', padding: '10px', textAlign: 'center', position: 'sticky', top: 0, zIndex: 1000 }}>
+          {revenueCatError}
+        </div>
+      )}
+      {/* Display subscription loading/error status from the hook */}
+      {subscriptionError && !revenueCatError && ( // Avoid double-messaging if a more critical RC error is already shown
+         <div style={{ backgroundColor: 'orange', color: 'white', padding: '10px', textAlign: 'center', position: 'sticky', top: revenueCatError ? '50px' : 0, zIndex: 999 }}>
+          Subscription Error: {subscriptionError.message || subscriptionError}
+        </div>
+      )}
+
       {/* Debug Buttons - Fixed Position */}
-      <div className="fixed top-4 right-4 z-50 flex flex-col space-y-2">
+      <div className="fixed top-4 right-4 z-50 flex flex-col space-y-2" style={{ top: (revenueCatError || subscriptionError) ? '60px' : '1rem' }}> {/* Adjust if error banners are shown */}
         {/* Login Debug Button */}
         <button
           onClick={handleDebugLogin}

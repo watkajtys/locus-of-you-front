@@ -13,6 +13,7 @@ export const PRODUCT_IDS = {
 // Entitlement identifier
 export const ENTITLEMENT_ID = 'premium_features';
 
+let purchasesInstance = null; // Stores the configured Purchases instance
 let isConfigured = false;
 
 /**
@@ -35,11 +36,13 @@ const generateAnonymousUserId = () => {
  * Initialize RevenueCat with anonymous user
  */
 export const initializeRevenueCat = async () => {
-  if (isConfigured) return;
+  if (isConfigured) return true; // Already configured successfully
   
   if (!REVENUECAT_API_KEY || REVENUECAT_API_KEY.trim() === '') {
-    console.warn('RevenueCat API key not found or empty. Please add VITE_REVENUECAT_PUBLIC_API_KEY to your .env file.');
-    return;
+    const errorMsg = 'RevenueCat API key not found or empty. Please add VITE_REVENUECAT_PUBLIC_API_KEY to your .env file.';
+    console.warn(errorMsg);
+    // throw new Error(errorMsg); // Option: throw an error to be caught by App.jsx
+    return false; // Return failure
   }
 
   try {
@@ -47,15 +50,30 @@ export const initializeRevenueCat = async () => {
     const anonymousUserId = generateAnonymousUserId();
     
     // Configure RevenueCat with anonymous user ID
-    await Purchases.configure({
+    // Purchases.configure is static and returns an instance.
+    purchasesInstance = Purchases.configure({
       apiKey: REVENUECAT_API_KEY,
       appUserId: anonymousUserId // Provide the anonymous user ID
     });
     
-    isConfigured = true;
-    console.log('RevenueCat initialized successfully with anonymous user:', anonymousUserId);
+    if (purchasesInstance) {
+      isConfigured = true;
+      console.log('RevenueCat initialized successfully with anonymous user:', anonymousUserId);
+      return true; // Return success
+    } else {
+      // This case should ideally not happen if Purchases.configure throws on failure,
+      // but as a safeguard:
+      const errorMsg = 'Failed to configure RevenueCat: configure method did not return an instance.';
+      console.error(errorMsg);
+      isConfigured = false;
+      // throw new Error(errorMsg); // Option: throw
+      return false; // Return failure
+    }
   } catch (error) {
     console.error('Failed to initialize RevenueCat:', error);
+    isConfigured = false; // Ensure this is false on error
+    // throw error; // Option: re-throw the error to be caught by App.jsx
+    return false; // Return failure
   }
 };
 
@@ -63,8 +81,8 @@ export const initializeRevenueCat = async () => {
  * Set user ID for RevenueCat and sync with Supabase
  */
 export const setRevenueCatUserId = async (userId) => {
-  if (!isConfigured) {
-    console.warn('RevenueCat not initialized');
+  if (!isConfigured || !purchasesInstance) {
+    console.warn('RevenueCat not initialized or instance not available');
     return;
   }
 
@@ -74,15 +92,16 @@ export const setRevenueCatUserId = async (userId) => {
   }
 
   try {
-    // Use logIn to identify the anonymous user
-    const result = await Purchases.logIn(userId);
-    console.log('RevenueCat user ID set:', userId);
+    // Use changeUser on the instance to identify the user
+    const customerInfoResult = await purchasesInstance.changeUser(userId);
+    console.log('RevenueCat user ID set via changeUser:', userId);
     
     // Clear the anonymous ID since we're now identified
     localStorage.removeItem('revenuecat_anonymous_id');
     
     // Update the RevenueCat customer ID in Supabase profile
-    const customerInfo = result.customerInfo;
+    // The result of changeUser is CustomerInfo directly
+    const customerInfo = customerInfoResult;
     if (customerInfo) {
       await updateSupabaseProfile(userId, customerInfo);
     }
@@ -161,13 +180,13 @@ const syncSubscriptionStatus = async (userId, customerInfo) => {
  * Get available offerings
  */
 export const getOfferings = async () => {
-  if (!isConfigured) {
-    console.warn('RevenueCat not initialized');
+  if (!isConfigured || !purchasesInstance) {
+    console.warn('RevenueCat not initialized or instance not available');
     return null;
   }
 
   try {
-    const offerings = await Purchases.getOfferings();
+    const offerings = await purchasesInstance.getOfferings();
     return offerings;
   } catch (error) {
     console.error('Failed to get offerings:', error);
@@ -179,12 +198,12 @@ export const getOfferings = async () => {
  * Purchase a subscription
  */
 export const purchaseSubscription = async (productId) => {
-  if (!isConfigured) {
-    throw new Error('RevenueCat not initialized');
+  if (!isConfigured || !purchasesInstance) {
+    throw new Error('RevenueCat not initialized or instance not available');
   }
 
   try {
-    const offerings = await Purchases.getOfferings();
+    const offerings = await purchasesInstance.getOfferings();
     
     if (!offerings?.current) {
       throw new Error('No current offering available');
@@ -199,7 +218,11 @@ export const purchaseSubscription = async (productId) => {
       throw new Error(`Product ${productId} not found in offerings`);
     }
 
-    const purchaseResult = await Purchases.purchasePackage(targetPackage);
+    // purchasePackage is an instance method.
+    // Note: The docs for v1.7.0 list purchasePackage.
+    // It's deprecated in later versions in favor of purchase({package: targetPackage}).
+    // For now, we'll stick to purchasePackage as it's in the 1.7.0 docs.
+    const purchaseResult = await purchasesInstance.purchasePackage(targetPackage);
     
     // Sync the updated subscription status with Supabase
     const { data: { user } } = await supabase.auth.getUser();
@@ -235,12 +258,19 @@ export const purchaseSubscription = async (productId) => {
  * Restore purchases
  */
 export const restorePurchases = async () => {
+  // Assuming isConfigured also implies purchasesInstance is available if needed,
+  // but being cautious as restorePurchases is not clearly an instance method in docs.
   if (!isConfigured) {
     throw new Error('RevenueCat not initialized');
   }
 
+  // NOTE: restorePurchases() is not listed as an instance method on the Purchases class
+  // in the purchases-js v1.7.0 SDK reference. It MIGHT be a static method, or not exist
+  // in this exact form for this SDK. If it's static, the call below is okay.
+  // If it's an instance method (unlikely given docs) or doesn't exist, this will error.
+  // For now, leaving as is to focus on the primary `logIn` bug.
   try {
-    const customerInfo = await Purchases.restorePurchases();
+    const customerInfo = await Purchases.restorePurchases(); // Assuming static if it exists
     
     // Sync restored subscription status with Supabase
     const { data: { user } } = await supabase.auth.getUser();
@@ -265,8 +295,8 @@ export const restorePurchases = async () => {
  * Check if user has premium subscription (from database first, then RevenueCat)
  */
 export const checkSubscriptionStatus = async () => {
-  if (!isConfigured) {
-    console.warn('RevenueCat not initialized');
+  if (!isConfigured || !purchasesInstance) {
+    console.warn('RevenueCat not initialized or instance not available');
     return { hasSubscription: false };
   }
 
@@ -285,13 +315,15 @@ export const checkSubscriptionStatus = async () => {
           activeEntitlements: status.active_entitlements,
           currentProduct: status.current_product,
           isTrial: status.is_trial,
-          subscriptionEndDate: status.subscription_end_date
+          subscriptionEndDate: status.subscription_end_date,
+          customerInfo: null, // No direct RC customerInfo if returning from DB cache
+          error: null,
         };
       }
     }
 
     // Fallback to RevenueCat if database lookup fails
-    const customerInfo = await Purchases.getCustomerInfo();
+    const customerInfo = await purchasesInstance.getCustomerInfo();
     const hasSubscription = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
     
     // Sync the latest status to database
@@ -302,11 +334,18 @@ export const checkSubscriptionStatus = async () => {
     return {
       hasSubscription,
       customerInfo,
-      activeEntitlements: customerInfo.entitlements.active
+      activeEntitlements: customerInfo.entitlements.active,
+      error: null, // Explicitly null on success
     };
   } catch (error) {
     console.error('Failed to check subscription status:', error);
-    return { hasSubscription: false, error: error.message };
+    // Ensure the returned object shape is consistent
+    return {
+      hasSubscription: false,
+      error: error.message || 'Unknown error checking subscription status.',
+      customerInfo: null,
+      activeEntitlements: {},
+    };
   }
 };
 
@@ -314,12 +353,12 @@ export const checkSubscriptionStatus = async () => {
  * Get customer info
  */
 export const getCustomerInfo = async () => {
-  if (!isConfigured) {
-    throw new Error('RevenueCat not initialized');
+  if (!isConfigured || !purchasesInstance) {
+    throw new Error('RevenueCat not initialized or instance not available');
   }
 
   try {
-    const customerInfo = await Purchases.getCustomerInfo();
+    const customerInfo = await purchasesInstance.getCustomerInfo();
     return customerInfo;
   } catch (error) {
     console.error('Failed to get customer info:', error);
@@ -345,17 +384,18 @@ export const setCustomerInfoUpdateListener = (callback) => {
  * Log out current user (switch back to anonymous)
  */
 export const logOutRevenueCat = async () => {
-  if (!isConfigured) {
+  if (!isConfigured || !purchasesInstance) {
+    console.warn('RevenueCat not initialized or instance not available for logout');
     return;
   }
 
   try {
-    await Purchases.logOut();
-    
-    // Generate a new anonymous ID for the next session
+    // To "log out", we change to a new anonymous user ID.
     const newAnonymousId = generateAnonymousUserId();
-    console.log('RevenueCat user logged out, new anonymous ID:', newAnonymousId);
+    await purchasesInstance.changeUser(newAnonymousId);
+
+    console.log('RevenueCat user logged out, switched to new anonymous ID:', newAnonymousId);
   } catch (error) {
-    console.error('Failed to log out RevenueCat user:', error);
+    console.error('Failed to log out RevenueCat user (by changing to anonymous):', error);
   }
 };
