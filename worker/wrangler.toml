@@ -3,13 +3,17 @@ main = "src/index.ts"
 compatibility_date = "2024-03-20"
 nodejs_compat = true
 
-[vars]
-ENVIRONMENT = "development"
+[ai]
+binding = "AI"
 
-# Add your environment variables here
-# GOOGLE_API_KEY = "your-google-api-key"
-# API_KEY = "your-api-key"
-# JWT_SECRET = "your-jwt-secret"
+[[d1_databases]]
+binding = "DB"
+database_name = "locus-user-data"
+database_id = "8860a9a3-2116-4a80-b836-5f668c1a1d68"
+
+[[vectorize]]
+binding = "VECTORIZE_INDEX"
+index_name = "user-journal-embeddings"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
@@ -22,18 +26,3 @@ id = "26f231f76b0949eb82a76d4f7c413d33"
 [[kv_namespaces]]
 binding = "COACHING_HISTORY_KV"
 id = "5845c2885c654de88998bb1e795c08a7"
-
-# Optional D1 database
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "locus-user-data"
-# database_id = "8860a9a3-2116-4a80-b836-5f668c1a1d68"
-
-# Optional vectorize for embeddings
-# [[vectorize]]
-# binding = "VECTORIZE_INDEX"
-# index_name = "user-journal-embeddings"
-
-# Optional AI binding for Cloudflare AI
-# [ai]
-# binding = "AI"
