@@ -5,14 +5,14 @@ import AuraAvatar from './AuraAvatar';
 import Card from './Card';
 import Button from './Button';
 
-// Spectrum Component for Data Visualization
-const SpectrumComponent = ({ title, description, userScore, minLabel, maxLabel }) => {
+// Spectrum Bar Component for Personal Agency
+const SpectrumBar = ({ title, description, userScore, minLabel, maxLabel }) => {
   // Convert score to percentage (assuming scores are 1-5 or similar)
   const percentage = ((userScore - 1) / 4) * 100;
   
   return (
     <div 
-      className="p-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+      className="p-8 rounded-xl transition-all duration-300 hover:scale-102"
       style={{ 
         backgroundColor: 'var(--color-card)',
         border: `1px solid var(--color-border)`
@@ -37,27 +37,18 @@ const SpectrumComponent = ({ title, description, userScore, minLabel, maxLabel }
         {/* Spectrum Visualization */}
         <div className="space-y-4">
           <div className="relative">
-            {/* Background Bar */}
+            {/* Background Line */}
             <div 
-              className="h-3 rounded-full"
-              style={{ backgroundColor: 'var(--color-primary)' }}
+              className="h-1 rounded-full"
+              style={{ backgroundColor: 'var(--color-border)' }}
             />
             
-            {/* Progress Bar */}
+            {/* Colored Dot Marker */}
             <div 
-              className="absolute top-0 left-0 h-3 rounded-full transition-all duration-700 ease-out"
+              className="absolute top-1/2 transform -translate-y-1/2 w-4 h-4 rounded-full border-2 border-white shadow-lg transition-all duration-700 ease-out"
               style={{ 
                 backgroundColor: 'var(--color-accent)',
-                width: `${percentage}%`
-              }}
-            />
-            
-            {/* Marker */}
-            <div 
-              className="absolute top-1/2 transform -translate-y-1/2 w-6 h-6 rounded-full border-3 border-white shadow-lg transition-all duration-700 ease-out"
-              style={{ 
-                backgroundColor: 'var(--color-accent)',
-                left: `calc(${percentage}% - 12px)`,
+                left: `calc(${percentage}% - 8px)`,
                 borderColor: 'white',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
               }}
@@ -68,6 +59,186 @@ const SpectrumComponent = ({ title, description, userScore, minLabel, maxLabel }
           <div className="flex justify-between text-sm font-medium" style={{ color: 'var(--color-muted)' }}>
             <span>{minLabel}</span>
             <span>{maxLabel}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Belief Balance Bar Component for Growth Mindset
+const BeliefBalanceBar = ({ title, description, userScore, leftLabel, rightLabel }) => {
+  // Convert score to percentage for Growth vs Fixed (assuming 1-5 scale)
+  const growthPercentage = ((userScore - 1) / 4) * 100;
+  const fixedPercentage = 100 - growthPercentage;
+  
+  return (
+    <div 
+      className="p-8 rounded-xl transition-all duration-300 hover:scale-102"
+      style={{ 
+        backgroundColor: 'var(--color-card)',
+        border: `1px solid var(--color-border)`
+      }}
+    >
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <h4 
+            className="text-xl font-semibold"
+            style={{ color: 'var(--color-text)' }}
+          >
+            {title}
+          </h4>
+          <p 
+            className="text-sm leading-relaxed"
+            style={{ color: 'var(--color-muted)' }}
+          >
+            {description}
+          </p>
+        </div>
+        
+        {/* Balance Bar Visualization */}
+        <div className="space-y-4">
+          <div className="relative h-6 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-border)' }}>
+            {/* Growth Segment */}
+            <div 
+              className="absolute top-0 left-0 h-full transition-all duration-700 ease-out"
+              style={{ 
+                backgroundColor: 'var(--color-accent)',
+                width: `${growthPercentage}%`
+              }}
+            />
+            {/* Fixed Segment */}
+            <div 
+              className="absolute top-0 right-0 h-full transition-all duration-700 ease-out"
+              style={{ 
+                backgroundColor: 'var(--color-muted)',
+                width: `${fixedPercentage}%`
+              }}
+            />
+          </div>
+          
+          {/* Labels */}
+          <div className="flex justify-between text-sm font-medium">
+            <div className="flex items-center space-x-2">
+              <div 
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: 'var(--color-accent)' }}
+              />
+              <span style={{ color: 'var(--color-text)' }}>{leftLabel}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span style={{ color: 'var(--color-text)' }}>{rightLabel}</span>
+              <div 
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: 'var(--color-muted)' }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Focus Ring Component for Achievement Orientation
+const FocusRing = ({ title, description, userScore, leftLabel, rightLabel }) => {
+  // Convert score to angle (assuming 1-5 scale maps to 0-360 degrees)
+  const promotionPercentage = ((userScore - 1) / 4) * 100;
+  const promotionAngle = (promotionPercentage / 100) * 360;
+  const preventionAngle = 360 - promotionAngle;
+  
+  const size = 120;
+  const strokeWidth = 12;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  
+  // Calculate stroke dash arrays for each segment
+  const promotionLength = (promotionAngle / 360) * circumference;
+  const preventionLength = (preventionAngle / 360) * circumference;
+  
+  return (
+    <div 
+      className="p-8 rounded-xl transition-all duration-300 hover:scale-102"
+      style={{ 
+        backgroundColor: 'var(--color-card)',
+        border: `1px solid var(--color-border)`
+      }}
+    >
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <h4 
+            className="text-xl font-semibold"
+            style={{ color: 'var(--color-text)' }}
+          >
+            {title}
+          </h4>
+          <p 
+            className="text-sm leading-relaxed"
+            style={{ color: 'var(--color-muted)' }}
+          >
+            {description}
+          </p>
+        </div>
+        
+        {/* Donut Chart Visualization */}
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative">
+            <svg width={size} height={size} className="transform -rotate-90">
+              {/* Background Circle */}
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="var(--color-border)"
+                strokeWidth={strokeWidth}
+                fill="transparent"
+              />
+              
+              {/* Promotion Focus Arc */}
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="var(--color-accent)"
+                strokeWidth={strokeWidth}
+                fill="transparent"
+                strokeDasharray={`${promotionLength} ${circumference}`}
+                strokeLinecap="round"
+                className="transition-all duration-700 ease-out"
+              />
+              
+              {/* Prevention Focus Arc */}
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="var(--color-muted)"
+                strokeWidth={strokeWidth}
+                fill="transparent"
+                strokeDasharray={`${preventionLength} ${circumference}`}
+                strokeDashoffset={-promotionLength}
+                strokeLinecap="round"
+                className="transition-all duration-700 ease-out"
+              />
+            </svg>
+          </div>
+          
+          {/* Labels */}
+          <div className="flex items-center space-x-6 text-sm font-medium">
+            <div className="flex items-center space-x-2">
+              <div 
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: 'var(--color-accent)' }}
+              />
+              <span style={{ color: 'var(--color-text)' }}>{leftLabel}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div 
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: 'var(--color-muted)' }}
+              />
+              <span style={{ color: 'var(--color-text)' }}>{rightLabel}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -102,54 +273,42 @@ const SnapshotScreen = ({ answers, onContinue }) => {
     }
   };
 
-  // Generate insights based on answers with display types
+  // Generate insights based on answers with abstract visualizations
   const generateInsights = (answers) => {
     const insights = [];
     
-    // Mindset insight - HIGHLIGHT CARD
-    if (answers.mindset === 'growth') {
-      insights.push({
-        type: 'highlight',
-        icon: Brain,
-        title: 'Growth Mindset Strength',
-        description: 'You believe abilities can be developed, which is a powerful asset for learning and overcoming challenges. This mindset is your foundation for continuous improvement.'
-      });
-    } else {
-      insights.push({
-        type: 'highlight',
-        icon: Brain,
-        title: 'Expertise Focus Strength',
-        description: 'You value proven strengths and expertise. We can build on your existing capabilities while gradually expanding your comfort zone with confidence.'
-      });
-    }
-    
-    // Locus of control insight - SPECTRUM VISUALIZATION
+    // Personal Agency insight - SPECTRUM BAR
     const locusScore = answers.locus === 'internal' ? 4.2 : 2.3; // Simulated score for visualization
     insights.push({
       type: 'spectrum',
       title: 'Personal Agency',
-      description: 'Your sense of control over outcomes shapes how you approach challenges',
+      description: 'Your sense of control over outcomes shapes how you approach challenges.',
       userScore: locusScore,
-      minLabel: 'External Focus',
-      maxLabel: 'Internal Control'
+      minLabel: 'External',
+      maxLabel: 'Internal'
     });
     
-    // Regulatory focus insight - STANDARD CARD
-    if (answers.regulatory_focus === 'promotion') {
-      insights.push({
-        type: 'standard',
-        icon: TrendingUp,
-        title: 'Achievement Orientation',
-        description: 'You are driven by achieving positive aspirations. Framing goals in terms of gains and opportunities will be most effective for your motivation.'
-      });
-    } else {
-      insights.push({
-        type: 'standard',
-        icon: Users,
-        title: 'Responsibility Focus',
-        description: 'You are motivated by fulfilling duties and preventing problems. Structure and security-focused approaches work best for building your confidence.'
-      });
-    }
+    // Growth Mindset insight - BELIEF BALANCE BAR
+    const mindsetScore = answers.mindset === 'growth' ? 4.5 : 2.0;
+    insights.push({
+      type: 'balance',
+      title: 'Growth Mindset',
+      description: 'Your beliefs about the nature of abilities and talents.',
+      userScore: mindsetScore,
+      leftLabel: 'Growth',
+      rightLabel: 'Fixed'
+    });
+    
+    // Achievement Orientation insight - FOCUS RING
+    const focusScore = answers.regulatory_focus === 'promotion' ? 4.0 : 2.5;
+    insights.push({
+      type: 'ring',
+      title: 'Achievement Orientation',
+      description: 'Your motivational focus influences how you pursue goals.',
+      userScore: focusScore,
+      leftLabel: 'Promotion Focus',
+      rightLabel: 'Prevention Focus'
+    });
     
     return insights;
   };
@@ -227,66 +386,29 @@ const SnapshotScreen = ({ answers, onContinue }) => {
               </div>
             </div>
 
-            {/* Dynamic Insights Section */}
-            <div className="space-y-6">
+            {/* Abstract Data Visualizations Section */}
+            <div className="space-y-8">
               <div className="text-center">
                 <h3 
                   className="text-2xl font-bold mb-2"
                   style={{ color: 'var(--color-text)' }}
                 >
-                  Key Insights About Your Motivation
+                  Key Insights
                 </h3>
                 <p 
                   className="text-base"
                   style={{ color: 'var(--color-muted)' }}
                 >
-                  These insights will shape your personalized coaching approach
+                  Abstract visualizations of your psychological profile
                 </p>
               </div>
 
-              <div className="space-y-6 max-w-3xl mx-auto">
+              <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                 {insights.map((insight, index) => {
-                  // Highlight Card
-                  if (insight.type === 'highlight') {
-                    return (
-                      <div
-                        key={index}
-                        className="relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl"
-                        style={{ 
-                          background: `linear-gradient(135deg, var(--color-accent), var(--color-secondary))`,
-                          border: `2px solid var(--color-accent)`
-                        }}
-                      >
-                        {/* Highlight Card Glow Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
-                        
-                        <div className="relative flex items-start space-x-6 p-8">
-                          <div 
-                            className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center shadow-lg"
-                            style={{ backgroundColor: 'white' }}
-                          >
-                            <insight.icon 
-                              className="w-8 h-8"
-                              style={{ color: 'var(--color-accent)' }}
-                            />
-                          </div>
-                          <div className="flex-1 space-y-3">
-                            <h4 className="text-2xl font-bold text-white">
-                              {insight.title}
-                            </h4>
-                            <p className="text-lg leading-relaxed text-white/90">
-                              {insight.description}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-                  
-                  // Spectrum Visualization
+                  // Spectrum Bar Visualization
                   if (insight.type === 'spectrum') {
                     return (
-                      <SpectrumComponent
+                      <SpectrumBar
                         key={index}
                         title={insight.title}
                         description={insight.description}
@@ -297,38 +419,35 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                     );
                   }
                   
-                  // Standard Card
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-start space-x-4 p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
-                      style={{ 
-                        backgroundColor: 'var(--color-card)',
-                        border: `1px solid var(--color-border)`
-                      }}
-                    >
-                      <div 
-                        className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: 'var(--color-accent)' }}
-                      >
-                        <insight.icon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <h4 
-                          className="text-lg font-semibold"
-                          style={{ color: 'var(--color-text)' }}
-                        >
-                          {insight.title}
-                        </h4>
-                        <p 
-                          className="text-base leading-relaxed"
-                          style={{ color: 'var(--color-muted)' }}
-                        >
-                          {insight.description}
-                        </p>
-                      </div>
-                    </div>
-                  );
+                  // Belief Balance Bar Visualization
+                  if (insight.type === 'balance') {
+                    return (
+                      <BeliefBalanceBar
+                        key={index}
+                        title={insight.title}
+                        description={insight.description}
+                        userScore={insight.userScore}
+                        leftLabel={insight.leftLabel}
+                        rightLabel={insight.rightLabel}
+                      />
+                    );
+                  }
+                  
+                  // Focus Ring Visualization
+                  if (insight.type === 'ring') {
+                    return (
+                      <FocusRing
+                        key={index}
+                        title={insight.title}
+                        description={insight.description}
+                        userScore={insight.userScore}
+                        leftLabel={insight.leftLabel}
+                        rightLabel={insight.rightLabel}
+                      />
+                    );
+                  }
+                  
+                  return null;
                 })}
               </div>
             </div>
