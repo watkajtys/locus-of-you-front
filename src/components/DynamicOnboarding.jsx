@@ -16,7 +16,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [questionVisible, setQuestionVisible] = useState(true);
   
-  // Updated question data structure with fluid sliders
+  // Updated question data structure with minimal sliders
   const questions = [
     {
       id: 'mindset',
@@ -82,11 +82,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       question: "I tend to be disorganized.",
       cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
-      max: 5,
-      labels: {
-        1: "Disagree Strongly",
-        5: "Agree Strongly"
-      }
+      max: 5
     },
     {
       id: 'personality_outgoing',
@@ -95,11 +91,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       question: "I see myself as someone who is outgoing and sociable.",
       cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
-      max: 5,
-      labels: {
-        1: "Disagree Strongly",
-        5: "Agree Strongly"
-      }
+      max: 5
     },
     {
       id: 'personality_moody',
@@ -108,11 +100,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       question: "I can be moody or have up and down mood swings.",
       cardType: "PERSONALITY DIAGNOSTIC",
       min: 1,
-      max: 5,
-      labels: {
-        1: "Disagree Strongly",
-        5: "Agree Strongly"
-      }
+      max: 5
     },
     {
       id: 'final_focus',
@@ -165,17 +153,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   // Handle fluid slider input
   const handleSliderChange = (value) => {
     setSliderValue(parseFloat(value));
-  };
-
-  // Get natural language description for slider value
-  const getSliderDescription = (value, min, max) => {
-    const percentage = (value - min) / (max - min);
-    
-    if (percentage <= 0.1) return "Strongly Disagree";
-    if (percentage <= 0.3) return "Disagree";
-    if (percentage <= 0.7) return "Neutral";
-    if (percentage <= 0.9) return "Agree";
-    return "Strongly Agree";
   };
 
   // Handle slider submission
@@ -400,28 +377,12 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                   </div>
                 )}
 
-                {/* Fluid Slider Input */}
+                {/* Minimal Slider Input */}
                 {currentQuestionData.type === 'slider' && (
                   <div className="max-w-2xl mx-auto">
-                    <Card className="p-8 space-y-8">
-                      {/* Current Value Display */}
-                      <div className="text-center">
-                        <div 
-                          className="text-lg font-medium mb-2"
-                          style={{ color: 'var(--color-text)' }}
-                        >
-                          {getSliderDescription(sliderValue, currentQuestionData.min, currentQuestionData.max)}
-                        </div>
-                        <div 
-                          className="text-sm opacity-60"
-                          style={{ color: 'var(--color-muted)' }}
-                        >
-                          {Math.round(sliderValue * 10) / 10} / {currentQuestionData.max}
-                        </div>
-                      </div>
-
+                    <Card className="p-12 space-y-8">
                       {/* Slider */}
-                      <div className="space-y-6">
+                      <div className="space-y-8">
                         <input
                           type="range"
                           min={currentQuestionData.min}
@@ -434,12 +395,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                             background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 100%)`
                           }}
                         />
-                        
-                        {/* Scale Labels - Only Min/Max */}
-                        <div className="flex justify-between text-sm px-2" style={{ color: 'var(--color-muted)' }}>
-                          <span className="text-left">{currentQuestionData.labels[currentQuestionData.min]}</span>
-                          <span className="text-right">{currentQuestionData.labels[currentQuestionData.max]}</span>
-                        </div>
                       </div>
 
                       {/* Submit Button */}
