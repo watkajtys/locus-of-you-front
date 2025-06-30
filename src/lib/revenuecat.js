@@ -74,7 +74,7 @@ export const setRevenueCatUserId = async (userId) => {
 
   try {
     // Use identify to associate the user ID with RevenueCat
-    const result = await Purchases.getSharedInstance().identify(userId);
+    const result = await Purchases.identify(userId);
     console.log('RevenueCat user ID set:', userId);
     
     // Clear the anonymous ID since we're now identified
@@ -97,7 +97,7 @@ export const getOfferings = async () => {
   }
 
   try {
-    const offerings = await Purchases.getSharedInstance().getOfferings();
+    const offerings = await Purchases.getOfferings();
     return offerings;
   } catch (error) {
     console.error('Failed to get offerings:', error);
@@ -114,7 +114,7 @@ export const purchaseSubscription = async (productId) => {
   }
 
   try {
-    const offerings = await Purchases.getSharedInstance().getOfferings();
+    const offerings = await Purchases.getOfferings();
     
     if (!offerings?.current) {
       throw new Error('No current offering available');
@@ -129,7 +129,7 @@ export const purchaseSubscription = async (productId) => {
       throw new Error(`Product ${productId} not found in offerings`);
     }
 
-    const purchaseResult = await Purchases.getSharedInstance().purchasePackage(targetPackage);
+    const purchaseResult = await Purchases.purchasePackage(targetPackage);
     
     return {
       success: true,
@@ -164,7 +164,7 @@ export const restorePurchases = async () => {
   }
 
   try {
-    const customerInfo = await Purchases.getSharedInstance().restorePurchases();
+    const customerInfo = await Purchases.restorePurchases();
     return {
       success: true,
       customerInfo
@@ -188,7 +188,7 @@ export const checkSubscriptionStatus = async () => {
   }
 
   try {
-    const customerInfo = await Purchases.getSharedInstance().getCustomerInfo();
+    const customerInfo = await Purchases.getCustomerInfo();
     const hasSubscription = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
     
     return {
@@ -211,7 +211,7 @@ export const getCustomerInfo = async () => {
   }
 
   try {
-    const customerInfo = await Purchases.getSharedInstance().getCustomerInfo();
+    const customerInfo = await Purchases.getCustomerInfo();
     return customerInfo;
   } catch (error) {
     console.error('Failed to get customer info:', error);
@@ -242,7 +242,7 @@ export const logOutRevenueCat = async () => {
   }
 
   try {
-    await Purchases.getSharedInstance().logOut();
+    await Purchases.logOut();
     
     // Generate a new anonymous ID for the next session
     const newAnonymousId = generateAnonymousUserId();
