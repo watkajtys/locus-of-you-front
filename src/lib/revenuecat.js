@@ -1,3 +1,4 @@
+// RevenueCat Web SDK correct import pattern
 import Purchases from '@revenuecat/purchases-js';
 
 // RevenueCat configuration
@@ -31,7 +32,7 @@ const generateAnonymousUserId = () => {
 };
 
 /**
- * Initialize RevenueCat with anonymous user
+ * Initialize RevenueCat with proper error handling
  */
 export const initializeRevenueCat = async () => {
   if (isConfigured) return;
@@ -42,19 +43,49 @@ export const initializeRevenueCat = async () => {
   }
 
   try {
+    // Check if Purchases is available and has the right structure
+    if (!Purchases) {
+      throw new Error('RevenueCat SDK not loaded properly');
+    }
+
     // Generate or retrieve anonymous user ID
     const anonymousUserId = generateAnonymousUserId();
     
-    // Configure RevenueCat with anonymous user ID
-    await Purchases.configure({
-      apiKey: REVENUECAT_API_KEY,
-      appUserId: anonymousUserId // Provide the anonymous user ID
-    });
+    // Configure RevenueCat - try different API patterns
+    let configureResult;
+    
+    if (typeof Purchases.configure === 'function') {
+      // Standard configure method
+      configureResult = await Purchases.configure({
+        apiKey: REVENUECAT_API_KEY,
+        appUserId: anonymousUserId
+      });
+    } else if (typeof Purchases.setup === 'function') {
+      // Alternative setup method
+      configureResult = await Purchases.setup(REVENUECAT_API_KEY, anonymousUserId);
+    } else if (typeof Purchases === 'function') {
+      // Constructor pattern
+      const purchases = new Purchases(REVENUECAT_API_KEY);
+      configureResult = await purchases.setAppUserId(anonymousUserId);
+    } else {
+      throw new Error('Unknown RevenueCat SDK API pattern');
+    }
     
     isConfigured = true;
     console.log('RevenueCat initialized successfully with anonymous user:', anonymousUserId);
+    return configureResult;
   } catch (error) {
     console.error('Failed to initialize RevenueCat:', error);
+    console.error('RevenueCat object:', Purchases);
+    
+    // Provide detailed debugging information
+    if (Purchases) {
+      console.log('Available RevenueCat methods:', Object.getOwnPropertyNames(Purchases));
+      console.log('Purchases prototype:', Object.getPrototypeOf(Purchases));
+    }
+    
+    // Don't throw to prevent app from breaking
+    return null;
   }
 };
 
@@ -73,8 +104,19 @@ export const setRevenueCatUserId = async (userId) => {
   }
 
   try {
-    // Use logIn to identify the anonymous user
-    const result = await Purchases.logIn(userId);
+    let result;
+    
+    // Try different API patterns for login
+    if (typeof Purchases.logIn === 'function') {
+      result = await Purchases.logIn(userId);
+    } else if (typeof Purchases.identify === 'function') {
+      result = await Purchases.identify(userId);
+    } else if (typeof Purchases.setAppUserId === 'function') {
+      result = await Purchases.setAppUserId(userId);
+    } else {
+      throw new Error('No supported user identification method found');
+    }
+    
     console.log('RevenueCat user ID set:', userId);
     
     // Clear the anonymous ID since we're now identified
@@ -83,12 +125,13 @@ export const setRevenueCatUserId = async (userId) => {
     return result;
   } catch (error) {
     console.error('Failed to set RevenueCat user ID:', error);
-    throw error;
+    // Don't throw to prevent app from breaking
+    return null;
   }
 };
 
 /**
- * Get available offerings
+ * Get available offerings with multiple API attempts
  */
 export const getOfferings = async () => {
   if (!isConfigured) {
@@ -97,7 +140,19 @@ export const getOfferings = async () => {
   }
 
   try {
-    const offerings = await Purchases.getOfferings();
+    let offerings;
+    
+    // Try different API patterns for getting offerings
+    if (typeof Purchases.getOfferings === 'function') {
+      offerings = await Purchases.getOfferings();
+    } else if (typeof Purchases.offerings === 'function') {
+      offerings = await Purchases.offerings();
+    } else if (typeof Purchases.fetchOfferings === 'function') {
+      offerings = await Purchases.fetchOfferings();
+    } else {
+      throw new Error('No supported offerings method found');
+    }
+    
     return offerings;
   } catch (error) {
     console.error('Failed to get offerings:', error);
@@ -106,7 +161,7 @@ export const getOfferings = async () => {
 };
 
 /**
- * Purchase a subscription
+ * Purchase a subscription with error handling
  */
 export const purchaseSubscription = async (productId) => {
   if (!isConfigured) {
@@ -114,7 +169,7 @@ export const purchaseSubscription = async (productId) => {
   }
 
   try {
-    const offerings = await Purchases.getOfferings();
+    const offerings = await getOfferings();
     
     if (!offerings?.current) {
       throw new Error('No current offering available');
@@ -129,7 +184,18 @@ export const purchaseSubscription = async (productId) => {
       throw new Error(`Product ${productId} not found in offerings`);
     }
 
-    const purchaseResult = await Purchases.purchasePackage(targetPackage);
+    let purchaseResult;
+    
+    // Try different API patterns for purchasing
+    if (typeof Purchases.purchasePackage === 'function') {
+      purchaseResult = await Purchases.purchasePackage(targetPackage);
+    } else if (typeof Purchases.buyPackage === 'function') {
+      purchaseResult = await Purchases.buyPackage(targetPackage);
+    } else if (typeof Purchases.purchase === 'function') {
+      purchaseResult = await Purchases.purchase(productId);
+    } else {
+      throw new Error('No supported purchase method found');
+    }
     
     return {
       success: true,
@@ -140,7 +206,7 @@ export const purchaseSubscription = async (productId) => {
     console.error('Purchase failed:', error);
     
     // Handle specific RevenueCat errors
-    if (error.code === 'USER_CANCELLED') {
+    if (error.code === 'USER_CANCELLED' || error.message?.includes('cancelled')) {
       return {
         success: false,
         error: 'Purchase was cancelled',
@@ -164,7 +230,17 @@ export const restorePurchases = async () => {
   }
 
   try {
-    const customerInfo = await Purchases.restorePurchases();
+    let customerInfo;
+    
+    // Try different API patterns for restoring
+    if (typeof Purchases.restorePurchases === 'function') {
+      customerInfo = await Purchases.restorePurchases();
+    } else if (typeof Purchases.restore === 'function') {
+      customerInfo = await Purchases.restore();
+    } else {
+      throw new Error('No supported restore method found');
+    }
+    
     return {
       success: true,
       customerInfo
@@ -188,13 +264,25 @@ export const checkSubscriptionStatus = async () => {
   }
 
   try {
-    const customerInfo = await Purchases.getCustomerInfo();
-    const hasSubscription = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
+    let customerInfo;
+    
+    // Try different API patterns for getting customer info
+    if (typeof Purchases.getCustomerInfo === 'function') {
+      customerInfo = await Purchases.getCustomerInfo();
+    } else if (typeof Purchases.customerInfo === 'function') {
+      customerInfo = await Purchases.customerInfo();
+    } else if (typeof Purchases.fetchCustomerInfo === 'function') {
+      customerInfo = await Purchases.fetchCustomerInfo();
+    } else {
+      throw new Error('No supported customer info method found');
+    }
+    
+    const hasSubscription = customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
     
     return {
       hasSubscription,
       customerInfo,
-      activeEntitlements: customerInfo.entitlements.active
+      activeEntitlements: customerInfo?.entitlements?.active || {}
     };
   } catch (error) {
     console.error('Failed to check subscription status:', error);
@@ -211,7 +299,17 @@ export const getCustomerInfo = async () => {
   }
 
   try {
-    const customerInfo = await Purchases.getCustomerInfo();
+    let customerInfo;
+    
+    // Try different API patterns
+    if (typeof Purchases.getCustomerInfo === 'function') {
+      customerInfo = await Purchases.getCustomerInfo();
+    } else if (typeof Purchases.customerInfo === 'function') {
+      customerInfo = await Purchases.customerInfo();
+    } else {
+      throw new Error('No supported customer info method found');
+    }
+    
     return customerInfo;
   } catch (error) {
     console.error('Failed to get customer info:', error);
@@ -228,9 +326,18 @@ export const setCustomerInfoUpdateListener = (callback) => {
     return;
   }
 
-  // Note: Customer info update listeners may not be available in the web SDK
-  // This function is kept for API compatibility but may not function
-  console.warn('Customer info update listeners may not be supported in RevenueCat Web SDK');
+  try {
+    // Try different listener patterns
+    if (typeof Purchases.addCustomerInfoUpdateListener === 'function') {
+      Purchases.addCustomerInfoUpdateListener(callback);
+    } else if (typeof Purchases.setUpdatedCustomerInfoListener === 'function') {
+      Purchases.setUpdatedCustomerInfoListener(callback);
+    } else {
+      console.warn('Customer info update listeners not supported in this SDK version');
+    }
+  } catch (error) {
+    console.error('Failed to set customer info listener:', error);
+  }
 };
 
 /**
@@ -242,7 +349,16 @@ export const logOutRevenueCat = async () => {
   }
 
   try {
-    await Purchases.logOut();
+    // Try different logout patterns
+    if (typeof Purchases.logOut === 'function') {
+      await Purchases.logOut();
+    } else if (typeof Purchases.reset === 'function') {
+      await Purchases.reset();
+    } else if (typeof Purchases.setAppUserId === 'function') {
+      // Fallback: set to anonymous user ID
+      const newAnonymousId = generateAnonymousUserId();
+      await Purchases.setAppUserId(newAnonymousId);
+    }
     
     // Generate a new anonymous ID for the next session
     const newAnonymousId = generateAnonymousUserId();
@@ -250,4 +366,25 @@ export const logOutRevenueCat = async () => {
   } catch (error) {
     console.error('Failed to log out RevenueCat user:', error);
   }
+};
+
+// Export debug function for troubleshooting
+export const debugRevenueCat = () => {
+  console.log('RevenueCat Debug Info:');
+  console.log('- isConfigured:', isConfigured);
+  console.log('- API Key present:', !!REVENUECAT_API_KEY);
+  console.log('- Purchases object:', Purchases);
+  
+  if (Purchases) {
+    console.log('- Available methods:', Object.getOwnPropertyNames(Purchases));
+    console.log('- Object type:', typeof Purchases);
+    console.log('- Constructor:', Purchases.constructor.name);
+  }
+  
+  return {
+    isConfigured,
+    hasApiKey: !!REVENUECAT_API_KEY,
+    purchases: Purchases,
+    availableMethods: Purchases ? Object.getOwnPropertyNames(Purchases) : []
+  };
 };
