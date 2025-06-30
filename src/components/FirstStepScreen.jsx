@@ -326,7 +326,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                 `}
               >
                 <CheckCircle className="w-6 h-6" />
-                <span>Continue to Sign Up</span>
+                <span>Keep My Momentum Going</span>
               </Button>
             </div>
             

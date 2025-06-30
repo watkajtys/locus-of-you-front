@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import DynamicOnboarding from './components/DynamicOnboarding';
 import SnapshotScreen from './components/SnapshotScreen';
 import FirstStepScreen from './components/FirstStepScreen';
+import Paywall from './components/Paywall';
 
 function App() {
   const { theme } = useTheme();
@@ -15,6 +16,7 @@ function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [showSnapshot, setShowSnapshot] = useState(false);
   const [showFirstStep, setShowFirstStep] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const [onboardingAnswers, setOnboardingAnswers] = useState(null);
 
   useEffect(() => {
@@ -72,10 +74,10 @@ function App() {
     setShowFirstStep(true);
   };
 
-  // Handle first step completion
+  // Handle first step completion - now goes to Paywall
   const handleFirstStepComplete = () => {
-    console.log('First step completed, going to auth');
-    setShowAuth(true);
+    console.log('First step completed, going to paywall');
+    setShowPaywall(true);
   };
 
   // Handle first step change request
@@ -84,6 +86,15 @@ function App() {
     // For now, just go back to snapshot - you could implement step variation logic here
     setShowFirstStep(false);
     setShowSnapshot(true);
+  };
+
+  // Handle subscription from paywall
+  const handleSubscribe = (planType) => {
+    console.log('User selected subscription plan:', planType);
+    // Here you would integrate with your payment processor (Stripe, etc.)
+    // For now, we'll just redirect to auth after "subscription"
+    setShowAuth(true);
+    setShowPaywall(false);
   };
 
   // Debug function to jump to snapshot with mock data
@@ -102,6 +113,7 @@ function App() {
     setShowSnapshot(true);
     setShowAuth(false);
     setShowFirstStep(false);
+    setShowPaywall(false);
     console.log('Debug: Jumped to snapshot with mock data');
   };
 
@@ -121,6 +133,7 @@ function App() {
     setShowFirstStep(true);
     setShowSnapshot(false);
     setShowAuth(false);
+    setShowPaywall(false);
     console.log('Debug: Jumped to first step with mock data');
   };
 
@@ -191,6 +204,15 @@ function App() {
           return <Dashboard session={session} />;
         }
 
+        // Show paywall if first step is completed
+        if (showPaywall && onboardingAnswers) {
+          return (
+            <Paywall 
+              onSubscribe={handleSubscribe}
+            />
+          );
+        }
+
         // Show first step screen if user clicked "I'm Ready"
         if (showFirstStep && onboardingAnswers) {
           return (
@@ -212,7 +234,7 @@ function App() {
           );
         }
 
-        // Show auth after first step completion or skip
+        // Show auth after paywall or skip
         if (showAuth) {
           return <Auth />;
         }
