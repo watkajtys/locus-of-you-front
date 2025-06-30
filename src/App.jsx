@@ -12,6 +12,7 @@ import DynamicOnboarding from './components/DynamicOnboarding';
 import SnapshotScreen from './components/SnapshotScreen';
 import FirstStepScreen from './components/FirstStepScreen';
 import Paywall from './components/Paywall';
+import ClearStateButton from './components/ClearStateButton';
 
 function AppContent() {
   const { theme } = useTheme();
@@ -282,6 +283,9 @@ function AppContent() {
           <span>First Step</span>
         </button>
       </div>
+
+      {/* Clear State Button */}
+      <ClearStateButton variant="debug" />
 
       {/* Main App Content */}
       {(() => {
