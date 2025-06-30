@@ -191,7 +191,7 @@ html {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* Celebration Animation - ENTIRE CHECKBOX JUMPS */
+/* Celebration Animation - ENTIRE CHECKBOX JUMPS ONCE */
 @keyframes celebrate-jump {
   0%, 20%, 50%, 80%, 100% {
     transform: translateY(0);
