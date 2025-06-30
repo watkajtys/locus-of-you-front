@@ -228,23 +228,26 @@ const SnapshotScreen = ({ answers, onContinue }) => {
               </div>
             </div>
 
-            {/* Call to Action */}
-            <div className="text-center space-y-6 pt-8">
-              <div className="space-y-3">
-                <h3 
-                  className="text-2xl font-bold"
+            {/* Bridge Text Section */}
+            <div className="text-center space-y-6 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
+              <div 
+                className="max-w-3xl mx-auto p-8 rounded-xl"
+                style={{ 
+                  backgroundColor: 'var(--color-primary)',
+                  border: `1px solid var(--color-border)`
+                }}
+              >
+                <p 
+                  className="text-lg md:text-xl leading-relaxed"
                   style={{ color: 'var(--color-text)' }}
                 >
-                  Ready to Transform Your Motivation?
-                </h3>
-                <p 
-                  className="text-lg max-w-2xl mx-auto"
-                  style={{ color: 'var(--color-muted)' }}
-                >
-                  Your personalized coaching plan is designed specifically for your {archetype.toLowerCase()} profile and will help you make progress on your goals.
+                  This snapshot is your <span className="font-bold">'why'</span>—the unique blueprint of what drives you and what holds you back. It's the diagnosis. The next step is the plan. This profile allows me to become your full-time adaptive coach, helping you diagnose challenges in real-time and co-creating a step-by-step plan to overcome them.
                 </p>
               </div>
-              
+            </div>
+
+            {/* Call to Action */}
+            <div className="text-center space-y-6 pt-4">
               <div className="pt-4">
                 <Button
                   variant="accent"
@@ -252,7 +255,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                   onClick={onContinue}
                   className="group flex items-center space-x-3 text-xl px-16 py-8"
                 >
-                  <span>See My Coaching Plan</span>
+                  <span>Activate My Adaptive Coach</span>
                   <ChevronRight className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
               </div>
