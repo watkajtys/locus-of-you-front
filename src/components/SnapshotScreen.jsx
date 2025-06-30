@@ -2,6 +2,7 @@ import React from 'react';
 import { Brain, Target, Lightbulb, TrendingUp, Users, Zap, ChevronRight } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
+import AIMessageCard from './AIMessageCard';
 import Card from './Card';
 import Button from './Button';
 
@@ -490,35 +491,20 @@ const SnapshotScreen = ({ answers, onContinue }) => {
               </div>
             </div>
 
-            {/* New Bridge Section - Turning Insight into Action */}
-            <div className="text-center space-y-6 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
-              <div className="space-y-4">
-                <h3 
-                  className="text-3xl font-bold"
-                  style={{ color: 'var(--color-text)' }}
-                >
-                  Turning Your Insight into Action
-                </h3>
-                
-                <div 
-                  className="max-w-3xl mx-auto p-8 rounded-xl"
-                  style={{ 
-                    backgroundColor: 'var(--color-primary)',
-                    border: `2px solid var(--color-accent)`
-                  }}
-                >
-                  <p 
-                    className="text-lg md:text-xl leading-relaxed"
-                    style={{ color: 'var(--color-text)' }}
-                  >
-                    Your <span className="font-bold">'{archetype}'</span> profile indicates that for a goal like <span className="font-bold">'{userGoal},'</span> the highest-leverage strategy is to address <span className="font-bold">'Task Complexity.'</span> We'll do this by isolating a single <span className="font-bold">'micro-victory'</span>—an infinitesimally small first step designed to build immediate momentum.
-                  </p>
-                </div>
+            {/* AI Message Card - Conversational Call to Action */}
+            <div className="space-y-8 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
+              <div className="max-w-3xl mx-auto">
+                <AIMessageCard 
+                  message="Based on your profile, the key to your goal is to define a single, concrete first step."
+                  question="Let's build that 'micro-victory' together right now."
+                  cardType="YOUR AI COACH"
+                  className="glassmorphism-card"
+                />
               </div>
             </div>
 
             {/* Call to Action */}
-            <div className="text-center space-y-6 pt-4">
+            <div className="text-center space-y-6">
               <div className="pt-4">
                 <Button
                   variant="accent"
@@ -526,7 +512,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                   onClick={onContinue}
                   className="group flex items-center space-x-3 text-xl px-16 py-8"
                 >
-                  <span>Create My First Step</span>
+                  <span>Let's Do It</span>
                   <ChevronRight className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
               </div>
