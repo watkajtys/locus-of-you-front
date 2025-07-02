@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { checkSubscriptionStatus, restorePurchases } from '../lib/revenuecat';
 
@@ -13,7 +13,7 @@ export const useSubscription = (user) => {
     subscriptionEndDate: null
   });
 
-  const refreshSubscriptionStatus = async () => {
+  const refreshSubscriptionStatus = useCallback(async () => {
     if (!user) {
       setSubscriptionStatus(prev => ({
         ...prev,
@@ -49,7 +49,7 @@ export const useSubscription = (user) => {
         error: error.message
       }));
     }
-  };
+  }, [user]);
 
   const handleRestorePurchases = async () => {
     try {
@@ -102,7 +102,7 @@ export const useSubscription = (user) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [user?.id]);
+  }, [user, refreshSubscriptionStatus]);
 
   return {
     ...subscriptionStatus,

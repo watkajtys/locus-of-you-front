@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { LogOut, User, Mail, Crown, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { logOutRevenueCat } from '../lib/revenuecat';
@@ -15,13 +15,7 @@ const Account = ({ session, hasSubscription = false }) => {
     avatar_url: ''
   });
 
-  useEffect(() => {
-    if (session) {
-      loadProfile();
-    }
-  }, [session]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -45,7 +39,13 @@ const Account = ({ session, hasSubscription = false }) => {
     } catch (error) {
       console.error('Error loading profile:', error);
     }
-  };
+  }, [session]);
+
+  useEffect(() => {
+    if (session) {
+      loadProfile();
+    }
+  }, [session, loadProfile]);
 
   const handleSignOut = async () => {
     setLoading(true);
