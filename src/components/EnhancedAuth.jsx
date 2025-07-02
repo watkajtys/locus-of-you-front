@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Mail, Lock, User, AlertCircle, CheckCircle, Eye, EyeOff, KeyRound } from 'lucide-react';
 import Card from './Card';
 import Button from './Button';
+import boltBadge from '../assets/bolt-badge.png';
 
 const EnhancedAuth = () => {
   const { signUp, signIn, resetPassword, loading, authError } = useAuth();
@@ -124,9 +125,15 @@ const EnhancedAuth = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-6" 
+      className="min-h-screen flex items-center justify-center p-6 relative" 
       style={{ backgroundColor: 'var(--color-background)' }}
     >
+      {/* Bolt Badge */}
+      <div className="absolute top-4 right-4 z-50">
+        <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
+          <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" />
+        </a>
+      </div>
       <Card className="w-full max-w-md p-8 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -284,7 +291,7 @@ const EnhancedAuth = () => {
                     color: 'var(--color-text)',
                   }}
                   placeholder="Enter your password"
-                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                  autoComplete="current-password"
                   required
                 />
                 <button
@@ -369,57 +376,7 @@ const EnhancedAuth = () => {
           </div>
         </form>
 
-        {/* Mode Switching Links */}
-        <div className="space-y-2 text-center">
-          {mode === 'signin' && (
-            <>
-              <button
-                onClick={() => setMode('reset')}
-                className="text-sm transition-colors duration-200 hover:underline"
-                style={{ color: 'var(--color-accent)' }}
-                disabled={loading}
-              >
-                Forgot your password?
-              </button>
-              <div className="text-sm" style={{ color: 'var(--color-muted)' }}>
-                Don't have an account?{' '}
-                <button
-                  onClick={() => setMode('signup')}
-                  className="font-medium transition-colors duration-200 hover:underline"
-                  style={{ color: 'var(--color-accent)' }}
-                  disabled={loading}
-                >
-                  Sign up
-                </button>
-              </div>
-            </>
-          )}
-
-          {mode === 'signup' && (
-            <div className="text-sm" style={{ color: 'var(--color-muted)' }}>
-              Already have an account?{' '}
-              <button
-                onClick={() => setMode('signin')}
-                className="font-medium transition-colors duration-200 hover:underline"
-                style={{ color: 'var(--color-accent)' }}
-                disabled={loading}
-              >
-                Sign in
-              </button>
-            </div>
-          )}
-
-          {mode === 'reset' && (
-            <button
-              onClick={() => setMode('signin')}
-              className="text-sm transition-colors duration-200 hover:underline"
-              style={{ color: 'var(--color-accent)' }}
-              disabled={loading}
-            >
-              Back to sign in
-            </button>
-          )}
-        </div>
+        
 
         {/* Footer */}
         <div className="text-center pt-4">

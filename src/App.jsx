@@ -223,11 +223,14 @@ function AppContent() {
 
         // Show first step screen if user clicked "I'm Ready"
         if (showFirstStep && onboardingAnswers) {
+          console.log('Rendering FirstStepScreen with onboardingAnswers:', onboardingAnswers);
+          console.log('onboardingUserId:', onboardingAnswers.userId);
           return (
             <FirstStepScreen 
               answers={onboardingAnswers}
               onComplete={handleFirstStepComplete}
               onChangeStep={handleFirstStepChange}
+              onboardingUserId={onboardingAnswers.userId} // Pass the anonymous user ID
             />
           );
         }

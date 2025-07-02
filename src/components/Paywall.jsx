@@ -8,6 +8,7 @@ import {
   PRODUCT_IDS,
   checkSubscriptionStatus 
 } from '../lib/revenuecat';
+import boltBadge from '../assets/bolt-badge.png';
 
 const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = false }) => {
   const [selectedPlan, setSelectedPlan] = useState('annual'); // Default to annual (best value)
@@ -37,6 +38,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
   const handleSubscribe = async () => {
     if (loading) return;
 
+    console.log('handleSubscribe called');
     setLoading(true);
     setError(null);
 
@@ -133,7 +135,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
       annual: {
         price: annualPackage?.product.priceString || '$119.99',
         monthlyEquivalent: annualPackage ? 
-          `$${(annualPackage.product.price / 12).toFixed(2)}` : 
+          `${(annualPackage.product.price / 12).toFixed(2)}` : 
           '$9.99'
       },
       monthly: {
@@ -168,9 +170,15 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
 
   return (
     <div 
-      className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
+      className="min-h-screen flex flex-col items-center justify-center font-inter p-6 relative"
       style={{ backgroundColor: '#0f172a' }} // Professional theme background
     >
+      {/* Bolt Badge */}
+      <div className="absolute top-4 right-4 z-50">
+        <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
+          <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" />
+        </a>
+      </div>
       <div className="max-w-5xl mx-auto w-full space-y-12">
         {/* Header Section */}
         <div className="text-center space-y-6">
@@ -555,6 +563,17 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
               )}
             </Button>
             
+            {!isAuthenticatedUser && (
+              <div className="mt-4">
+                <button
+                  onClick={() => onSubscriptionSuccess?.(null, 'skipped')}
+                  className="text-sm font-medium text-gray-400 hover:underline"
+                >
+                  Skip for now (limited access)
+                </button>
+              </div>
+            )}
+
             <div className="mt-4 space-y-2">
               <p 
                 className="text-sm font-medium"

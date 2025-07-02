@@ -26,6 +26,43 @@ export const UserProfileSchema = z.object({
 
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
+// Onboarding Answers Type
+export const OnboardingAnswersSchema = z.object({
+  mindset: z.enum(['fixed', 'growth']),
+  locus: z.enum(['external', 'internal']),
+  regulatory_focus: z.enum(['promotion', 'prevention']),
+  personality_disorganized: z.number().min(1).max(5),
+  personality_outgoing: z.number().min(1).max(5),
+  personality_moody: z.number().min(1).max(5),
+  final_focus: z.string().min(1),
+});
+
+export type OnboardingAnswers = z.infer<typeof OnboardingAnswersSchema>;
+
+// Insight Types for Snapshot
+export const InsightSchema = z.object({
+  type: z.enum(['spectrum', 'balance', 'ring']),
+  title: z.string(),
+  description: z.string(),
+  userScore: z.number(),
+  minLabel: z.string().optional(),
+  maxLabel: z.string().optional(),
+  leftLabel: z.string().optional(),
+  rightLabel: z.string().optional(),
+});
+
+export type Insight = z.infer<typeof InsightSchema>;
+
+// Snapshot Data Type
+export const SnapshotDataSchema = z.object({
+  archetype: z.string(),
+  insights: z.array(InsightSchema),
+  userGoal: z.string(),
+  narrativeSummary: z.string(),
+});
+
+export type SnapshotData = z.infer<typeof SnapshotDataSchema>;
+
 // Coaching Message Types
 export const CoachingMessageSchema = z.object({
   message: z.string().min(1).max(2000),
@@ -35,7 +72,8 @@ export const CoachingMessageSchema = z.object({
     previousMessages: z.array(z.string()).optional(),
     currentGoal: z.string().optional(),
     urgencyLevel: z.enum(['low', 'medium', 'high', 'crisis']).default('medium'),
-    sessionType: z.enum(['diagnostic', 'intervention', 'reflection', 'goal_setting']).default('diagnostic')
+    sessionType: z.enum(['diagnostic', 'intervention', 'reflection', 'goal_setting', 'onboarding_diagnostic', 'snapshot_generation']).default('diagnostic'),
+    onboardingAnswers: OnboardingAnswersSchema.optional(), // Add onboardingAnswers
   }).optional()
 });
 
@@ -98,6 +136,7 @@ export interface DiagnosticConfig extends ChainConfig {
 export interface InterventionConfig extends ChainConfig {
   interventionTypes: ('behavioral' | 'cognitive' | 'motivational' | 'goal_setting')[];
   personalityFactors: boolean;
+  microtaskSystemPrompt?: string; // Add this line
 }
 
 // API Response Types
@@ -223,4 +262,9 @@ export interface CrisisIndicators {
   severity: 'none' | 'low' | 'medium' | 'high' | 'immediate';
   confidence: number;
   recommendedAction: 'continue' | 'escalate' | 'emergency_services' | 'crisis_line';
+}
+
+export interface Microtask {
+  rationale: string;
+  task: string;
 }

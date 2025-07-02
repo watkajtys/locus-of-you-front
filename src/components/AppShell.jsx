@@ -3,6 +3,7 @@ import { MessageCircle, BarChart3, User } from 'lucide-react';
 import CoachingInterface from './CoachingInterface';
 import Dashboard from './Dashboard';
 import Account from './Account';
+import boltBadge from '../assets/bolt-badge.png';
 
 const AppShell = ({ session, hasSubscription }) => {
   const [activeTab, setActiveTab] = useState('coach');
@@ -32,9 +33,15 @@ const AppShell = ({ session, hasSubscription }) => {
 
   return (
     <div 
-      className="min-h-screen flex flex-col font-inter"
-      style={{ backgroundColor: 'var(--color-background)' }}
-    >
+        className="min-h-screen flex flex-col font-inter relative"
+        style={{ backgroundColor: 'var(--color-background)' }}
+      >
+        {/* Bolt Badge */}
+        <div className="absolute top-4 right-4 z-50">
+          <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
+            <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" />
+          </a>
+        </div>
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden">
         {ActiveComponent && (

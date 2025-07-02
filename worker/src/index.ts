@@ -10,11 +10,13 @@ import {
   UserProfileSchema,
   GuardrailConfig,
   DiagnosticConfig,
-  InterventionConfig
+  InterventionConfig,
+  OnboardingAnswersSchema,
 } from './types';
 import { GuardrailChain } from './chains/guardrail';
 import { DiagnosticChain } from './chains/diagnostic';
 import { InterventionsChain } from './chains/interventions';
+import { SnapshotChain } from './chains/snapshot'; // Import SnapshotChain
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -34,8 +36,9 @@ app.get('/health', (c) => {
 app.post('/api/coaching/message', async (c) => {
   const { env, executionCtx } = c;
   try {
-    // 1. Parse and validate incoming message
     const body = await c.req.json();
+    console.log("Worker received request body:", body); // NEW LINE
+    // 1. Parse and validate incoming message
     const coachingMessage = CoachingMessageSchema.parse(body);
     const { userId, sessionId, context, message } = coachingMessage;
 
@@ -47,6 +50,7 @@ app.post('/api/coaching/message', async (c) => {
     const guardrailChain = new GuardrailChain(guardrailConfig, env);
     const diagnosticChain = new DiagnosticChain(env.GOOGLE_API_KEY, diagnosticConfig);
     const interventionsChain = new InterventionsChain(env.GOOGLE_API_KEY, interventionConfig);
+    const snapshotChain = new SnapshotChain(); // Initialize SnapshotChain
 
     // 3. Guardrail First: Assess for safety
     const safetyAssessment = await guardrailChain.assessSafety(coachingMessage);
@@ -77,7 +81,23 @@ app.post('/api/coaching/message', async (c) => {
     // 5. Conditional Logic based on sessionType
     const sessionType = context?.sessionType || 'diagnostic';
 
-    if (sessionType === 'diagnostic') {
+    if (sessionType === 'onboarding_diagnostic') {
+      const onboardingAnswers = context?.onboardingAnswers;
+      if (!onboardingAnswers) {
+        return c.json({ success: false, error: { message: 'Onboarding answers not provided.', code: 'MISSING_ONBOARDING_ANSWERS' } }, 400);
+      }
+      const snapshotData = await snapshotChain.generateSnapshot(onboardingAnswers, userProfile);
+
+      // Store snapshot data in KV
+      await env.USER_SESSIONS_KV.put(`snapshot_${userId}`, JSON.stringify(snapshotData));
+      finalResponseData = { message: 'Onboarding diagnostic completed and snapshot generated.', snapshotData };
+    } else if (sessionType === 'snapshot_generation') {
+      const snapshotString = await env.USER_SESSIONS_KV.get(`snapshot_${userId}`);
+      if (!snapshotString) {
+        return c.json({ success: false, error: { message: 'Snapshot data not found for user.', code: 'SNAPSHOT_NOT_FOUND' } }, 404);
+      }
+      finalResponseData = JSON.parse(snapshotString);
+    } else if (sessionType === 'diagnostic') {
       finalResponseData = await diagnosticChain.assessUser(coachingMessage, userProfile);
     } else if (sessionType === 'intervention') {
       const assessmentData = await diagnosticChain.assessUser(coachingMessage, userProfile);
@@ -90,7 +110,9 @@ app.post('/api/coaching/message', async (c) => {
     // 6. Asynchronously save conversation history
     if (!env.COACHING_HISTORY_KV) {
       console.warn('COACHING_HISTORY_KV not configured, skipping history save.');
-    } else {
+    }
+    // Only save history for actual coaching messages, not onboarding/snapshot generation
+    else if (sessionType === 'diagnostic' || sessionType === 'intervention') {
         const historyKey = `${userId}:${sessionId || 'default'}:${new Date().toISOString()}`;
         const historyRecord = {
           userMessage: coachingMessage,
@@ -116,7 +138,71 @@ app.post('/api/coaching/message', async (c) => {
   } catch (error) {
     console.error("Error in coaching endpoint:", error);
     if (error instanceof Error) {
-        return c.json({ success: false, error: { message: error.message, code: 'VALIDATION_ERROR' } }, 400);
+      if (error.name === 'ZodError') {
+        // Zod validation error
+        return c.json({ success: false, error: { message: 'Validation failed', code: 'VALIDATION_ERROR', details: (error as any).issues } }, 400);
+      } else {
+        // Other known errors
+        return c.json({ success: false, error: { message: error.message, code: 'PROCESSING_ERROR' } }, 400);
+      }
+    }
+    return c.json({ success: false, error: { message: 'An unknown server error occurred', code: 'UNKNOWN_ERROR' } }, 500);
+  }
+});
+
+app.post('/api/microtask/generate', async (c) => {
+  const { env } = c;
+  try {
+    const body = await c.req.json();
+    const { onboardingAnswers, userId } = body;
+
+    // Validate onboardingAnswers
+    const parsedOnboardingAnswers = OnboardingAnswersSchema.parse(onboardingAnswers);
+
+    // Fetch user profile
+    if (!env.USER_SESSIONS_KV) {
+      return c.json({ success: false, error: { message: 'USER_SESSIONS_KV not configured', code: 'KV_NOT_CONFIGURED' } }, 500);
+    }
+    let userProfile: UserProfile;
+    const profileString = await env.USER_SESSIONS_KV.get(userId);
+    if (!profileString) {
+      // If no profile, create a basic one for microtask generation
+      userProfile = UserProfileSchema.parse({
+        id: userId,
+        createdAt: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        preferences: {},
+        psychologicalProfile: {},
+      });
+    } else {
+      userProfile = UserProfileSchema.parse(JSON.parse(profileString));
+    }
+
+    const interventionConfig: InterventionConfig = { interventionTypes: ['behavioral', 'cognitive'], personalityFactors: true, maxTokens: 1000, temperature: 0.4, model: 'gemini-2.5-flash', systemPrompt: '' };
+    const interventionsChain = new InterventionsChain(env.GOOGLE_API_KEY, interventionConfig);
+
+    const microtask = await interventionsChain.generateFirstMicrotask(parsedOnboardingAnswers, userProfile);
+
+    const apiResponse: APIResponse = {
+      success: true,
+      data: microtask,
+      metadata: {
+        requestId: c.req.header('cf-request-id') || '',
+        timestamp: new Date().toISOString(),
+        processingTime: 0
+      }
+    };
+
+    return c.json(apiResponse);
+
+  } catch (error) {
+    console.error("Error in microtask generation endpoint:", error);
+    if (error instanceof Error) {
+      if (error.name === 'ZodError') {
+        return c.json({ success: false, error: { message: 'Validation failed', code: 'VALIDATION_ERROR', details: (error as any).issues } }, 400);
+      } else {
+        return c.json({ success: false, error: { message: error.message, code: 'PROCESSING_ERROR' } }, 400);
+      }
     }
     return c.json({ success: false, error: { message: 'An unknown server error occurred', code: 'UNKNOWN_ERROR' } }, 500);
   }

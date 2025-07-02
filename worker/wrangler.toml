@@ -2,6 +2,7 @@ name = "ai-coaching-api"
 main = "src/index.ts"
 compatibility_date = "2024-03-20"
 nodejs_compat = true
+log_level = "debug"
 
 [ai]
 binding = "AI"

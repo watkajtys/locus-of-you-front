@@ -8,6 +8,8 @@ import {
   CoachingMessage,
   UserProfile,
   PsychologicalAssessment,
+  OnboardingAnswers,
+  Microtask,
 } from "../types";
 
 // Define the structure for the assessment data input
@@ -107,6 +109,57 @@ export class InterventionsChain {
       console.error("Error parsing intervention response:", error);
       // Fallback or re-throw, depending on desired error handling
       throw new Error("Failed to generate a valid intervention prescription.");
+    }
+  }
+
+  async generateFirstMicrotask(
+    onboardingAnswers: OnboardingAnswers,
+    userProfile: UserProfile
+  ): Promise<Microtask> {
+    const systemPrompt = new SystemMessage(
+      `You are an AI coach specializing in helping users take their first impossibly small step towards a goal.
+      Based on the user's onboarding answers and psychological profile, generate a single, extremely small, actionable task.
+      The task should be so small it feels almost trivial, designed to build momentum and reduce friction.
+      
+      You will receive:
+      1. The user's onboarding answers (goal, mindset, locus of control, personality traits).
+      2. The user's comprehensive psychological profile.
+
+      You MUST return a single, valid JSON object with the following structure and nothing else:
+      {
+        "rationale": "A brief, clear explanation of why this specific microtask was chosen for them, linking it to their onboarding answers and profile.",
+        "task": "The single, impossibly small, actionable task."
+      }`
+    );
+
+    const humanMessage = new HumanMessage(
+      `Onboarding Answers: ${JSON.stringify(onboardingAnswers, null, 2)}
+      User's Psychological Profile: ${JSON.stringify(userProfile.psychologicalProfile, null, 2)}`
+    );
+
+    const response = await this.model.invoke([systemPrompt, humanMessage]);
+
+    console.log("Raw LLM response content for microtask:", response.content); // Log raw LLM response
+
+    let jsonString = response.content as string;
+    // Attempt to extract content from a markdown code block (```json or ```)
+    const jsonStringMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonStringMatch && jsonStringMatch[1]) {
+      jsonString = jsonStringMatch[1]; // Use extracted content if match found
+    }
+    jsonString = jsonString.trim(); // Trim whitespace
+
+    // Fallback: if no markdown block was found, try to parse the original text directly
+    if (!jsonString && (response.content as string).trim().startsWith('{') && (response.content as string).trim().endsWith('}')) {
+      jsonString = (response.content as string).trim();
+    }
+
+    try {
+      const parsedResponse: Microtask = JSON.parse(jsonString);
+      return parsedResponse;
+    } catch (error) {
+      console.error("Error parsing microtask response:", error);
+      throw new Error("Failed to generate a valid microtask.");
     }
   }
 }

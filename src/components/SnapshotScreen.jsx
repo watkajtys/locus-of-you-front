@@ -1,10 +1,12 @@
-import React from 'react';
-import { Brain, Target, Lightbulb, TrendingUp, Users, Zap, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { Brain, Target, Lightbulb, TrendingUp, Users, Zap, ChevronRight, Loader2 } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Card from './Card';
 import Button from './Button';
+import boltBadge from '../assets/bolt-badge.png';
 
 // Spectrum Bar Component for Personal Agency
 const SpectrumBar = ({ title, description, userScore, minLabel, maxLabel }) => {
@@ -248,119 +250,117 @@ const FocusRing = ({ title, description, userScore, leftLabel, rightLabel }) => 
 };
 
 const SnapshotScreen = ({ answers, onContinue }) => {
-  // Determine user's archetype based on their answers
-  const determineArchetype = (answers) => {
-    const mindset = answers.mindset;
-    const locus = answers.locus;
-    const focus = answers.regulatory_focus;
-    
-    // Simple archetype determination logic
-    if (mindset === 'growth' && locus === 'internal' && focus === 'promotion') {
-      return 'Visionary Achiever';
-    } else if (mindset === 'growth' && locus === 'internal' && focus === 'prevention') {
-      return 'Steady Builder';
-    } else if (mindset === 'growth' && locus === 'external' && focus === 'promotion') {
-      return 'Adaptive Optimist';
-    } else if (mindset === 'growth' && locus === 'external' && focus === 'prevention') {
-      return 'Compassionate Achiever';
-    } else if (mindset === 'fixed' && locus === 'internal' && focus === 'promotion') {
-      return 'Determined Specialist';
-    } else if (mindset === 'fixed' && locus === 'internal' && focus === 'prevention') {
-      return 'Reliable Executor';
-    } else if (mindset === 'fixed' && locus === 'external' && focus === 'promotion') {
-      return 'Opportunistic Realist';
-    } else {
-      return 'Thoughtful Planner';
-    }
-  };
+  const [archetype, setArchetype] = useState('');
+  const [insights, setInsights] = useState([]);
+  const [userGoal, setUserGoal] = useState('');
+  const [narrativeSummary, setNarrativeSummary] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Generate supportive descriptions based on user's answers
-  const generateSupportiveDescription = (answers, insight) => {
-    if (insight.type === 'spectrum') {
-      // Personal Agency - Focus on starting point, not judgment  
-      if (answers.locus === 'external') {
-        return "Your current style is to focus more on external circumstances. This is a common pattern, and it gives us a clear starting point for building your sense of personal agency.";
-      } else {
-        return "Your natural focus is on personal action and control. This internal orientation is a strong foundation we can build upon for achieving your goals.";
-      }
-    }
-    
-    if (insight.type === 'balance') {
-      // Growth Mindset - Frame as malleable belief, not fixed trait
-      if (answers.mindset === 'fixed') {
-        return "Your profile shows a current belief that abilities are mostly fixed. The great news is that this belief itself is a skill that can be developed. We'll focus on strategies that strengthen a growth-oriented perspective.";
-      } else {
-        return "Your belief in the ability to develop and grow is a powerful asset. This growth-oriented mindset will be the foundation for all the strategies we build together.";
-      }
-    }
-    
-    if (insight.type === 'ring') {
-      // Achievement Orientation - Frame both as strategic strengths
-      if (answers.regulatory_focus === 'promotion') {
-        return "Your focus leans toward pursuing new opportunities and gains. This promotion-focused approach brings energy and ambition to your goal achievement strategies.";
-      } else if (answers.regulatory_focus === 'prevention') {
-        return "Your focus leans toward ensuring stability and avoiding problems. This prevention-focused approach brings careful planning and risk awareness to your strategies.";
-      } else {
-        return "Your focus is balanced between pursuing opportunities and ensuring stability. This means you can leverage both promotional energy and preventive wisdom in your approach.";
-      }
-    }
-    
-    return insight.description;
-  };
+  useEffect(() => {
+    const fetchSnapshotData = async () => {
+      try {
+        let userId;
+        let accessToken = null;
 
-  // Generate insights with supportive, non-judgmental framing
-  const generateInsights = (answers) => {
-    const insights = [];
-    
-    // Personal Agency insight - SPECTRUM BAR with reframed labels
-    const locusScore = answers.locus === 'internal' ? 4.2 : 2.3;
-    const personalAgencyInsight = {
-      type: 'spectrum',
-      title: 'Personal Agency',
-      userScore: locusScore,
-      minLabel: 'Focus on Circumstance',  // Changed from "External"
-      maxLabel: 'Focus on Action'         // Changed from "Internal"
-    };
-    personalAgencyInsight.description = generateSupportiveDescription(answers, personalAgencyInsight);
-    insights.push(personalAgencyInsight);
-    
-    // Growth Mindset insight - BELIEF BALANCE BAR with supportive framing
-    const mindsetScore = answers.mindset === 'growth' ? 4.5 : 2.0;
-    const growthMindsetInsight = {
-      type: 'balance',
-      title: 'Growth Mindset',
-      userScore: mindsetScore,
-      leftLabel: 'Growth Belief',          // Emphasized as "belief"
-      rightLabel: 'Current Fixed Belief'   // Framed as "current" not permanent
-    };
-    growthMindsetInsight.description = generateSupportiveDescription(answers, growthMindsetInsight);
-    insights.push(growthMindsetInsight);
-    
-    // Achievement Orientation insight - FOCUS RING with both as strengths
-    const focusScore = answers.regulatory_focus === 'promotion' ? 4.0 : 2.5;
-    const achievementInsight = {
-      type: 'ring',
-      title: 'Achievement Orientation',
-      userScore: focusScore,
-      leftLabel: 'Promotion Focus',
-      rightLabel: 'Prevention Focus'
-    };
-    achievementInsight.description = generateSupportiveDescription(answers, achievementInsight);
-    insights.push(achievementInsight);
-    
-    return insights;
-  };
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          userId = user.id;
+          const session = await supabase.auth.getSession();
+          accessToken = session.data.session?.access_token;
+        } else {
+          // Generate an anonymous ID if no user is authenticated
+          userId = localStorage.getItem('anonymous_onboarding_id');
+          if (!userId) {
+            // This case should ideally not happen if onboarding was completed
+            // but as a fallback, generate a new anonymous ID
+            userId = `anon_snapshot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem('anonymous_onboarding_id', userId);
+          }
+        }
 
-  const archetype = determineArchetype(answers);
-  const insights = generateInsights(answers);
-  const userGoal = answers.final_focus || "improving your overall well-being";
+        const workerApiUrl = import.meta.env.VITE_WORKER_API_URL;
+        if (!workerApiUrl) {
+          throw new Error('VITE_WORKER_API_URL is not defined in environment variables.');
+        }
+
+        const payload = {
+          userId: userId,
+          sessionId: `snapshot_${userId}_${Date.now()}`, // Unique session ID for snapshot
+          context: {
+            sessionType: 'snapshot_generation',
+            onboardingAnswers: answers // Send all collected answers
+          },
+          message: "Generate motivational snapshot based on onboarding answers."
+        };
+
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+
+        const response = await fetch(`${workerApiUrl}/api/coaching/message`, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || 'Failed to fetch snapshot data from worker.');
+        }
+
+        const result = await response.json();
+        
+        // Assuming the worker returns data in this structure
+        setArchetype(result.data.archetype || 'Unknown Archetype');
+        setInsights(result.data.insights || []);
+        setUserGoal(result.data.userGoal || answers.final_focus || "improving your overall well-being");
+        setNarrativeSummary(result.data.narrativeSummary || "Could not generate a summary at this time.");
+
+      } catch (err) {
+        console.error('Error fetching snapshot data:', err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSnapshotData();
+  }, [answers]); // Re-run effect if answers change
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-background)' }}>
+        <Loader2 className="w-10 h-10 animate-spin" style={{ color: 'var(--color-accent)' }} />
+        <p className="text-lg ml-3" style={{ color: 'var(--color-muted)' }}>Generating your snapshot...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-red-500" style={{ backgroundColor: 'var(--color-background)' }}>
+        <p className="text-lg">Error: {error}</p>
+        <p className="text-md mt-2">Please try again later or generously contact support.</p>
+      </div>
+    );
+  }
 
   return (
     <AuraProvider>
       <div 
-        className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
+        className="min-h-screen flex flex-col items-center justify-center font-inter p-6 relative"
         style={{ backgroundColor: 'var(--color-background)' }}
       >
+        {/* Bolt Badge */}
+        <div className="absolute top-4 right-4 z-50">
+          <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
+            <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" />
+          </a>
+        </div>
         <div className="max-w-4xl mx-auto w-full space-y-8">
           {/* Header with Aura */}
           <div className="text-center space-y-4">
@@ -494,7 +494,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
             {/* Narrative Summary Section - Now using AIMessageCard */}
             <div className="space-y-6 pt-8" style={{ borderTop: `1px solid var(--color-border)` }}>
               <AIMessageCard
-                paragraph="What this tells me is that you're a 'Visionary Achiever.' You have a powerful belief that you can grow and a natural drive toward your goals. At the same time, your focus on personal action means you likely feel the full weight of getting things done. It's a potent combination of aspiration and responsibility, and it gives us a clear picture of how to build a plan that feels both ambitious and sustainable for you."
+                paragraph={narrativeSummary}
                 cardType="MY OBSERVATION"
               />
             </div>

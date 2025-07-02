@@ -4,6 +4,7 @@ import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Button from './Button';
+import boltBadge from '../assets/bolt-badge.png';
 
 // Confetti Component with JavaScript-based animation
 const ConfettiExplosion = ({ isActive, onComplete }) => {
@@ -95,62 +96,91 @@ const ConfettiExplosion = ({ isActive, onComplete }) => {
   );
 };
 
-const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
+const FirstStepScreen = ({ answers, onComplete, onChangeStep, onboardingUserId }) => {
   const [isTaskCompleted, setIsTaskCompleted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [rationale, setRationale] = useState('');
+  const [task, setTask] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Generate personalized micro-victory based on user's profile and goal
-  const generateMicroVictoryContent = (answers) => {
-    const userGoal = answers?.final_focus || "building better habits";
-    const mindset = answers?.mindset;
-    const locus = answers?.locus;
-    
-    // Generate the rationale (same for all users with minor customization)
-    const rationale = `Your profile shows you're driven by personal growth and action. Based on your goal of "${userGoal}," I've defined your first micro-victory below.`;
-    
-    // Generate the specific task based on user's goal and profile
-    let task = "Write down the single smallest first step you could take tomorrow, and decide what time you'll do it.";
-    
-    // Customize task based on user's goal if it contains specific keywords
-    if (userGoal.toLowerCase().includes('exercise') || userGoal.toLowerCase().includes('fitness') || userGoal.toLowerCase().includes('running')) {
-      if (mindset === 'growth' && locus === 'internal') {
-        task = "Decide on the specific time tomorrow you will put your running shoes on.";
-      } else {
-        task = "Choose exactly where you will place your workout clothes tonight.";
+  useEffect(() => {
+    console.log('FirstStepScreen useEffect triggered'); // Add this line
+    const fetchMicrotask = async () => {
+      console.log('Inside fetchMicrotask: onboardingUserId', onboardingUserId);
+      console.log('Inside fetchMicrotask: answers', answers);
+      if (!onboardingUserId || !answers) {
+        setError('User ID or onboarding answers not available.');
+        setIsLoading(false);
+        return;
       }
-    } else if (userGoal.toLowerCase().includes('read') || userGoal.toLowerCase().includes('book')) {
-      if (mindset === 'growth' && locus === 'internal') {
-        task = "Place one specific book on your pillow before you go to bed tonight.";
-      } else {
-        task = "Decide on the exact spot where you will keep your book visible.";
-      }
-    } else if (userGoal.toLowerCase().includes('write') || userGoal.toLowerCase().includes('journal')) {
-      if (mindset === 'growth' && locus === 'internal') {
-        task = "Open a blank document and type just your name and today's date.";
-      } else {
-        task = "Place a pen and paper on the table where you eat breakfast.";
-      }
-    } else if (userGoal.toLowerCase().includes('meditat') || userGoal.toLowerCase().includes('mindful')) {
-      if (mindset === 'growth' && locus === 'internal') {
-        task = "Set a 2-minute timer and sit in the same chair you'll use tomorrow.";
-      } else {
-        task = "Decide on the specific chair or spot where you will sit tomorrow.";
-      }
-    } else {
-      // Generic task based on their profile
-      if (mindset === 'growth' && locus === 'internal') {
-        task = "Write down the single smallest first step you could take tomorrow, then decide what time you'll do it.";
-      } else if (locus === 'external') {
-        task = "Set up one small thing in your environment that will make tomorrow's first step easier.";
-      } else {
-        task = "Decide on the specific time tomorrow you will take your first small step.";
-      }
-    }
-    
-    return { rationale, task };
-  };
 
-  const { rationale, task } = generateMicroVictoryContent(answers);
+      try {
+        const response = await fetch(`${import.meta.env.VITE_WORKER_API_URL}/api/microtask/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: onboardingUserId,
+            onboardingAnswers: answers,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const text = await response.text();
+        console.log('Raw microtask response text:', text); // Log raw response
+
+        let jsonString = text.trim(); // Start with the raw text, trimmed
+
+        // First, try to parse the raw text directly. If it's valid JSON, we're good.
+        try {
+          JSON.parse(jsonString);
+        } catch (e) {
+          // If direct parsing fails, it might be wrapped in markdown. Try to extract.
+          const jsonStringMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+          if (jsonStringMatch && jsonStringMatch[1]) {
+            jsonString = jsonStringMatch[1].trim(); // Use extracted content if match found
+          } else {
+            // If no markdown block found and direct parse failed, then it's an invalid format.
+            throw new Error('Could not extract JSON from response or JSON string is empty.');
+          }
+        }
+
+        console.log('Extracted microtask jsonString (after trim):', jsonString); // Log extracted string
+
+        if (!jsonString) {
+          throw new Error('Extracted JSON string is empty or null.');
+        }
+
+        let data;
+        try {
+          data = JSON.parse(jsonString);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error(`Error parsing microtask response: ${parseError.message}. Attempted to parse: "${jsonString.substring(0, 200)}..."`); // Show a snippet of the problematic string
+        }
+
+        if (!data || (data.success === false && data.error?.message)) {
+          throw new Error(data.error.message || 'Failed to generate microtask: Unknown error.');
+        }
+
+        // Set the rationale and task from the fetched data
+        setRationale(data.data.rationale);
+        setTask(data.data.task);
+      } catch (err) {
+        console.error("Error fetching microtask:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMicrotask();
+  }, [onboardingUserId, answers]);
 
   // Handle task completion toggle
   const handleTaskClick = () => {
@@ -175,9 +205,15 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
   return (
     <AuraProvider>
       <div 
-        className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
+        className="min-h-screen flex flex-col items-center justify-center font-inter p-6 relative"
         style={{ backgroundColor: 'var(--color-background)' }}
       >
+        {/* Bolt Badge */}
+        <div className="absolute top-4 right-4 z-50">
+          <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
+            <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" />
+          </a>
+        </div>
         <div className="max-w-3xl mx-auto w-full space-y-8">
           {/* Header with Aura */}
           <div className="text-center space-y-4">
@@ -189,127 +225,133 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
                 className="text-3xl md:text-4xl font-bold leading-tight"
                 style={{ color: 'var(--color-text)' }}
               >
-                Your First Step
+                {answers?.name ? `${answers.name}, Your First Step` : 'Your First Step'}
               </h1>
               <p 
                 className="text-lg"
                 style={{ color: 'var(--color-muted)' }}
               >
-                Let's start with something impossibly small
+                {answers?.name ? `Let's find your impossibly small first step, ${answers.name}.` : "Let's start with something impossibly small."}
               </p>
             </div>
           </div>
 
           {/* First Card - AI Rationale */}
           <div className="space-y-6">
-            <AIMessageCard 
-              paragraph={rationale}
-              cardType="YOUR AI COACH"
-            />
+            {isLoading && <p className="text-center text-gray-500">Generating your first step...</p>}
+            {error && <p className="text-center text-red-500">Error: {error}</p>}
+            {!isLoading && !error && (
+              <>
+                <AIMessageCard 
+                  paragraph={rationale}
+                  cardType="YOUR AI COACH"
+                />
 
-            {/* Second Card - The Task with consistent styling and confetti */}
-            <div className="relative">
-              {/* Confetti Explosion */}
-              <ConfettiExplosion 
-                isActive={showConfetti} 
-                onComplete={handleConfettiComplete}
-              />
-              
-              <div
-                className={`
-                  relative shadow-lg border
-                  rounded-tl-xl rounded-bl-xl rounded-br-xl
-                  pt-8 px-8 pb-8 md:px-10 md:pb-10
-                  transition-all duration-300 ease-in-out
-                  hover:shadow-xl hover:-translate-y-1 cursor-pointer
-                  ${isTaskCompleted 
-                    ? 'bg-green-50 border-green-200 hover:bg-green-100' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
-                  }
-                `}
-                style={{
-                  backgroundColor: isTaskCompleted ? '#f0fdf4' : 'var(--color-card)',
-                  borderColor: isTaskCompleted ? '#bbf7d0' : 'var(--color-border)',
-                }}
-                onClick={handleTaskClick}
-              >
-                {/* The Tab - matching AIMessageCard style */}
-                <div 
-                  className={`
-                    absolute top-0 right-0 -translate-y-1/2
-                    px-4 py-0.5 
-                    rounded-tl-lg rounded-tr-lg
-                    border border-b-0 shadow-sm
-                    ${isTaskCompleted 
-                      ? 'bg-green-100 border-green-200' 
-                      : 'bg-slate-100 border-slate-200'
-                    }
-                  `}
-                >
-                  <span 
+                {/* Second Card - The Task with consistent styling and confetti */}
+                <div className="relative">
+                  {/* Confetti Explosion */}
+                  <ConfettiExplosion 
+                    isActive={showConfetti} 
+                    onComplete={handleConfettiComplete}
+                  />
+                  
+                  <div
                     className={`
-                      text-xs font-semibold tracking-widest uppercase select-none
-                      ${isTaskCompleted ? 'text-green-700' : 'text-slate-600'}
+                      relative shadow-lg border
+                      rounded-tl-xl rounded-bl-xl rounded-br-xl
+                      pt-8 px-8 pb-8 md:px-10 md:pb-10
+                      transition-all duration-300 ease-in-out
+                      hover:shadow-xl hover:-translate-y-1 cursor-pointer
+                      ${isTaskCompleted 
+                        ? 'bg-green-50 border-green-200 hover:bg-green-100' 
+                        : 'bg-white border-gray-200 hover:bg-gray-50'
+                      }
                     `}
-                    style={{ 
-                      fontFamily: 'Inter, sans-serif',
+                    style={{
+                      backgroundColor: isTaskCompleted ? '#f0fdf4' : 'var(--color-card)',
+                      borderColor: isTaskCompleted ? '#bbf7d0' : 'var(--color-border)',
                     }}
+                    onClick={handleTaskClick}
                   >
-                    {isTaskCompleted ? 'COMPLETED' : 'YOUR TASK'}
-                  </span>
-                </div>
-
-                {/* Task Content with Checkbox */}
-                <div className="flex items-center space-x-6">
-                  {/* Large Checkbox Icon - BOUNCES ONCE WHEN COMPLETED */}
-                  <div className="flex-shrink-0">
-                    {isTaskCompleted ? (
-                      <div 
-                        className="relative w-8 h-8 md:w-10 md:h-10"
+                    {/* The Tab - matching AIMessageCard style */}
+                    <div 
+                      className={`
+                        absolute top-0 right-0 -translate-y-1/2
+                        px-4 py-0.5 
+                        rounded-tl-lg rounded-tr-lg
+                        border border-b-0 shadow-sm
+                        ${isTaskCompleted 
+                          ? 'bg-green-100 border-green-200' 
+                          : 'bg-slate-100 border-slate-200'
+                        }
+                      `}
+                    >
+                      <span 
+                        className={`
+                          text-xs font-semibold tracking-widest uppercase select-none
+                          ${isTaskCompleted ? 'text-green-700' : 'text-slate-600'}
+                        `}
                         style={{ 
-                          animation: 'celebrate-jump 0.6s ease-in-out'
+                          fontFamily: 'Inter, sans-serif',
                         }}
                       >
-                        {/* Green Circle Background */}
-                        <div 
-                          className="absolute inset-0 rounded-full bg-green-600"
-                          style={{ backgroundColor: '#16a34a' }}
-                        />
-                        {/* Centered White Checkmark */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Check 
-                            className="w-5 h-5 md:w-6 md:h-6 text-white"
-                            strokeWidth={3}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <Circle 
-                        className="w-8 h-8 md:w-10 md:h-10"
-                        style={{ color: 'var(--color-accent)' }}
-                        strokeWidth={2}
-                      />
-                    )}
-                  </div>
+                        {isTaskCompleted ? 'COMPLETED' : 'YOUR TASK'}
+                      </span>
+                    </div>
 
-                  {/* Task Text */}
-                  <div className="flex-1">
-                    <p 
-                      className={`
-                        text-2xl md:text-3xl font-bold leading-relaxed
-                        ${isTaskCompleted ? 'text-green-800 line-through' : ''}
-                      `}
-                      style={{ 
-                        color: isTaskCompleted ? '#166534' : 'var(--color-text)',
-                        fontFamily: 'Inter, sans-serif'
-                      }}
-                    >
-                      {task}
-                    </p>
+                    {/* Task Content with Checkbox */}
+                    <div className="flex items-center space-x-6">
+                      {/* Large Checkbox Icon - BOUNCES ONCE WHEN COMPLETED */}
+                      <div className="flex-shrink-0">
+                        {isTaskCompleted ? (
+                          <div 
+                            className="relative w-8 h-8 md:w-10 md:h-10"
+                            style={{ 
+                              animation: 'celebrate-jump 0.6s ease-in-out'
+                            }}
+                          >
+                            {/* Green Circle Background */}
+                            <div 
+                              className="absolute inset-0 rounded-full bg-green-600"
+                              style={{ backgroundColor: '#16a34a' }}
+                            />
+                            {/* Centered White Checkmark */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Check 
+                                className="w-5 h-5 md:w-6 md:h-6 text-white"
+                                strokeWidth={3}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <Circle 
+                            className="w-8 h-8 md:w-10 md:h-10"
+                            style={{ color: 'var(--color-accent)' }}
+                            strokeWidth={2}
+                          />
+                        )}
+                      </div>
+
+                      {/* Task Text */}
+                      <div className="flex-1">
+                        <p 
+                          className={`
+                            text-2xl md:text-3xl font-bold leading-relaxed
+                            ${isTaskCompleted ? 'text-green-800 line-through' : ''}
+                          `}
+                          style={{ 
+                            color: isTaskCompleted ? '#166534' : 'var(--color-text)',
+                            fontFamily: 'Inter, sans-serif'
+                          }}
+                        >
+                          {task}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -333,7 +375,11 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
             <div>
               <button
                 onClick={onChangeStep}
-                className="text-base font-medium transition-all duration-200 hover:underline hover:scale-105"
+                disabled={isLoading || error}
+                className={`
+                  text-base font-medium transition-all duration-200 hover:underline hover:scale-105
+                  ${isLoading || error ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
                 style={{ color: 'var(--color-muted)' }}
               >
                 I need a different first step
@@ -348,7 +394,7 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep }) => {
               style={{ color: 'var(--color-muted)' }}
             >
               {isTaskCompleted 
-                ? "🎉 Amazing! You've taken the first step towards building consistency!" 
+                ? (answers?.name ? `🎉 Amazing ${answers.name}! You've taken the first step towards building consistency!` : "🎉 Amazing! You've taken the first step towards building consistency!") 
                 : "Remember: The goal isn't to be perfect, it's to be consistent."
               }
             </p>

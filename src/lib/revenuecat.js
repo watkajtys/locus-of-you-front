@@ -91,7 +91,7 @@ export const setRevenueCatUserId = async (userId) => {
       await updateSupabaseProfile(userId, customerInfo);
     }
     
-    return result;
+    return customerInfo;
   } catch (error) {
     console.error('Failed to set RevenueCat user ID:', error);
     throw error;
@@ -183,6 +183,7 @@ export const getOfferings = async () => {
  * Purchase a subscription
  */
 export const purchaseSubscription = async (productId) => {
+  console.log('purchaseSubscription called for product:', productId);
   if (!isConfigured || !purchasesInstance) {
     throw new Error('RevenueCat not initialized or instance not available');
   }
@@ -190,17 +191,26 @@ export const purchaseSubscription = async (productId) => {
   try {
     const offerings = await purchasesInstance.getOfferings();
     
-    if (!offerings?.current) {
-      throw new Error('No current offering available');
+    console.log('RevenueCat offerings object:', offerings);
+    console.log('RevenueCat offerings.current:', offerings?.current);
+    console.log('RevenueCat offerings.current.availablePackages:', offerings?.current?.availablePackages);
+
+    let targetPackage = null;
+
+    // Iterate through all offerings to find the product
+    for (const offeringId in offerings.all) {
+      const offering = offerings.all[offeringId];
+      const foundPackage = offering.availablePackages.find(
+        pkg => pkg.rcBillingProduct && pkg.rcBillingProduct.identifier === productId
+      );
+      if (foundPackage) {
+        targetPackage = foundPackage;
+        break;
+      }
     }
 
-    // Find the specific package by product ID
-    const targetPackage = offerings.current.availablePackages.find(
-      pkg => pkg.product.identifier === productId
-    );
-
     if (!targetPackage) {
-      throw new Error(`Product ${productId} not found in offerings`);
+      throw new Error(`Product ${productId} not found in any offerings`);
     }
 
     // purchasePackage is an instance method.
@@ -280,6 +290,17 @@ export const restorePurchases = async () => {
  * Check if user has premium subscription (from database first, then RevenueCat)
  */
 export const checkSubscriptionStatus = async () => {
+  // Temporarily return true to grant all users premium privileges
+  return {
+    hasSubscription: true,
+    activeEntitlements: ['premium_features'], // Mock an active entitlement
+    currentProduct: 'mock_product',
+    isTrial: false,
+    subscriptionEndDate: null
+  };
+
+  // Original code (commented out):
+  /*
   if (!isConfigured || !purchasesInstance) {
     console.warn('RevenueCat not initialized or instance not available');
     return { hasSubscription: false };
@@ -323,6 +344,7 @@ export const checkSubscriptionStatus = async () => {
     console.error('Failed to check subscription status:', error);
     return { hasSubscription: false, error: error.message };
   }
+  */
 };
 
 /**

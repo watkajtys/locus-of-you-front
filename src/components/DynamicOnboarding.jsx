@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 import { ChevronRight, User, LogIn, Zap } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Card from './Card';
 import Button from './Button';
+import boltBadge from '../assets/bolt-badge.png';
 
 const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -15,6 +17,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [textInput, setTextInput] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [questionVisible, setQuestionVisible] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Add isLoading state
   
   // Updated question data structure with extreme labels
   const questions = [
@@ -132,9 +135,80 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     setQuestionVisible(true);
   }, [currentQuestion]);
 
+  // New function to send onboarding data to the Cloudflare Worker
+  const sendOnboardingDataToWorker = async (onboardingAnswers) => {
+    setIsLoading(true);
+    try {
+      console.log('DEBUG: onboardingAnswers received by sendOnboardingDataToWorker:', onboardingAnswers); // NEW LINE
+      let userId;
+      let accessToken = null;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        userId = user.id;
+        const session = await supabase.auth.getSession();
+        accessToken = session.data.session?.access_token;
+      } else {
+        // Generate an anonymous ID if no user is authenticated
+        userId = localStorage.getItem('anonymous_onboarding_id');
+        if (!userId) {
+          userId = `anon_onboarding_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          localStorage.setItem('anonymous_onboarding_id', userId);
+        }
+      }
+
+      const workerApiUrl = import.meta.env.VITE_WORKER_API_URL;
+      if (!workerApiUrl) {
+        throw new Error('VITE_WORKER_API_URL is not defined in environment variables.');
+      }
+
+      // Add userId to onboardingAnswers before sending to worker and before onComplete
+      onboardingAnswers.userId = userId;
+
+      const payload = {
+        userId: userId,
+        sessionId: `onboarding_${userId}_${Date.now()}`, // Unique session ID for onboarding
+        context: {
+          sessionType: 'onboarding_diagnostic',
+          onboardingAnswers: onboardingAnswers // Send all collected answers
+        },
+        message: "Onboarding assessment completed." // A generic message for the worker
+      };
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      console.log('Sending onboarding payload to worker:', payload); // Add this line
+      const response = await fetch(`${workerApiUrl}/api/coaching/message`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to send onboarding data to worker.');
+      }
+
+      const result = await response.json();
+      console.log('Onboarding data sent to worker successfully:', result);
+      return result;
+
+    } catch (error) {
+      console.error('Error sending onboarding data to worker:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Handle choice answer selection
-  const handleAnswerSelect = (questionId, answerValue, optionData) => {
-    if (isTransitioning) return;
+  const handleAnswerSelect = async (questionId, answerValue, optionData) => { // Make it async
+    if (isTransitioning || isLoading) return; // Add isLoading check
     
     setIsTransitioning(true);
     setSelectedAnswer(answerValue);
@@ -148,7 +222,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     const newProgress = ((currentQuestion + 1) / questions.length) * 100;
     setProgress(newProgress);
     
-    setTimeout(() => {
+    console.log('DEBUG: newAnswers in handleAnswerSelect:', newAnswers); // NEW LINE
+    setTimeout(async () => { // Make inner function async // Make inner function async
       if (currentQuestion < questions.length - 1) {
         setQuestionVisible(false);
         setTimeout(() => {
@@ -157,7 +232,13 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         }, 200);
       } else {
         setIsTransitioning(false);
-        onComplete && onComplete(newAnswers);
+        try {
+          await sendOnboardingDataToWorker(newAnswers);
+          onComplete && onComplete(newAnswers);
+        } catch (error) {
+          console.error("Failed to complete onboarding due to worker error:", error);
+          // Optionally, show an error message to the user
+        }
       }
     }, 500);
   };
@@ -168,8 +249,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   };
 
   // Handle slider submission
-  const handleSliderSubmit = () => {
-    if (isTransitioning) return;
+  const handleSliderSubmit = async () => { // Make it async
+    if (isTransitioning || isLoading) return; // Add isLoading check
     
     setIsTransitioning(true);
     
@@ -185,7 +266,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     const newProgress = ((currentQuestion + 1) / questions.length) * 100;
     setProgress(newProgress);
     
-    setTimeout(() => {
+    console.log('DEBUG: newAnswers in handleSliderSubmit:', newAnswers); // NEW LINE
+    setTimeout(async () => { // Make inner function async
       if (currentQuestion < questions.length - 1) {
         setQuestionVisible(false);
         setTimeout(() => {
@@ -194,7 +276,12 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         }, 200);
       } else {
         setIsTransitioning(false);
-        onComplete && onComplete(newAnswers);
+        try {
+          await sendOnboardingDataToWorker(newAnswers);
+          onComplete && onComplete(newAnswers);
+        } catch (error) {
+          console.error("Failed to complete onboarding due to worker error:", error);
+        }
       }
     }, 500);
   };
@@ -205,8 +292,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   };
 
   // Handle text input submission
-  const handleTextInputSubmit = () => {
-    if (isTransitioning || !textInput.trim()) return;
+  const handleTextInputSubmit = async () => { // Make it async
+    if (isTransitioning || isLoading || !textInput.trim()) return; // Add isLoading check
     
     setIsTransitioning(true);
     
@@ -219,9 +306,15 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     const newProgress = 100;
     setProgress(newProgress);
     
-    setTimeout(() => {
+    console.log('DEBUG: newAnswers in handleTextInputSubmit:', newAnswers); // NEW LINE
+    setTimeout(async () => { // Make inner function async
       setIsTransitioning(false);
-      onComplete && onComplete(newAnswers);
+      try {
+        await sendOnboardingDataToWorker(newAnswers);
+        onComplete && onComplete(newAnswers);
+      } catch (error) {
+        console.error("Failed to complete onboarding due to worker error:", error);
+      }
     }, 500);
   };
 
@@ -241,27 +334,11 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       >
         {/* Header Section */}
         <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-6 md:pt-8 pb-2 md:pb-4">
-          {/* Bolt Hackathon Badge */}
-          <div className="flex justify-center mb-4">
-            <div 
-              className="flex items-center space-x-2 px-4 py-2 rounded-full shadow-sm"
-              style={{
-                backgroundColor: 'var(--color-card)',
-                borderColor: 'var(--color-border)',
-                border: '1px solid var(--color-border)'
-              }}
-            >
-              <Zap 
-                className="w-4 h-4"
-                style={{ color: 'var(--color-accent)' }}
-              />
-              <span 
-                className="text-sm font-medium"
-                style={{ color: 'var(--color-accent)' }}
-              >
-                Built with Bolt
-              </span>
-            </div>
+          {/* Bolt Badge */}
+          <div className="absolute top-4 right-4 z-50">
+            <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
+              <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" />
+            </a>
           </div>
 
           {/* Welcome Text */}
@@ -295,7 +372,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
               Motivational DNA Profile
             </h2>
             
-            {/* Progress Bar */}
             <div className="w-full h-3 bg-sky-200 rounded-full overflow-hidden">
               <div
                 className="h-full bg-sky-600 rounded-full transition-all duration-700 ease-out"
@@ -450,10 +526,10 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                           variant="accent"
                           size="large"
                           onClick={handleSliderSubmit}
-                          disabled={isTransitioning}
+                          disabled={isTransitioning || isLoading} // Disable button when loading
                           className="px-12"
                         >
-                          {isTransitioning ? 'Loading...' : 'Continue'}
+                          {isTransitioning || isLoading ? 'Processing...' : 'Continue'} {/* Update button text */}
                         </Button>
                       </div>
                     </Card>
@@ -475,7 +551,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                           borderColor: 'var(--color-border)',
                           color: 'var(--color-text)',
                         }}
-                        disabled={isTransitioning}
+                        disabled={isTransitioning || isLoading} // Disable textarea when loading
                       />
 
                       {/* Submit Button */}
@@ -484,10 +560,10 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                           variant="accent"
                           size="large"
                           onClick={handleTextInputSubmit}
-                          disabled={isTransitioning || !textInput.trim()}
+                          disabled={isTransitioning || isLoading || !textInput.trim()} // Disable button when loading
                           className="px-12"
                         >
-                          {isTransitioning ? 'Loading...' : 'Complete Assessment'}
+                          {isTransitioning || isLoading ? 'Processing...' : 'Complete Assessment'} {/* Update button text */}
                         </Button>
                       </div>
                     </Card>
@@ -501,44 +577,44 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         {/* Bottom Navigation */}
         <div 
           className="flex-shrink-0 border-t backdrop-blur-sm"
-          style={{
+          style={{ 
             backgroundColor: 'var(--color-card)',
             borderColor: 'var(--color-border)',
             opacity: '0.98'
           }}
         >
           <div className="max-w-4xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between space-x-4">
-              {/* Secondary - Skip for Now Button */}
-              <button
-                onClick={onSkip}
-                disabled={isTransitioning}
-                className="flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-xl transition-all duration-300 ease-in-out hover:scale-102 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-                style={{
-                  backgroundColor: 'var(--color-primary)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-muted)',
-                  border: '1px solid var(--color-border)'
-                }}
-              >
-                <span className="text-sm font-medium">Skip for Now</span>
-              </button>
+            {/*<div className="flex items-center justify-between space-x-4">*/}
+            {/*  /!* Secondary - Skip for Now Button *!/*/}
+            {/*  <button*/}
+            {/*    onClick={onSkip}*/}
+            {/*    disabled={isTransitioning || isLoading} // Disable button when loading*/}
+            {/*    className="flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-xl transition-all duration-300 ease-in-out hover:scale-102 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"*/}
+            {/*    style={{*/}
+            {/*      backgroundColor: 'var(--color-primary)',*/}
+            {/*      borderColor: 'var(--color-border)',*/}
+            {/*      color: 'var(--color-muted)',*/}
+            {/*      border: '1px solid var(--color-border)'*/}
+            {/*    }}*/}
+            {/*  >*/}
+            {/*    <span className="text-sm font-medium">Skip for Now</span>*/}
+            {/*  </button>*/}
 
-              {/* Primary - Log In Button */}
-              <button
-                onClick={handleLogIn}
-                disabled={isTransitioning}
-                className="flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-xl transition-all duration-300 ease-in-out hover:scale-102 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-                style={{
-                  backgroundColor: 'var(--color-accent)',
-                  color: 'white',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                }}
-              >
-                <LogIn className="w-5 h-5" />
-                <span className="text-sm font-semibold">Log In</span>
-              </button>
-            </div>
+            {/*  /!* Primary - Log In Button *!/*/}
+            {/*  <button*/}
+            {/*    onClick={handleLogIn}*/}
+            {/*    disabled={isTransitioning || isLoading} // Disable button when loading*/}
+            {/*    className="flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-xl transition-all duration-300 ease-in-out hover:scale-102 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"*/}
+            {/*    style={{*/}
+            {/*      backgroundColor: 'var(--color-accent)',*/}
+            {/*      color: 'white',*/}
+            {/*      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'*/}
+            {/*    }}*/}
+            {/*  >*/}
+            {/*    <LogIn className="w-5 h-5" />*/}
+            {/*    <span className="text-sm font-semibold">Log In</span>*/}
+            {/*  </button>*/}
+            {/*</div>*/}
 
             {/* Help Text */}
             <div className="text-center mt-3">
