@@ -375,11 +375,11 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                 Your Motivational Snapshot
               </h1>
               <p 
-                className="text-lg md:text-xl"
-                style={{ color: 'var(--color-muted)' }}
-              >
-                Your personalized starting point for growth
-              </p>
+                  className="text-lg md:text-xl"
+                  style={{ color: 'var(--color-muted)' }}
+                >
+                  Your personalized starting point for growth and self-discovery
+                </p>
             </div>
           </div>
 
@@ -437,7 +437,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                   className="text-base"
                   style={{ color: 'var(--color-muted)' }}
                 >
-                  Your unique motivational profile and starting points for growth
+                  Your unique motivational profile and starting points for growth and self-discovery
                 </p>
               </div>
 

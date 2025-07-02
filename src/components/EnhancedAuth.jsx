@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/authHooks';
 import { Mail, Lock, User, AlertCircle, CheckCircle, Eye, EyeOff, KeyRound } from 'lucide-react';
 import Card from './Card';
 import Button from './Button';

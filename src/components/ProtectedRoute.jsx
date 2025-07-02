@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/authHooks';
 import { Loader2 } from 'lucide-react';
 import EnhancedAuth from './EnhancedAuth';
 
