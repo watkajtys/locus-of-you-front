@@ -372,20 +372,23 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                 className="text-4xl md:text-5xl font-bold leading-tight"
                 style={{ color: 'var(--color-text)' }}
               >
-                Your Motivational Snapshot
+                Your Motivational DNA Snapshot
               </h1>
               <p 
-                  className="text-lg md:text-xl"
+                  className="text-lg md:text-xl max-w-2xl mx-auto" // Added max-width for better readability
                   style={{ color: 'var(--color-muted)' }}
                 >
-                  Your personalized starting point for growth and self-discovery
+                Here's what we've learned from our conversation. This isn't a test or a score, but your personal blueprint. We'll use this to build a plan that works for you.
                 </p>
             </div>
           </div>
 
           {/* Main Results Card */}
+          {/* The structure inside Card will display the insights (DNA dimensions) */}
+          {/* The 'archetype' and 'userGoal' sections might need to be reconsidered or integrated differently if not directly part of onboard.md's Phase 3 text */}
           <Card className="p-8 md:p-12 space-y-10">
-            {/* Archetype Section */}
+            {/* Archetype Section (Keeping for now, as it might be part of the "insights cards") */}
+            {archetype && (
             <div className="text-center space-y-4">
               <div className="space-y-2">
                 <p 
@@ -406,104 +409,69 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                   '{archetype}'
                 </h2>
               </div>
-              
-              {/* Goal Context */}
-              <div 
-                className="max-w-2xl mx-auto p-6 rounded-xl"
-                style={{ 
-                  backgroundColor: 'var(--color-primary)',
-                  border: `1px solid var(--color-border)`
-                }}
-              >
-                <p 
-                  className="text-lg leading-relaxed"
-                  style={{ color: 'var(--color-text)' }}
-                >
-                  <span className="font-semibold">Your focus:</span> {userGoal}
-                </p>
-              </div>
             </div>
+            )}
 
-            {/* Key Insights Section - VERTICAL STACK */}
-            <div className="space-y-8">
+            {/* Key Insights Section - This is where the 7 dimension cards would go */}
+            {/* The existing 'insights.map' logic should render these if the worker provides them */}
+            {insights && insights.length > 0 && (
+              <div className="space-y-8">
+                <div className="text-center">
+                  {/* Title for insights section can be removed if each card is self-explanatory */}
+                  {/* <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>Key Insights</h3> */}
+                </div>
+                <div className="space-y-8 max-w-3xl mx-auto">
+                  {insights.map((insight, index) => {
+                    if (insight.type === 'spectrum') {
+                      return <SpectrumBar key={index} {...insight} />;
+                    }
+                    if (insight.type === 'balance') {
+                      return <BeliefBalanceBar key={index} {...insight} />;
+                    }
+                    if (insight.type === 'ring') {
+                      return <FocusRing key={index} {...insight} />;
+                    }
+                    // Potentially add a default card display if type is not matched
+                    return (
+                        <div key={index} className="p-4 rounded-lg" style={{backgroundColor: 'var(--color-card-alt)', border: '1px solid var(--color-border)'}}>
+                            <h4 className="font-semibold" style={{color: 'var(--color-text)'}}>{insight.title || 'Insight'}</h4>
+                            <p style={{color: 'var(--color-muted)'}}>{insight.description || 'Details not available.'}</p>
+                        </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Narrative Summary Section - from worker, could be part of the blueprint */}
+            {narrativeSummary && (
+              <div className="space-y-6 pt-8" style={{ borderTop: `1px solid var(--color-border)` }}>
+                <AIMessageCard
+                  paragraph={narrativeSummary}
+                  cardType="YOUR BLUEPRINT SUMMARY" // Adjusted card type
+                />
+              </div>
+            )}
+
+            {/* Final Section: Connecting Your DNA to Your Goal */}
+            <div className="space-y-6 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
               <div className="text-center">
-                <h3 
-                  className="text-2xl font-bold mb-2"
-                  style={{ color: 'var(--color-text)' }}
-                >
-                  Key Insights
-                </h3>
-                <p 
-                  className="text-base"
-                  style={{ color: 'var(--color-muted)' }}
-                >
-                  Your unique motivational profile and starting points for growth and self-discovery
-                </p>
+                <h3
+                    className="text-2xl md:text-3xl font-bold mb-2"
+                    style={{ color: 'var(--color-text)' }}
+                  >
+                    Connecting Your DNA to Your Goal
+                  </h3>
+                {userGoal && (
+                  <p className="text-lg mb-4" style={{color: 'var(--color-muted)'}}>
+                    Regarding your focus on: <strong>{userGoal}</strong>
+                  </p>
+                )}
               </div>
-
-              {/* Vertical stack of insights with supportive descriptions */}
-              <div className="space-y-8 max-w-3xl mx-auto">
-                {insights.map((insight, index) => {
-                  // Spectrum Bar Visualization
-                  if (insight.type === 'spectrum') {
-                    return (
-                      <SpectrumBar
-                        key={index}
-                        title={insight.title}
-                        description={insight.description}
-                        userScore={insight.userScore}
-                        minLabel={insight.minLabel}
-                        maxLabel={insight.maxLabel}
-                      />
-                    );
-                  }
-                  
-                  // Belief Balance Bar Visualization
-                  if (insight.type === 'balance') {
-                    return (
-                      <BeliefBalanceBar
-                        key={index}
-                        title={insight.title}
-                        description={insight.description}
-                        userScore={insight.userScore}
-                        leftLabel={insight.leftLabel}
-                        rightLabel={insight.rightLabel}
-                      />
-                    );
-                  }
-                  
-                  // Focus Ring Visualization
-                  if (insight.type === 'ring') {
-                    return (
-                      <FocusRing
-                        key={index}
-                        title={insight.title}
-                        description={insight.description}
-                        userScore={insight.userScore}
-                        leftLabel={insight.leftLabel}
-                        rightLabel={insight.rightLabel}
-                      />
-                    );
-                  }
-                  
-                  return null;
-                })}
-              </div>
-            </div>
-
-            {/* Narrative Summary Section - Now using AIMessageCard */}
-            <div className="space-y-6 pt-8" style={{ borderTop: `1px solid var(--color-border)` }}>
-              <AIMessageCard
-                paragraph={narrativeSummary}
-                cardType="MY OBSERVATION"
-              />
-            </div>
-
-            {/* AI Message Card - Conversational Call to Action */}
-            <div className="space-y-8 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
               <AIMessageCard 
-                paragraph="It's powerful to see how your mindset and focus connect. The logical next step is to apply this insight directly to your goal. I can guide you through creating your first 'micro-victory' right now, if you're ready."
-                cardType="YOUR AI COACH"
+                message="So, how does this all relate to the challenge you mentioned?" // Replaced 'paragraph' with 'message'
+                paragraph="Your unique profile gives us the perfect clue for the best way to start." // Added paragraph for the second line
+                cardType="COACH" // Consistent card type
               />
             </div>
 

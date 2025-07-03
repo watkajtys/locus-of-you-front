@@ -225,14 +225,9 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep, onboardingUserId }
                 className="text-3xl md:text-4xl font-bold leading-tight"
                 style={{ color: 'var(--color-text)' }}
               >
-                {answers?.name ? `${answers.name}, Your First Step` : 'Your First Step'}
+                Your First Step
               </h1>
-              <p 
-                className="text-lg"
-                style={{ color: 'var(--color-muted)' }}
-              >
-                {answers?.name ? `Let's find your impossibly small first step, ${answers.name}.` : "Let's start with something impossibly small."}
-              </p>
+              {/* Subtitle removed as per onboard.md, the AIMessageCard will deliver the coach's message */}
             </div>
           </div>
 
@@ -243,9 +238,18 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep, onboardingUserId }
             {!isLoading && !error && (
               <>
                 <AIMessageCard 
-                  paragraph={rationale}
-                  cardType="YOUR AI COACH"
+                  message="Based on your DNA, the most effective first step isn't a giant leap, but a small, strategic action designed for your specific style."
+                  // The 'rationale' variable from worker can still be used if it contains the specific step's rationale,
+                  // or this message can be shown if 'rationale' is generic.
+                  // For now, using the direct quote from onboard.md for the primary message.
+                  // If 'rationale' is meant to be the 'paragraph' prop, we might need to adjust AIMessageCard or how data is passed.
+                  // For now, assuming 'rationale' might be empty or not directly used here as per the new script.
+                  // paragraph={rationale} // This was the old way, new script has a fixed message.
+                  cardType="COACH" // Consistent with new cardType
                 />
+
+                {/* Displaying the tailored ISFS (task) will be handled by the card below */}
+                {/* The coach message "Give it a try when the time is right, and we'll check in later." will be after the task card */}
 
                 {/* Second Card - The Task with consistent styling and confetti */}
                 <div className="relative">
@@ -350,28 +354,37 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep, onboardingUserId }
                     </div>
                   </div>
                 </div>
+
+                {/* Coach message after the task */}
+                <div className="text-center mt-6">
+                    <p className="text-lg" style={{color: 'var(--color-text)'}}>
+                        Give it a try when the time is right, and we'll check in later.
+                    </p>
+                </div>
               </>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-4 pt-6"> {/* Added pt-6 for spacing */}
             <div className="pt-4">
               <Button
                 variant="accent"
                 size="large"
-                onClick={onComplete}
-                disabled={!isTaskCompleted}
+                onClick={() => onComplete(task)} // Pass the task text to onComplete
+                disabled={!isTaskCompleted} // Button is enabled once task is checked
                 className={`
                   group flex items-center space-x-3 text-xl px-12 py-6
                   ${!isTaskCompleted ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
               >
                 <CheckCircle className="w-6 h-6" />
-                <span>Keep My Momentum Going</span>
+                <span>I Did It!</span>
+                {/* Text changed from "Keep My Momentum Going", as per onboard.md the reflection/paywall is next */}
               </Button>
             </div>
             
+            {/* "I need a different first step" button - kept as it's good UX, though not in onboard.md Phase 4 */}
             <div>
               <button
                 onClick={onChangeStep}
@@ -387,15 +400,15 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep, onboardingUserId }
             </div>
           </div>
 
-          {/* Encouraging Footer */}
+          {/* Encouraging Footer - Updated */}
           <div className="text-center pt-8">
             <p 
               className="text-sm italic"
               style={{ color: 'var(--color-muted)' }}
             >
               {isTaskCompleted 
-                ? (answers?.name ? `🎉 Amazing ${answers.name}! You've taken the first step towards building consistency!` : "🎉 Amazing! You've taken the first step towards building consistency!") 
-                : "Remember: The goal isn't to be perfect, it's to be consistent."
+                ? "🎉 Great job on completing your first step!"
+                : "Taking this small, strategic action is the first step to building momentum."
               }
             </p>
           </div>
