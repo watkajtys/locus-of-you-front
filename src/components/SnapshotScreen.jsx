@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Brain, Target, Lightbulb, TrendingUp, Users, Zap, ChevronRight, Loader2 } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
+import useStore from '../store/store'; // Import Zustand store
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Card from './Card';
@@ -249,7 +250,10 @@ const FocusRing = ({ title, description, userScore, leftLabel, rightLabel }) => 
   );
 };
 
-const SnapshotScreen = ({ answers, onContinue }) => {
+const SnapshotScreen = ({ onContinue }) => { // Removed answers prop
+  const onboardingAnswers = useStore((state) => state.onboardingAnswers);
+  const setCurrentView = useStore((state) => state.setCurrentView); // For fallback navigation
+
   const [archetype, setArchetype] = useState('');
   const [insights, setInsights] = useState([]);
   const [userGoal, setUserGoal] = useState('');
@@ -259,23 +263,37 @@ const SnapshotScreen = ({ answers, onContinue }) => {
 
   useEffect(() => {
     const fetchSnapshotData = async () => {
+      // Ensure onboardingAnswers are available before fetching
+      if (!onboardingAnswers) {
+        console.warn("SnapshotScreen: onboardingAnswers not available yet. Skipping fetch.");
+        // Optionally, set an error or redirect, or wait for App.jsx to provide answers.
+        // If App.jsx ensures this screen is only shown when answers are ready, this check is a safeguard.
+        setError("Onboarding data is missing. Please complete onboarding first.");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true); // Set loading true at the start of fetch attempt
+      setError(null); // Clear previous errors
+
       try {
         let userId;
         let accessToken = null;
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          userId = user.id;
-          const session = await supabase.auth.getSession();
-          accessToken = session.data.session?.access_token;
+        // Try to get authenticated user first
+        const { data: { user: authenticatedUser } } = await supabase.auth.getUser();
+        if (authenticatedUser) {
+          userId = authenticatedUser.id;
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) throw sessionError;
+          accessToken = sessionData.session?.access_token;
         } else {
-          // Generate an anonymous ID if no user is authenticated
-          userId = localStorage.getItem('anonymous_onboarding_id');
+          // Fallback to anonymous ID from onboarding answers if stored there, or localStorage
+          userId = onboardingAnswers.userId || localStorage.getItem('anonymous_onboarding_id');
           if (!userId) {
-            // This case should ideally not happen if onboarding was completed
-            // but as a fallback, generate a new anonymous ID
-            userId = `anon_snapshot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            localStorage.setItem('anonymous_onboarding_id', userId);
+            // This is a less ideal fallback, should not happen if onboarding stored userId
+            console.warn("SnapshotScreen: No user ID found in session or onboarding answers.");
+            userId = `anon_snapshot_fallback_${Date.now()}`;
           }
         }
 
@@ -286,17 +304,15 @@ const SnapshotScreen = ({ answers, onContinue }) => {
 
         const payload = {
           userId: userId,
-          sessionId: `snapshot_${userId}_${Date.now()}`, // Unique session ID for snapshot
+          sessionId: `snapshot_${userId}_${Date.now()}`,
           context: {
             sessionType: 'snapshot_generation',
-            onboardingAnswers: answers // Send all collected answers
+            onboardingAnswers: onboardingAnswers // Use onboardingAnswers from store
           },
           message: "Generate motivational snapshot based on onboarding answers."
         };
 
-        const headers = {
-          'Content-Type': 'application/json',
-        };
+        const headers = { 'Content-Type': 'application/json' };
         if (accessToken) {
           headers['Authorization'] = `Bearer ${accessToken}`;
         }
@@ -309,27 +325,41 @@ const SnapshotScreen = ({ answers, onContinue }) => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error?.message || 'Failed to fetch snapshot data from worker.');
+          throw new Error(errorData.error?.message || `Worker request failed with status ${response.status}`);
         }
 
         const result = await response.json();
         
-        // Assuming the worker returns data in this structure
-        setArchetype(result.data.archetype || 'Unknown Archetype');
-        setInsights(result.data.insights || []);
-        setUserGoal(result.data.userGoal || answers.final_focus || "improving your overall well-being");
-        setNarrativeSummary(result.data.narrativeSummary || "Could not generate a summary at this time.");
+        setArchetype(result.data?.archetype || 'Unknown Archetype');
+        setInsights(result.data?.insights || []);
+        // Use final_goal_context from onboardingAnswers for userGoal
+        setUserGoal(onboardingAnswers.final_goal_context || result.data?.userGoal || "your goals");
+        setNarrativeSummary(result.data?.narrativeSummary || "Could not generate a narrative summary at this time.");
 
       } catch (err) {
         console.error('Error fetching snapshot data:', err);
-        setError(err.message);
+        setError(err.message || 'An unexpected error occurred while fetching snapshot data.');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchSnapshotData();
-  }, [answers]); // Re-run effect if answers change
+  }, [onboardingAnswers]); // Depend on onboardingAnswers from the store
+
+  // Initial check for onboardingAnswers before first render attempt of main content
+  if (!onboardingAnswers && !isLoading && !error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ backgroundColor: 'var(--color-background)' }}>
+        <p className="text-lg mb-4" style={{ color: 'var(--color-text)' }}>
+          It seems your onboarding data is not available.
+        </p>
+        <Button onClick={() => setCurrentView('onboarding')} variant="primary">
+          Return to Onboarding
+        </Button>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -345,10 +375,14 @@ const SnapshotScreen = ({ answers, onContinue }) => {
       <div className="min-h-screen flex flex-col items-center justify-center text-red-500" style={{ backgroundColor: 'var(--color-background)' }}>
         <p className="text-lg">Error: {error}</p>
         <p className="text-md mt-2">Please try again later or generously contact support.</p>
+        <Button onClick={() => setCurrentView('onboarding')} variant="primary" className="mt-4">
+          Return to Onboarding
+        </Button>
       </div>
     );
   }
 
+  // Render the main content if no loading and no error, and onboardingAnswers exist
   return (
     <AuraProvider>
       <div 
@@ -370,7 +404,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                 Your Motivational DNA Snapshot
               </h1>
               <p 
-                  className="text-lg md:text-xl max-w-2xl mx-auto" // Added max-width for better readability
+                  className="text-lg md:text-xl max-w-2xl mx-auto"
                   style={{ color: 'var(--color-muted)' }}
                 >
                 Here's what we've learned from our conversation. This isn't a test or a score, but your personal blueprint. We'll use this to build a plan that works for you.
@@ -378,11 +412,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
             </div>
           </div>
 
-          {/* Main Results Card */}
-          {/* The structure inside Card will display the insights (DNA dimensions) */}
-          {/* The 'archetype' and 'userGoal' sections might need to be reconsidered or integrated differently if not directly part of onboard.md's Phase 3 text */}
           <Card className="p-8 md:p-12 space-y-10">
-            {/* Archetype Section (Keeping for now, as it might be part of the "insights cards") */}
             {archetype && (
             <div className="text-center space-y-4">
               <div className="space-y-2">
@@ -407,14 +437,8 @@ const SnapshotScreen = ({ answers, onContinue }) => {
             </div>
             )}
 
-            {/* Key Insights Section - This is where the 7 dimension cards would go */}
-            {/* The existing 'insights.map' logic should render these if the worker provides them */}
             {insights && insights.length > 0 && (
               <div className="space-y-8">
-                <div className="text-center">
-                  {/* Title for insights section can be removed if each card is self-explanatory */}
-                  {/* <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>Key Insights</h3> */}
-                </div>
                 <div className="space-y-8 max-w-3xl mx-auto">
                   {insights.map((insight, index) => {
                     if (insight.type === 'spectrum') {
@@ -426,7 +450,6 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                     if (insight.type === 'ring') {
                       return <FocusRing key={index} {...insight} />;
                     }
-                    // Potentially add a default card display if type is not matched
                     return (
                         <div key={index} className="p-4 rounded-lg" style={{backgroundColor: 'var(--color-card-alt)', border: '1px solid var(--color-border)'}}>
                             <h4 className="font-semibold" style={{color: 'var(--color-text)'}}>{insight.title || 'Insight'}</h4>
@@ -438,17 +461,15 @@ const SnapshotScreen = ({ answers, onContinue }) => {
               </div>
             )}
 
-            {/* Narrative Summary Section - from worker, could be part of the blueprint */}
             {narrativeSummary && (
               <div className="space-y-6 pt-8" style={{ borderTop: `1px solid var(--color-border)` }}>
                 <AIMessageCard
                   paragraph={narrativeSummary}
-                  cardType="YOUR BLUEPRINT SUMMARY" // Adjusted card type
+                  cardType="YOUR BLUEPRINT SUMMARY"
                 />
               </div>
             )}
 
-            {/* Final Section: Connecting Your DNA to Your Goal */}
             <div className="space-y-6 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
               <div className="text-center">
                 <h3
@@ -464,19 +485,18 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                 )}
               </div>
               <AIMessageCard 
-                message="So, how does this all relate to the challenge you mentioned?" // Replaced 'paragraph' with 'message'
-                paragraph="Your unique profile gives us the perfect clue for the best way to start." // Added paragraph for the second line
-                cardType="COACH" // Consistent card type
+                message="So, how does this all relate to the challenge you mentioned?"
+                paragraph="Your unique profile gives us the perfect clue for the best way to start."
+                cardType="COACH"
               />
             </div>
 
-            {/* Call to Action */}
             <div className="text-center space-y-6">
               <div className="pt-4">
                 <Button
                   variant="accent"
                   size="large"
-                  onClick={onContinue}
+                  onClick={onContinue} // This calls App.jsx's handler, which changes currentView
                   className="group flex items-center space-x-3 text-xl px-16 py-8"
                 >
                   <span>Okay, I'm Ready</span>
@@ -486,7 +506,6 @@ const SnapshotScreen = ({ answers, onContinue }) => {
             </div>
           </Card>
 
-          {/* Footer */}
           <div className="text-center">
             <p 
               className="text-sm"

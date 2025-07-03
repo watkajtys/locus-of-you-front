@@ -1,17 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Added useEffect
 import { supabase } from '../lib/supabase';
 import { ChevronRight } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
+import useStore from '../store/store'; // Import Zustand store
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Card from './Card';
 import Button from './Button';
 
+const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip props are kept as App.jsx passes them
+  const setOnboardingAnswers = useStore((state) => state.setOnboardingAnswers);
+  const setCurrentView = useStore((state) => state.setCurrentView);
+  // Access existing onboardingAnswers from store to potentially resume
+  const existingOnboardingAnswers = useStore((state) => state.onboardingAnswers);
 
-const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [answers, setAnswers] = useState({});
+  // Initialize local answers with store's answers if available, for resumption
+  const [answers, setAnswers] = useState(existingOnboardingAnswers || {});
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   // const [sliderValue, setSliderValue] = useState(3); // Removed as no slider questions in new flow
   const [textInput, setTextInput] = useState('');

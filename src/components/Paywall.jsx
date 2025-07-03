@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Zap, Brain, Target, BarChart3, BookOpen, Sparkles, Crown, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
+import useStore from '../store/store'; // Import Zustand store
 import Card from './Card';
 import Button from './Button';
 import { 
@@ -11,8 +12,15 @@ import {
 
 
 const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = false }) => {
+  // isAuthenticatedUser prop is still useful to tailor UI elements if needed.
+  // onSubscribe and onSubscriptionSuccess are passed from App.jsx to handle post-purchase logic.
+
+  const setHasSubscription = useStore((state) => state.setHasSubscription);
+  const setCurrentView = useStore((state) => state.setCurrentView);
+  // Potentially: const session = useStore((state) => state.session); to get user ID for RevenueCat if not already handled.
+
   const [selectedPlan, setSelectedPlan] = useState('annual'); // Default to annual (best value)
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Local loading for purchase process
   const [error, setError] = useState(null);
   const [offerings, setOfferings] = useState(null);
   const [loadingOfferings, setLoadingOfferings] = useState(true);
@@ -57,28 +65,38 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
         const status = await checkSubscriptionStatus();
         
         if (status.hasSubscription) {
-          // Call success callback if provided
+          setHasSubscription(true); // Update store
+          // Call success callback passed from App.jsx (which might also refresh or set view)
           onSubscriptionSuccess?.(result.customerInfo, selectedPlan);
-          
-          // Call the original callback
-          onSubscribe?.(selectedPlan);
+          // onSubscribe is also called by App.jsx's handleSubscriptionSuccess,
+          // so calling it here might be redundant if onSubscriptionSuccess already covers it.
+          // For now, assume App.jsx's onSubscriptionSuccess will call its onSubscribe logic.
+          // If the user is authenticated, App.jsx's subscription gate will handle view change.
+          // If not authenticated (e.g. end of onboarding), might need to set view to auth.
+          if (!isAuthenticatedUser) {
+            // setCurrentView('auth'); // Or let App.jsx handle this transition via onSubscriptionSuccess
+          }
         } else {
-          throw new Error('Subscription not found after purchase');
+          // This case should ideally not happen if purchase was successful and status check is reliable.
+          setHasSubscription(false); // Ensure store reflects reality
+          throw new Error('Subscription not found after successful purchase confirmation. Please contact support.');
         }
       } else {
-        // Purchase failed
+        // Purchase failed or was cancelled
         if (result.userCancelled) {
-          // User cancelled, don't show error
           console.log('User cancelled subscription purchase');
+          // No error message needed for user cancellation
         } else {
           setError(result.error || 'Failed to process subscription. Please try again.');
+          setHasSubscription(false); // Ensure store reflects no subscription
         }
       }
     } catch (error) {
       console.error('Subscription error:', error);
       setError(error.message || 'An unexpected error occurred. Please try again.');
+      setHasSubscription(false); // Ensure store reflects no subscription on error
     } finally {
-      setLoading(false);
+      setLoading(false); // Reset local loading state
     }
   };
 

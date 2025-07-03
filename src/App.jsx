@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { useTheme } from './hooks/useTheme';
-import { AuthProvider } from './hooks/useAuth';
+import { AuthProvider } from './hooks/useAuth'; // AuthProvider might be refactored or removed if session is globally managed
 import { initializeRevenueCat, setRevenueCatUserId, logOutRevenueCat } from './lib/revenuecat';
 import { useSubscription } from './hooks/useSubscription';
+import useStore from './store/store'; // Import the Zustand store
 import EnhancedAuth from './components/EnhancedAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppShell from './components/AppShell';
@@ -11,40 +12,50 @@ import DynamicOnboarding from './components/DynamicOnboarding';
 import SnapshotScreen from './components/SnapshotScreen';
 import FirstStepScreen from './components/FirstStepScreen';
 import Paywall from './components/Paywall';
-import ReflectionScreen from './components/ReflectionScreen'; // Import ReflectionScreen
+import ReflectionScreen from './components/ReflectionScreen';
 
 function AppContent() {
   const { theme } = useTheme();
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [showAuth, setShowAuth] = useState(false);
-  const [showSnapshot, setShowSnapshot] = useState(false);
-  const [showFirstStep, setShowFirstStep] = useState(false);
-  const [showReflectionScreen, setShowReflectionScreen] = useState(false); // New state for ReflectionScreen
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [onboardingAnswers, setOnboardingAnswers] = useState(null);
-  const [currentIsfsTask, setCurrentIsfsTask] = useState(''); // State to store the ISFS task text
+  // Get state and actions from Zustand store
+  const session = useStore((state) => state.session);
+  const isLoading = useStore((state) => state.isLoading);
+  const currentView = useStore((state) => state.currentView);
+  const onboardingAnswers = useStore((state) => state.onboardingAnswers);
+  const currentIsfsTask = useStore((state) => state.currentIsfsTask);
+  const storeHasSubscription = useStore((state) => state.hasSubscription);
+
+  const setSession = useStore((state) => state.setSession);
+  const setIsLoading = useStore((state) => state.setIsLoading);
+  const setCurrentView = useStore((state) => state.setCurrentView);
+  const setOnboardingAnswers = useStore((state) => state.setOnboardingAnswers);
+  const setCurrentIsfsTask = useStore((state) => state.setCurrentIsfsTask);
+  const setHasSubscription = useStore((state) => state.setHasSubscription);
+  const clearUserState = useStore((state) => state.clearUserState);
+
 
   // Use the subscription hook for real-time subscription status
-  const { hasSubscription, isLoading: subscriptionLoading, refreshSubscriptionStatus } = useSubscription(session?.user);
+  // Pass session?.user to useSubscription. If session is null, user will be undefined.
+  const { hasSubscription: rcatHasSubscription, isLoading: subscriptionLoading, refreshSubscriptionStatus } = useSubscription(session?.user);
+
+  // Update Zustand store when rcatHasSubscription changes
+  useEffect(() => {
+    setHasSubscription(rcatHasSubscription);
+  }, [rcatHasSubscription, setHasSubscription]);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Initialize RevenueCat first and wait for it to complete
+        setIsLoading(true);
         await initializeRevenueCat();
-
-        // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
         } else {
-          setSession(session);
-          
-          // If user is authenticated, set RevenueCat user ID
-          if (session?.user) {
+          setSession(initialSession);
+          if (initialSession?.user) {
             try {
-              await setRevenueCatUserId(session.user.id);
+              await setRevenueCatUserId(initialSession.user.id);
+              // Initial subscription status will be handled by useSubscription hook and updated in store
             } catch (error) {
               console.error('Error setting RevenueCat user ID:', error);
             }
@@ -53,103 +64,105 @@ function AppContent() {
       } catch (error) {
         console.error('Error initializing app:', error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     initializeApp();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session);
-        setSession(session);
-        setLoading(false);
-        
-        // Handle RevenueCat user management
-        if (session?.user) {
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+      async (_event, newSession) => {
+        console.log('Auth state changed:', _event, newSession);
+        setSession(newSession); // Update session in store
+        // No need to setLoading(false) here as initial loading is handled by initializeApp
+
+        if (newSession?.user) {
           try {
-            await setRevenueCatUserId(session.user.id);
-            // The subscription status will be updated automatically through the hook
+            await setRevenueCatUserId(newSession.user.id);
+            refreshSubscriptionStatus(); // Refresh subscription status on auth change
           } catch (error) {
-            console.error('Error setting RevenueCat user ID:', error);
+            console.error('Error setting RevenueCat user ID during auth change:', error);
           }
         } else {
-          // User logged out
           await logOutRevenueCat();
+          // clearUserState(); // Clearing user state here might be too early if there's a transition period.
+                           // Consider calling clearUserState when user explicitly logs out or session is truly invalid.
+                           // For now, useSubscription will update hasSubscription to false.
         }
       }
     );
 
-    // Cleanup subscription on unmount
     return () => {
-      subscription.unsubscribe();
+      authSubscription.unsubscribe();
     };
-  }, []);
+  }, [setSession, setIsLoading, refreshSubscriptionStatus]); // Removed clearUserState from dependencies for now
 
   // Handle onboarding completion
   const handleOnboardingComplete = (answers) => {
     console.log('Onboarding completed with answers:', answers);
-    // Store answers in localStorage and state
-    localStorage.setItem('onboarding-answers', JSON.stringify(answers));
+    localStorage.setItem('onboarding-answers', JSON.stringify(answers)); // Keep localStorage for persistence if needed
     setOnboardingAnswers(answers);
-    setShowSnapshot(true);
+    setCurrentView('snapshot');
   };
 
-  // Handle onboarding skip
+  // Handle onboarding skip - this might mean going to auth or a limited paywall
   const handleOnboardingSkip = () => {
     console.log('Onboarding skipped');
-    setShowAuth(true);
+    // Decide next view: if user exists, maybe 'appShell' (if subscribed) or 'paywall', else 'auth'
+    setCurrentView('auth'); // Example: go to EnhancedAuth
   };
 
-  // Handle snapshot continuation - now goes to FirstStepScreen
+  // Handle snapshot continuation
   const handleSnapshotContinue = () => {
     console.log('Continuing from snapshot to first step');
-    setShowFirstStep(true);
+    setCurrentView('firstStep');
   };
 
-  // Handle first step completion - now goes to Paywall
-  const handleFirstStepComplete = (taskText) => { // taskText will be passed from FirstStepScreen
+  // Handle first step completion
+  const handleFirstStepComplete = (taskText) => {
     console.log('First step completed with task:', taskText, 'Proceeding to reflection.');
-    setCurrentIsfsTask(taskText || 'your first step'); // Store the task for ReflectionScreen, with a fallback
-    setShowFirstStep(false); // Hide FirstStepScreen
-    setShowReflectionScreen(true); // Show ReflectionScreen
-    // setShowPaywall(true); // Original line, now handled by handleReflectionComplete
+    setCurrentIsfsTask(taskText || 'your first step');
+    setCurrentView('reflection');
   };
 
-  // Handle reflection completion - goes to Paywall
+  // Handle reflection completion
   const handleReflectionComplete = () => {
     console.log('Reflection completed, proceeding to paywall.');
-    setShowReflectionScreen(false); // Hide ReflectionScreen
-    setShowPaywall(true); // Show Paywall
+    setCurrentView('paywall');
   };
 
   // Handle first step change request
   const handleFirstStepChange = () => {
     console.log('User wants a different first step');
-    // For now, just go back to snapshot - you could implement step variation logic here
-    setShowFirstStep(false);
-    setShowSnapshot(true);
+    setCurrentView('snapshot'); // Go back to snapshot
   };
 
   // Handle subscription from paywall
-  const handleSubscribe = (planType) => {
+  const handleSubscribe = async (planType) => {
     console.log('User selected subscription plan:', planType);
-    // After successful subscription through RevenueCat, refresh status
-    refreshSubscriptionStatus();
-    // The subscription gate will automatically redirect to AppShell once subscription is detected
+    // RevenueCat purchase logic is in Paywall.jsx
+    // After successful purchase, Paywall.jsx's onSubscriptionSuccess will be called.
+    // We need to ensure App.jsx's state (via store) is updated.
+    // The useSubscription hook should automatically refresh and update the store.
+    // If not, call refreshSubscriptionStatus() here or in onSubscriptionSuccess.
+    await refreshSubscriptionStatus(); // Explicitly refresh
   };
 
-  // Handle successful subscription (called by RevenueCat after purchase)
-  const handleSubscriptionSuccess = (customerInfo, planType) => {
-    console.log('Subscription successful:', { customerInfo, planType });
-    // Refresh subscription status to get latest data
-    refreshSubscriptionStatus();
-    // You might want to store subscription info in your database here
+  // Handle successful subscription (called by Paywall's onSubscriptionSuccess)
+  const handleSubscriptionSuccess = async (customerInfo, planType) => {
+    console.log('Subscription successful in App.jsx:', { customerInfo, planType });
+    await refreshSubscriptionStatus(); // Ensure store is up-to-date
+    // If successful, the subscription gate below should allow access to AppShell
+    // No direct setCurrentView('appShell') here, as the gate handles it.
+    // If user is not authenticated after subscribing (e.g. onboarding paywall), guide to auth.
+    if (!session) {
+      setCurrentView('auth');
+    }
   };
+
 
   // Show loading state while checking authentication or subscription
-  if (loading || (session && subscriptionLoading)) {
+  if (isLoading || (session && subscriptionLoading)) {
     return (
       <div 
         className="min-h-screen flex items-center justify-center font-inter"
@@ -164,7 +177,7 @@ function AppContent() {
             className="text-sm"
             style={{ color: 'var(--color-muted)' }}
           >
-            {loading ? 'Loading...' : 'Checking subscription...'}
+            {isLoading ? 'Loading...' : 'Checking subscription...'}
           </p>
         </div>
       </div>
@@ -178,112 +191,132 @@ function AppContent() {
         // 🔒 SUBSCRIPTION GATE: Check authentication and subscription status
         if (session) {
           // User is authenticated - now check subscription status
-          if (!subscriptionLoading && !hasSubscription) {
+          if (!subscriptionLoading && !storeHasSubscription) {
             // User is authenticated but has no active subscription
-            console.log('🔒 Subscription gate: Redirecting to paywall - no active subscription');
+            console.log('🔒 Subscription gate: User authenticated, no subscription. Current view:', currentView);
+            // If currentView is already paywall, or they just came from a flow leading to paywall, show it.
+            // Otherwise, set currentView to 'paywall'.
+            // This prevents loops if Paywall component itself tries to redirect.
+            if (currentView !== 'paywall') {
+                // setCurrentView('paywall'); // This might cause an infinite loop if Paywall is not careful
+                                         // It's better to let the Paywall component render directly.
+            }
             return (
-              <Paywall 
+              <Paywall
                 onSubscribe={handleSubscribe}
                 onSubscriptionSuccess={handleSubscriptionSuccess}
-                isAuthenticatedUser={true} // Pass flag to indicate user is already logged in
+                isAuthenticatedUser={true}
               />
             );
           }
-          
+
           // User is authenticated AND has active subscription - allow access to app
-          if (hasSubscription) {
+          if (storeHasSubscription) {
+            // If they were on a pre-auth view, move them to appShell
+            if (currentView !== 'appShell') {
+                // setCurrentView('appShell'); // Let ProtectedRoute handle this or ensure AppShell is default for authed+subscribed
+            }
             return (
               <ProtectedRoute>
-                <AppShell session={session} hasSubscription={hasSubscription} />
+                <AppShell />
               </ProtectedRoute>
             );
           }
-          
-          // Still loading subscription status - show loading
-          return (
-            <div 
-              className="min-h-screen flex items-center justify-center font-inter"
-              style={{ backgroundColor: 'var(--color-background)' }}
-            >
-              <div className="text-center space-y-4">
-                <div 
-                  className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto"
-                  style={{ borderColor: 'var(--color-accent)' }}
-                />
-                <p 
-                  className="text-sm"
-                  style={{ color: 'var(--color-muted)' }}
-                >
-                  Verifying subscription status...
-                </p>
+
+          // Still loading subscription status - show loading (already handled by the top-level isLoading check)
+          // This specific block for "Verifying subscription status..." might be redundant
+          // if the main isLoading || (session && subscriptionLoading) covers it.
+          // However, keeping it ensures a specific message if only subscription is loading.
+          if (subscriptionLoading) {
+            return (
+              <div
+                className="min-h-screen flex items-center justify-center font-inter"
+                style={{ backgroundColor: 'var(--color-background)' }}
+              >
+                <div className="text-center space-y-4">
+                  <div
+                    className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto"
+                    style={{ borderColor: 'var(--color-accent)' }}
+                  />
+                  <p
+                    className="text-sm"
+                    style={{ color: 'var(--color-muted)' }}
+                  >
+                    Verifying subscription status...
+                  </p>
+                </div>
               </div>
-            </div>
-          );
+            );
+          }
+          // Fallback for authenticated user if no other condition met (should ideally not happen)
+          // return <EnhancedAuth />; // Or some other default authenticated view
         }
 
-        // User is NOT authenticated - show onboarding/auth flow
-        
-        // Show paywall if reflection is completed (during onboarding)
-        if (showPaywall && onboardingAnswers) {
-          return (
-            <Paywall 
-              onSubscribe={handleSubscribe}
-              onSubscriptionSuccess={handleSubscriptionSuccess}
-              isAuthenticatedUser={false} // User is in onboarding flow
-            />
-          );
+        // User is NOT authenticated - use currentView from store to show onboarding/auth flow
+        switch (currentView) {
+          case 'onboarding':
+            return (
+              <DynamicOnboarding
+                onComplete={handleOnboardingComplete}
+                onSkip={handleOnboardingSkip}
+              />
+            );
+          case 'snapshot':
+            // Ensure onboardingAnswers exist before showing snapshot
+            if (onboardingAnswers) {
+              return (
+                <SnapshotScreen
+                  // answers prop might be removed if SnapshotScreen fetches from store
+                  onContinue={handleSnapshotContinue}
+                />
+              );
+            }
+            setCurrentView('onboarding'); // Fallback if no answers
+            return null; // Or a loading/redirect indicator
+          case 'firstStep':
+            if (onboardingAnswers) {
+              return (
+                <FirstStepScreen
+                  // answers prop might be removed
+                  onComplete={handleFirstStepComplete}
+                  onChangeStep={handleFirstStepChange}
+                  // onboardingUserId might be removed if fetched from store or answers
+                />
+              );
+            }
+            setCurrentView('onboarding'); // Fallback
+            return null;
+          case 'reflection':
+            if (onboardingAnswers && currentIsfsTask) {
+              return (
+                <ReflectionScreen
+                  // task and userName might be removed if fetched from store
+                  onComplete={handleReflectionComplete}
+                />
+              );
+            }
+            setCurrentView('firstStep'); // Fallback
+            return null;
+          case 'paywall': // This case is for non-authenticated users hitting paywall (e.g. after onboarding reflection)
+            return (
+              <Paywall
+                onSubscribe={handleSubscribe}
+                onSubscriptionSuccess={handleSubscriptionSuccess}
+                isAuthenticatedUser={false}
+              />
+            );
+          case 'auth':
+            return <EnhancedAuth />;
+          default:
+            // Fallback to onboarding if currentView is unknown or invalid for non-authenticated user
+            setCurrentView('onboarding');
+            return (
+              <DynamicOnboarding
+                onComplete={handleOnboardingComplete}
+                onSkip={handleOnboardingSkip}
+              />
+            );
         }
-
-        // Show reflection screen if first step is completed
-        if (showReflectionScreen && onboardingAnswers) {
-          const taskForReflection = currentIsfsTask || localStorage.getItem('lastActiveIsfsTask') || 'your first step';
-          return (
-            <ReflectionScreen
-              task={taskForReflection} // Pass the stored ISFS task
-              userName={onboardingAnswers?.name} // Optional: pass user name if available
-              userId={onboardingAnswers?.userId} // Pass the user ID
-              onComplete={handleReflectionComplete}
-            />
-          );
-        }
-
-        // Show first step screen if user clicked "I'm Ready" from snapshot
-        if (showFirstStep && onboardingAnswers) {
-          console.log('Rendering FirstStepScreen with onboardingAnswers:', onboardingAnswers);
-          console.log('onboardingUserId:', onboardingAnswers.userId);
-          return (
-            <FirstStepScreen 
-              answers={onboardingAnswers}
-              // onComplete will now be called with taskText, see next step for FirstStepScreen modification
-              onComplete={handleFirstStepComplete}
-              onChangeStep={handleFirstStepChange}
-              onboardingUserId={onboardingAnswers.userId} // Pass the anonymous user ID
-            />
-          );
-        }
-
-        // Show snapshot results if onboarding is completed
-        if (showSnapshot && onboardingAnswers) {
-          return (
-            <SnapshotScreen 
-              answers={onboardingAnswers}
-              onContinue={handleSnapshotContinue}
-            />
-          );
-        }
-
-        // Show auth after paywall or skip
-        if (showAuth) {
-          return <EnhancedAuth />;
-        }
-
-        // Show onboarding first
-        return (
-          <DynamicOnboarding 
-            onComplete={handleOnboardingComplete}
-            onSkip={handleOnboardingSkip}
-          />
-        );
       })()}
     </>
   );
@@ -291,9 +324,14 @@ function AppContent() {
 
 function App() {
   return (
+    // AuthProvider might still be needed if useAuth hook is used by components
+    // that are not yet refactored or if it provides other context.
+    // If session is fully managed by Zustand, AuthProvider's role for session might be redundant.
     <AuthProvider>
       <AppContent />
     </AuthProvider>
+    // Or, if AuthProvider is solely for session, and session is in Zustand:
+    // <AppContent />
   );
 }
 
