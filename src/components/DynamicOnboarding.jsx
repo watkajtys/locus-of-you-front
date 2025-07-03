@@ -137,11 +137,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     setTextInput('');
     setQuestionVisible(true);
   }, [currentQuestion]);
-    setSelectedAnswer(null);
-    setSliderValue(3);
-    setTextInput('');
-    setQuestionVisible(true);
-  }, [currentQuestion]);
 
   const currentQuestionData = questions[currentQuestion];
   const previousQuestionData = currentQuestion > 0 ? questions[currentQuestion -1] : null;
