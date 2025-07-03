@@ -371,7 +371,12 @@ const FirstStepScreen = ({ answers, onComplete, onChangeStep, onboardingUserId }
               <Button
                 variant="accent"
                 size="large"
-                onClick={() => onComplete(task)} // Pass the task text to onComplete
+                onClick={() => {
+                  if (task) {
+                    localStorage.setItem('lastActiveIsfsTask', task);
+                  }
+                  onComplete(task);
+                }}
                 disabled={!isTaskCompleted} // Button is enabled once task is checked
                 className={`
                   group flex items-center space-x-3 text-xl px-12 py-6
