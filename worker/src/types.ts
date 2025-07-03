@@ -73,7 +73,9 @@ export const CoachingMessageSchema = z.object({
     currentGoal: z.string().optional(),
     urgencyLevel: z.enum(['low', 'medium', 'high', 'crisis']).default('medium'),
     sessionType: z.enum(['diagnostic', 'intervention', 'reflection', 'goal_setting', 'onboarding_diagnostic', 'snapshot_generation']).default('diagnostic'),
-    onboardingAnswers: OnboardingAnswersSchema.optional(), // Add onboardingAnswers
+    onboardingAnswers: OnboardingAnswersSchema.optional(),
+    previousTask: z.string().optional(), // For 'reflection' sessionType: the task just completed
+    reflectionId: z.string().optional(), // For 'reflection' sessionType: e.g., 'easy', 'silly', 'not_done'
   }).optional()
 });
 

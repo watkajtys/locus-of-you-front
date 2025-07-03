@@ -236,10 +236,12 @@ function AppContent() {
 
         // Show reflection screen if first step is completed
         if (showReflectionScreen && onboardingAnswers) {
+          const taskForReflection = currentIsfsTask || localStorage.getItem('lastActiveIsfsTask') || 'your first step';
           return (
             <ReflectionScreen
-              task={currentIsfsTask} // Pass the stored ISFS task
+              task={taskForReflection} // Pass the stored ISFS task
               userName={onboardingAnswers?.name} // Optional: pass user name if available
+              userId={onboardingAnswers?.userId} // Pass the user ID
               onComplete={handleReflectionComplete}
             />
           );

@@ -103,6 +103,35 @@ app.post('/api/coaching/message', async (c) => {
       const assessmentData = await diagnosticChain.assessUser(coachingMessage, userProfile);
       // TODO: Update user profile with new assessment insights
       finalResponseData = await interventionsChain.prescribeIntervention(coachingMessage, userProfile, assessmentData);
+    } else if (sessionType === 'reflection') {
+      const previousTask = coachingMessage.context?.previousTask;
+      const reflectionId = coachingMessage.context?.reflectionId;
+      const reflectionText = coachingMessage.message; // User's textual reflection
+
+      if (!previousTask || !reflectionId) {
+        return c.json({ success: false, error: { message: 'Previous task and reflectionId are required for reflection session type.', code: 'MISSING_REFLECTION_DATA' } }, 400);
+      }
+
+      const adaptedMicrotask = await interventionsChain.generateAdaptedMicrotask(
+        previousTask,
+        reflectionId,
+        reflectionText,
+        userProfile
+      );
+
+      // Store the adapted microtask in KV (will be done in the next step formally, but this is where it happens)
+      // For now, the response will include this adapted task.
+      // The frontend doesn't directly use this response from /api/coaching/message to show the next task.
+      // It will fetch it after the paywall. This endpoint confirms receipt and processing of reflection.
+      finalResponseData = {
+        message: "Reflection processed and next task generated.",
+        nextAdaptedTask: adaptedMicrotask
+      };
+      // TODO: In Step 7, actually save `adaptedMicrotask` to KV under a specific key for later retrieval.
+      await env.USER_SESSIONS_KV.put(`nextAdaptedTask_${userId}`, JSON.stringify(adaptedMicrotask));
+      console.log(`Stored nextAdaptedTask_${userId}: ${JSON.stringify(adaptedMicrotask)}`);
+
+
     } else {
       return c.json({ success: false, error: { message: `Invalid session type: ${sessionType}`, code: 'INVALID_SESSION_TYPE' } }, 400);
     }
@@ -111,11 +140,11 @@ app.post('/api/coaching/message', async (c) => {
     if (!env.COACHING_HISTORY_KV) {
       console.warn('COACHING_HISTORY_KV not configured, skipping history save.');
     }
-    // Only save history for actual coaching messages, not onboarding/snapshot generation
-    else if (sessionType === 'diagnostic' || sessionType === 'intervention') {
+    // Save history for diagnostic, intervention, and reflection messages
+    else if (sessionType === 'diagnostic' || sessionType === 'intervention' || sessionType === 'reflection') {
         const historyKey = `${userId}:${sessionId || 'default'}:${new Date().toISOString()}`;
         const historyRecord = {
-          userMessage: coachingMessage,
+          userMessage: coachingMessage, // This now includes context like previousTask and reflectionId for 'reflection' type
           aiResponse: finalResponseData,
           timestamp: new Date().toISOString(),
         };
