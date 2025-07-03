@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { ChevronRight, User, LogIn, Zap } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
@@ -213,7 +213,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   };
 
   // Handle choice answer selection
-  const handleAnswerSelect = async (questionId, answerValue, optionData) => { // Make it async
+  const handleAnswerSelect = async (questionId, answerValue) => { // Make it async
     if (isTransitioning || isLoading) return; // Add isLoading check
     
     setIsTransitioning(true);
@@ -328,11 +328,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
     }, 500);
   };
 
-  // Handle Log In button click
-  const handleLogIn = () => {
-    // Call onSkip to trigger showing the auth screen
-    onSkip && onSkip();
-  };
+  
 
   // Determine the message for the AIMessageCard
   // For the first question, it's fixed. For subsequent questions, it's the coach's response to the previous answer.
