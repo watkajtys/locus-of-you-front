@@ -82,37 +82,25 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
     }
   };
 
+  // Updated premiumFeatures as per onboard.md
   const premiumFeatures = [
     {
-      icon: Zap,
-      title: 'Unlimited, continuous coaching dialogue',
-      description: 'Never-ending personalized guidance tailored to your unique profile'
+      icon: Zap, // Keeping Zap icon, can be changed
+      title: 'An Adaptive Plan that Evolves With You',
+      // No description in onboard.md, can add one if desired
+      description: 'Your coaching plan adapts based on your progress and reflections.'
     },
     {
-      icon: Brain,
-      title: 'Full access to the diagnostic engine (ET→SDT→GST)',
-      description: 'Deep psychological insights using Evidence-based Therapy principles'
+      icon: Brain, // Keeping Brain icon
+      title: 'Unlock Your Next Step, and the Next...',
+      description: 'Continuously receive tailored steps to build momentum towards your goals.'
     },
     {
-      icon: Target,
-      title: 'Personalized, evidence-based interventions',
-      description: 'Custom strategies designed specifically for your motivational profile'
-    },
-    {
-      icon: BarChart3,
-      title: 'Unlimited goal setting and tracking',
-      description: 'Set, monitor, and achieve as many goals as you want'
-    },
-    {
-      icon: Sparkles,
-      title: 'Advanced "Data Storytelling" progress summaries',
-      description: 'Beautiful, insightful reports that show your growth over time'
-    },
-    {
-      icon: BookOpen,
-      title: 'Access to all specialized coaching playbooks',
-      description: 'Comprehensive guides for every aspect of personal development'
+      icon: Target, // Keeping Target icon
+      title: 'Ongoing Insights from Your Personal AI Coach',
+      description: 'Benefit from continuous analysis and feedback from your AI coach.'
     }
+    // Removed other features to match onboard.md's conciseness for Phase 6
   ];
 
   // Helper function to get pricing from offerings
@@ -196,20 +184,23 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
               className="text-4xl md:text-6xl font-bold leading-tight"
               style={{ color: '#f1f5f9' }} // slate-100 text
             >
-              {isAuthenticatedUser ? 'Unlock Premium Features' : 'Unlock Your Full Potential'}
+              Let's Keep the Momentum Going.
             </h1>
             <p 
               className="text-lg md:text-xl leading-relaxed max-w-3xl mx-auto"
               style={{ color: '#94a3b8' }} // slate-400 muted
             >
-              {isAuthenticatedUser 
-                ? 'You need an active subscription to access premium coaching features. Choose your plan below to continue your growth journey.'
-                : 'The free snapshot was just the beginning. Unlock the continuous coaching relationship to diagnose why you\'re stuck and build a personalized plan to move forward.'
-              }
+              You've already seen how a personalized first step can make a difference. The real power of LocusOfYou is turning that one action into a consistent practice.
+            </p>
+            <p
+              className="text-md md:text-lg leading-relaxed max-w-3xl mx-auto" // Sub-Body
+              style={{ color: '#94a3b8' }} // slate-400 muted
+            >
+              Subscribing unlocks your full, ongoing coaching experience. We'll help you reflect on every step, adapt your plan based on how it goes, and reveal your next step, every single time.
             </p>
           </div>
 
-          {/* Back to Limited Access (for authenticated users only) */}
+          {/* Back to Limited Access (for authenticated users only) - This might be less relevant if Paywall is part of onboarding before full auth wall */}
           {isAuthenticatedUser && (
             <div className="flex justify-center">
               <button
@@ -555,15 +546,15 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
                 </div>
               ) : (
                 <>
-                  {isAuthenticatedUser 
-                    ? `🚀 Subscribe to ${selectedPlan === 'annual' ? 'Annual' : 'Monthly'} Plan`
-                    : '🚀 Start My 7-Day Free Trial'
-                  }
+                  {/* Text updated as per onboard.md */}
+                  Unlock My Full Plan
                 </>
               )}
             </Button>
             
-            {!isAuthenticatedUser && (
+            {/* The "Skip for now" button might be removed if this is a hard paywall in the onboarding flow */}
+            {/* For now, keeping it but commenting out, as onboard.md doesn't specify it for Phase 6 */}
+            {/* {!isAuthenticatedUser && (
               <div className="mt-4">
                 <button
                   onClick={() => onSubscriptionSuccess?.(null, 'skipped')}
@@ -572,7 +563,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
                   Skip for now (limited access)
                 </button>
               </div>
-            )}
+            )} */}
 
             <div className="mt-4 space-y-2">
               <p 

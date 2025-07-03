@@ -11,6 +11,7 @@ import DynamicOnboarding from './components/DynamicOnboarding';
 import SnapshotScreen from './components/SnapshotScreen';
 import FirstStepScreen from './components/FirstStepScreen';
 import Paywall from './components/Paywall';
+import ReflectionScreen from './components/ReflectionScreen'; // Import ReflectionScreen
 
 function AppContent() {
   const { theme } = useTheme();
@@ -19,8 +20,10 @@ function AppContent() {
   const [showAuth, setShowAuth] = useState(false);
   const [showSnapshot, setShowSnapshot] = useState(false);
   const [showFirstStep, setShowFirstStep] = useState(false);
+  const [showReflectionScreen, setShowReflectionScreen] = useState(false); // New state for ReflectionScreen
   const [showPaywall, setShowPaywall] = useState(false);
   const [onboardingAnswers, setOnboardingAnswers] = useState(null);
+  const [currentIsfsTask, setCurrentIsfsTask] = useState(''); // State to store the ISFS task text
 
   // Use the subscription hook for real-time subscription status
   const { hasSubscription, isLoading: subscriptionLoading, refreshSubscriptionStatus } = useSubscription(session?.user);
@@ -106,9 +109,19 @@ function AppContent() {
   };
 
   // Handle first step completion - now goes to Paywall
-  const handleFirstStepComplete = () => {
-    console.log('First step completed, going to paywall');
-    setShowPaywall(true);
+  const handleFirstStepComplete = (taskText) => { // taskText will be passed from FirstStepScreen
+    console.log('First step completed with task:', taskText, 'Proceeding to reflection.');
+    setCurrentIsfsTask(taskText || 'your first step'); // Store the task for ReflectionScreen, with a fallback
+    setShowFirstStep(false); // Hide FirstStepScreen
+    setShowReflectionScreen(true); // Show ReflectionScreen
+    // setShowPaywall(true); // Original line, now handled by handleReflectionComplete
+  };
+
+  // Handle reflection completion - goes to Paywall
+  const handleReflectionComplete = () => {
+    console.log('Reflection completed, proceeding to paywall.');
+    setShowReflectionScreen(false); // Hide ReflectionScreen
+    setShowPaywall(true); // Show Paywall
   };
 
   // Handle first step change request
@@ -210,7 +223,7 @@ function AppContent() {
 
         // User is NOT authenticated - show onboarding/auth flow
         
-        // Show paywall if first step is completed (during onboarding)
+        // Show paywall if reflection is completed (during onboarding)
         if (showPaywall && onboardingAnswers) {
           return (
             <Paywall 
@@ -221,13 +234,25 @@ function AppContent() {
           );
         }
 
-        // Show first step screen if user clicked "I'm Ready"
+        // Show reflection screen if first step is completed
+        if (showReflectionScreen && onboardingAnswers) {
+          return (
+            <ReflectionScreen
+              task={currentIsfsTask} // Pass the stored ISFS task
+              userName={onboardingAnswers?.name} // Optional: pass user name if available
+              onComplete={handleReflectionComplete}
+            />
+          );
+        }
+
+        // Show first step screen if user clicked "I'm Ready" from snapshot
         if (showFirstStep && onboardingAnswers) {
           console.log('Rendering FirstStepScreen with onboardingAnswers:', onboardingAnswers);
           console.log('onboardingUserId:', onboardingAnswers.userId);
           return (
             <FirstStepScreen 
               answers={onboardingAnswers}
+              // onComplete will now be called with taskText, see next step for FirstStepScreen modification
               onComplete={handleFirstStepComplete}
               onChangeStep={handleFirstStepChange}
               onboardingUserId={onboardingAnswers.userId} // Pass the anonymous user ID
