@@ -8,7 +8,7 @@ import {
   PRODUCT_IDS,
   checkSubscriptionStatus 
 } from '../lib/revenuecat';
-import boltBadge from '../assets/bolt-badge.png';
+
 
 const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = false }) => {
   const [selectedPlan, setSelectedPlan] = useState('annual'); // Default to annual (best value)
@@ -161,12 +161,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
       className="min-h-screen flex flex-col items-center justify-center font-inter p-6 relative"
       style={{ backgroundColor: '#0f172a' }} // Professional theme background
     >
-      {/* Bolt Badge */}
-      <div className="absolute top-4 right-4 z-50">
-        <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
-          <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" />
-        </a>
-      </div>
+      
       <div className="max-w-5xl mx-auto w-full space-y-12">
         {/* Header Section */}
         <div className="text-center space-y-6">

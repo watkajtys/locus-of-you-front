@@ -1,6 +1,6 @@
 import { Cloud, Zap } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
-import boltBadge from '../assets/bolt-badge.png';
+
 
 const Header = ({ theme, onThemeToggle }) => {
   return (
@@ -42,9 +42,7 @@ const Header = ({ theme, onThemeToggle }) => {
           </div>
           
           <div className="flex items-center space-x-4">
-            <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
-              <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" /> {/* Adjusted size */}
-            </a>
+            
             <ThemeToggle theme={theme} onToggle={onThemeToggle} />
           </div>
         </div>

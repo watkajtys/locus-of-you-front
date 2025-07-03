@@ -6,7 +6,7 @@ import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Card from './Card';
 import Button from './Button';
-import boltBadge from '../assets/bolt-badge.png';
+
 
 // Spectrum Bar Component for Personal Agency
 const SpectrumBar = ({ title, description, userScore, minLabel, maxLabel }) => {
@@ -355,12 +355,7 @@ const SnapshotScreen = ({ answers, onContinue }) => {
         className="min-h-screen flex flex-col items-center justify-center font-inter p-6 relative"
         style={{ backgroundColor: 'var(--color-background)' }}
       >
-        {/* Bolt Badge */}
-        <div className="absolute top-4 right-4 z-50">
-          <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
-            <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" />
-          </a>
-        </div>
+        
         <div className="max-w-4xl mx-auto w-full space-y-8">
           {/* Header with Aura */}
           <div className="text-center space-y-4">

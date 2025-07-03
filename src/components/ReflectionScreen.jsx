@@ -4,7 +4,7 @@ import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Button from './Button';
 import Card from './Card'; // For styling options if needed
-import boltBadge from '../assets/bolt-badge.png'; // Assuming this is used consistently
+
 
 const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
   const [reflectionMade, setReflectionMade] = useState(false);
@@ -72,8 +72,7 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
   };
 
 
-  const handleOptionSelect = (option) // Pass the whole option object
-   => {
+  const handleOptionSelect = (option) => { // Pass the whole option object
     setSelectedOption(option.text); // Keep UI state with text for button loading indicator
     sendReflectionToBackend(option); // Send the whole option object
     // setReflectionMade(true) is now called within sendReflectionToBackend upon success
@@ -90,12 +89,7 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
         className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
         style={{ backgroundColor: 'var(--color-background)' }}
       >
-        {/* Bolt Badge */}
-        <div className="absolute top-4 right-4 z-50">
-          <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
-            <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" />
-          </a>
-        </div>
+        
 
         <div className="max-w-2xl mx-auto w-full space-y-8">
           <div className="text-center space-y-4">

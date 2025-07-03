@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/authHooks';
 import { Mail, Lock, User, AlertCircle, CheckCircle, Eye, EyeOff, KeyRound } from 'lucide-react';
 import Card from './Card';
 import Button from './Button';
-import boltBadge from '../assets/bolt-badge.png';
+
 
 const EnhancedAuth = () => {
   const { signUp, signIn, resetPassword, loading, authError } = useAuth();
@@ -128,12 +128,7 @@ const EnhancedAuth = () => {
       className="min-h-screen flex items-center justify-center p-6 relative" 
       style={{ backgroundColor: 'var(--color-background)' }}
     >
-      {/* Bolt Badge */}
-      <div className="absolute top-4 right-4 z-50">
-        <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
-          <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" />
-        </a>
-      </div>
+      
       <Card className="w-full max-w-md p-8 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">

@@ -6,7 +6,7 @@ import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Card from './Card';
 import Button from './Button';
-import boltBadge from '../assets/bolt-badge.png';
+
 
 const DynamicOnboarding = ({ onComplete, onSkip }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -356,12 +356,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       >
         {/* Header Section */}
         <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-6 md:pt-8 pb-2 md:pb-4">
-          {/* Bolt Badge */}
-          <div className="absolute top-4 right-4 z-50">
-            <a href="https://bolt.new" target="_blank" rel="noopener noreferrer">
-              <img src={boltBadge} alt="Bolt Badge" className="w-10 h-10" />
-            </a>
-          </div>
+          
 
           {/* Welcome Text - Updated as per onboard.md */}
           <div className="text-center mb-2 md:mb-4">
