@@ -162,4 +162,67 @@ export class InterventionsChain {
       throw new Error("Failed to generate a valid microtask.");
     }
   }
+
+  async generateAdaptedMicrotask(
+    previousTask: string,
+    reflectionId: string, // e.g., "easy", "silly", "not_done"
+    reflectionText: string, // The user's actual textual reflection
+    userProfile: UserProfile
+  ): Promise<Microtask> {
+    const systemPromptText = `You are an AI coach specializing in adapting microtasks based on user feedback.
+    The user just completed (or attempted) a previous microtask and provided a reflection.
+    Your goal is to generate the *next* single, extremely small, actionable task that logically follows.
+    The task should be so small it feels almost trivial, designed to build momentum and reduce friction.
+
+    User's Previous Task: "${previousTask}"
+    User's Reflection ID: "${reflectionId}" (e.g., 'easy', 'silly', 'not_done', 'something_else')
+    User's Reflection Text: "${reflectionText}"
+
+    Consider these guidelines based on the reflection ID:
+    - If 'easy': The user found it easy. The next task can build slightly on the previous one or be a similar small step in the same direction.
+    - If 'silly': The user did it but felt silly. Acknowledge this. The next task should still be small but perhaps feel more meaningful or be framed differently.
+    - If 'not_done': The user didn't do it. The next task should likely be even smaller, different, or address potential blockers implicitly. Avoid judgment.
+    - If 'something_else': The user had other things come up. The next task should be very low friction, acknowledging that life happens.
+
+    You will also receive the user's comprehensive psychological profile. Use this to tailor the task's nature and framing.
+    For example, if user is low on 'competence' (from SDT assessment in their profile), make the task very achievable.
+    If user has a 'fixed mindset', frame the task as an experiment.
+
+    You MUST return a single, valid JSON object with the following structure and nothing else:
+    {
+      "rationale": "A brief, clear explanation of why this *new* specific microtask was chosen for them, acknowledging their reflection and linking to their profile if relevant.",
+      "task": "The *new* single, impossibly small, actionable task."
+    }`;
+
+    const systemPrompt = new SystemMessage(systemPromptText);
+
+    const humanMessage = new HumanMessage(
+      `User's Psychological Profile: ${JSON.stringify(userProfile.psychologicalProfile, null, 2)}
+      Previous Task: "${previousTask}"
+      Reflection ID: "${reflectionId}"
+      Reflection Text: "${reflectionText}"`
+    );
+
+    const response = await this.model.invoke([systemPrompt, humanMessage]);
+    console.log("Raw LLM response content for adapted microtask:", response.content);
+
+    let jsonString = response.content as string;
+    const jsonStringMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonStringMatch && jsonStringMatch[1]) {
+      jsonString = jsonStringMatch[1];
+    }
+    jsonString = jsonString.trim();
+
+    if (!jsonString && (response.content as string).trim().startsWith('{') && (response.content as string).trim().endsWith('}')) {
+      jsonString = (response.content as string).trim();
+    }
+
+    try {
+      const parsedResponse: Microtask = JSON.parse(jsonString);
+      return parsedResponse;
+    } catch (error) {
+      console.error("Error parsing adapted microtask response:", error, "Attempted to parse:", jsonString);
+      throw new Error("Failed to generate a valid adapted microtask. Raw: " + jsonString);
+    }
+  }
 }

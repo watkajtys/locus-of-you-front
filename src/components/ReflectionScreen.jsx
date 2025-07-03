@@ -19,7 +19,7 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
     { id: 'something_else', text: 'Something else came up.' },
   ];
 
-  const sendReflectionToBackend = async (reflectionText) => {
+  const sendReflectionToBackend = async (reflectionOption) => {
     if (!userId) {
       console.error('User ID is missing, cannot send reflection.');
       setError('User ID is missing. Cannot save reflection.'); // Show error to user
@@ -30,16 +30,17 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
     try {
       const payload = {
         userId: userId,
-        // sessionId: null, // Explicitly null if not available/needed
-        message: { // Assuming the worker expects a message object for /api/coaching/message
-          type: 'reflection', // Custom type to identify this message
-          task: task || 'Unknown task', // Fallback for task
-          reflection: reflectionText,
-        },
-        // Alternative payload structure if /api/coaching/message is more generic:
-        // isfsTask: task || 'Unknown task',
-        // reflectionChoice: reflectionText,
+        message: reflectionOption.text, // The user's selected reflection text
+        context: {
+          sessionType: 'reflection',
+          previousTask: task || 'Unknown task', // The ISFS task they reflected on
+          reflectionId: reflectionOption.id, // e.g., 'easy', 'silly'
+          // You could also include the full onboardingAnswers here if the backend needs more context
+          // onboardingAnswers: onboardingAnswers,
+        }
       };
+
+      console.log("Sending reflection payload:", JSON.stringify(payload, null, 2));
 
       const response = await fetch(`${import.meta.env.VITE_WORKER_API_URL}/api/coaching/message`, {
         method: 'POST',
@@ -71,9 +72,10 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
   };
 
 
-  const handleOptionSelect = (optionText) => {
-    setSelectedOption(optionText);
-    sendReflectionToBackend(optionText);
+  const handleOptionSelect = (option) // Pass the whole option object
+   => {
+    setSelectedOption(option.text); // Keep UI state with text for button loading indicator
+    sendReflectionToBackend(option); // Send the whole option object
     // setReflectionMade(true) is now called within sendReflectionToBackend upon success
   };
 
@@ -120,7 +122,7 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
                       key={option.id}
                       variant="outline" // Or another appropriate variant
                       size="large"
-                      onClick={() => handleOptionSelect(option.text)}
+                       onClick={() => handleOptionSelect(option)} // Pass the whole option object
                       className="w-full text-left justify-start py-4"
                       disabled={isLoading}
                     >
