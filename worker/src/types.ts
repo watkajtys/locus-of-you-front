@@ -272,3 +272,12 @@ export interface Microtask {
   rationale: string;
   task: string;
 }
+
+// Handler function type
+export type SessionHandler = (
+  coachingMessage: CoachingMessage,
+  userProfile: UserProfile,
+  env: Env,
+  executionCtx: ExecutionContext,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+) => Promise<any>;

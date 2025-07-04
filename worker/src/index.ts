@@ -9,16 +9,34 @@ import {
   UserProfile,
   UserProfileSchema,
   GuardrailConfig,
-  DiagnosticConfig,
+  // DiagnosticConfig, // No longer directly used in this file
   InterventionConfig,
   OnboardingAnswersSchema,
+  SessionHandler,
 } from './types';
 import { GuardrailChain } from './chains/guardrail';
-import { DiagnosticChain } from './chains/diagnostic';
-import { InterventionsChain } from './chains/interventions';
-import { SnapshotChain } from './chains/snapshot'; // Import SnapshotChain
+// import { DiagnosticChain } from './chains/diagnostic'; // No longer directly used here
+// import { InterventionsChain } from './chains/interventions'; // No longer directly used here
+// import { SnapshotChain } from './chains/snapshot'; // No longer directly used here
+
+// Import handlers
+import { handleOnboardingDiagnostic } from './handlers/onboardingDiagnosticHandler';
+import { handleSnapshotGeneration } from './handlers/snapshotGenerationHandler';
+import { handleDiagnostic } from './handlers/diagnosticHandler';
+import { handleIntervention } from './handlers/interventionHandler';
+import { handleReflection } from './handlers/reflectionHandler';
 
 const app = new Hono<{ Bindings: Env }>();
+
+// Handler Map
+const sessionHandlers: Record<string, SessionHandler> = {
+  onboarding_diagnostic: handleOnboardingDiagnostic,
+  snapshot_generation: handleSnapshotGeneration,
+  diagnostic: handleDiagnostic,
+  intervention: handleIntervention,
+  reflection: handleReflection,
+  // goal_setting is in types but not in the original if/else, so not included for now
+};
 
 // Middleware
 app.use('*', cors());
@@ -42,15 +60,9 @@ app.post('/api/coaching/message', async (c) => {
     const coachingMessage = CoachingMessageSchema.parse(body);
     const { userId, sessionId, context, message } = coachingMessage;
 
-    // 2. Initialize Chains with environment-specific configs
+    // 2. Initialize GuardrailChain (other chains are initialized in their handlers)
     const guardrailConfig: GuardrailConfig = { crisisKeywords: [], escalationThreshold: 0.95, maxTokens: 500, temperature: 0.1, model: 'gemini-2.5-flash', systemPrompt: '' };
-    const diagnosticConfig: DiagnosticConfig = { assessmentFrameworks: ['SDT'], maxQuestions: 1, maxTokens: 500, temperature: 0.3, model: 'gemini-2.5-flash', systemPrompt: '' };
-    const interventionConfig: InterventionConfig = { interventionTypes: ['behavioral', 'cognitive'], personalityFactors: true, maxTokens: 1000, temperature: 0.4, model: 'gemini-2.5-flash', systemPrompt: '' };
-
     const guardrailChain = new GuardrailChain(guardrailConfig, env);
-    const diagnosticChain = new DiagnosticChain(env.GOOGLE_API_KEY, diagnosticConfig);
-    const interventionsChain = new InterventionsChain(env.GOOGLE_API_KEY, interventionConfig);
-    const snapshotChain = new SnapshotChain(); // Initialize SnapshotChain
 
     // 3. Guardrail First: Assess for safety
     const safetyAssessment = await guardrailChain.assessSafety(coachingMessage);
@@ -76,65 +88,25 @@ app.post('/api/coaching/message', async (c) => {
       userProfile = UserProfileSchema.parse(JSON.parse(profileString));
     }
 
-    let finalResponseData: any;
+    // 5. Determine sessionType and delegate to handler
+    const sessionType = context?.sessionType || 'diagnostic'; // Default to 'diagnostic' if not provided
+    const handler = sessionHandlers[sessionType];
 
-    // 5. Conditional Logic based on sessionType
-    const sessionType = context?.sessionType || 'diagnostic';
-
-    if (sessionType === 'onboarding_diagnostic') {
-      const onboardingAnswers = context?.onboardingAnswers;
-      if (!onboardingAnswers) {
-        return c.json({ success: false, error: { message: 'Onboarding answers not provided.', code: 'MISSING_ONBOARDING_ANSWERS' } }, 400);
-      }
-      const snapshotData = await snapshotChain.generateSnapshot(onboardingAnswers, userProfile);
-
-      // Store snapshot data in KV
-      await env.USER_SESSIONS_KV.put(`snapshot_${userId}`, JSON.stringify(snapshotData));
-      finalResponseData = { message: 'Onboarding diagnostic completed and snapshot generated.', snapshotData };
-    } else if (sessionType === 'snapshot_generation') {
-      const snapshotString = await env.USER_SESSIONS_KV.get(`snapshot_${userId}`);
-      if (!snapshotString) {
-        return c.json({ success: false, error: { message: 'Snapshot data not found for user.', code: 'SNAPSHOT_NOT_FOUND' } }, 404);
-      }
-      finalResponseData = JSON.parse(snapshotString);
-    } else if (sessionType === 'diagnostic') {
-      finalResponseData = await diagnosticChain.assessUser(coachingMessage, userProfile);
-    } else if (sessionType === 'intervention') {
-      const assessmentData = await diagnosticChain.assessUser(coachingMessage, userProfile);
-      // TODO: Update user profile with new assessment insights
-      finalResponseData = await interventionsChain.prescribeIntervention(coachingMessage, userProfile, assessmentData);
-    } else if (sessionType === 'reflection') {
-      const previousTask = coachingMessage.context?.previousTask;
-      const reflectionId = coachingMessage.context?.reflectionId;
-      const reflectionText = coachingMessage.message; // User's textual reflection
-
-      if (!previousTask || !reflectionId) {
-        return c.json({ success: false, error: { message: 'Previous task and reflectionId are required for reflection session type.', code: 'MISSING_REFLECTION_DATA' } }, 400);
-      }
-
-      const adaptedMicrotask = await interventionsChain.generateAdaptedMicrotask(
-        previousTask,
-        reflectionId,
-        reflectionText,
-        userProfile
-      );
-
-      // Store the adapted microtask in KV (will be done in the next step formally, but this is where it happens)
-      // For now, the response will include this adapted task.
-      // The frontend doesn't directly use this response from /api/coaching/message to show the next task.
-      // It will fetch it after the paywall. This endpoint confirms receipt and processing of reflection.
-      finalResponseData = {
-        message: "Reflection processed and next task generated.",
-        nextAdaptedTask: adaptedMicrotask
-      };
-      // TODO: In Step 7, actually save `adaptedMicrotask` to KV under a specific key for later retrieval.
-      await env.USER_SESSIONS_KV.put(`nextAdaptedTask_${userId}`, JSON.stringify(adaptedMicrotask));
-      console.log(`Stored nextAdaptedTask_${userId}: ${JSON.stringify(adaptedMicrotask)}`);
-
-
-    } else {
+    if (!handler) {
       return c.json({ success: false, error: { message: `Invalid session type: ${sessionType}`, code: 'INVALID_SESSION_TYPE' } }, 400);
     }
+
+    // Specific pre-handler checks that were in the original if/else blocks
+    if (sessionType === 'onboarding_diagnostic' && !context?.onboardingAnswers) {
+      return c.json({ success: false, error: { message: 'Onboarding answers not provided for onboarding_diagnostic session type.', code: 'MISSING_ONBOARDING_ANSWERS' } }, 400);
+    }
+    if (sessionType === 'reflection') {
+      if (!context?.previousTask || !context?.reflectionId) {
+        return c.json({ success: false, error: { message: 'Previous task and reflectionId are required for reflection session type.', code: 'MISSING_REFLECTION_DATA' } }, 400);
+      }
+    }
+
+    const finalResponseData = await handler(coachingMessage, userProfile, env, executionCtx);
 
     // 6. Asynchronously save conversation history
     if (!env.COACHING_HISTORY_KV) {
