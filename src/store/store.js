@@ -9,6 +9,8 @@ const useStore = create((set) => ({
   isLoading: true,
   currentIsfsTask: '',
   currentView: 'onboarding', // Initial view
+  momentumMirrorData: null,
+  dashboardTeaserData: null,
 
   // Actions
   setSession: (session) => set({ session }),
@@ -18,6 +20,8 @@ const useStore = create((set) => ({
   setIsLoading: (loading) => set({ isLoading: loading }),
   setCurrentIsfsTask: (task) => set({ currentIsfsTask: task }),
   setCurrentView: (view) => set({ currentView: view }),
+  setMomentumMirrorData: (data) => set({ momentumMirrorData: data }),
+  setDashboardTeaserData: (data) => set({ dashboardTeaserData: data }),
 
   // Action to clear user-specific state on logout
   clearUserState: () =>
@@ -28,6 +32,8 @@ const useStore = create((set) => ({
       onboardingAnswers: null,
       currentIsfsTask: '',
       currentView: 'onboarding', // Reset to initial view or an auth view
+      momentumMirrorData: null,
+      dashboardTeaserData: null,
     }),
 }));
 

@@ -273,6 +273,18 @@ export interface Microtask {
   task: string;
 }
 
+// Momentum Mirror Data Types
+export interface MomentumMirrorData {
+  title: string;
+  body: string;
+  userId: string;
+}
+
+export interface DashboardTeaserData {
+  teaser: string;
+  userId: string;
+}
+
 // Handler function type
 export type SessionHandler = (
   coachingMessage: CoachingMessage,

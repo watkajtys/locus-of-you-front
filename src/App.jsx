@@ -13,6 +13,8 @@ import SnapshotScreen from './components/SnapshotScreen';
 import FirstStepScreen from './components/FirstStepScreen';
 import Paywall from './components/Paywall';
 import ReflectionScreen from './components/ReflectionScreen';
+import MomentumMirror from './components/MomentumMirror';
+import DashboardTeaser from './components/DashboardTeaser';
 
 function AppContent() {
   const { theme } = useTheme();
@@ -127,7 +129,19 @@ function AppContent() {
 
   // Handle reflection completion
   const handleReflectionComplete = () => {
-    console.log('Reflection completed, proceeding to paywall.');
+    console.log('Reflection completed, proceeding to momentum mirror.');
+    setCurrentView('momentumMirror');
+  };
+
+  // Handle momentum mirror continuation
+  const handleMomentumMirrorContinue = () => {
+    console.log('Momentum mirror completed, proceeding to dashboard teaser.');
+    setCurrentView('dashboardTeaser');
+  };
+
+  // Handle dashboard teaser continuation
+  const handleDashboardTeaserContinue = () => {
+    console.log('Dashboard teaser completed, proceeding to paywall.');
     setCurrentView('paywall');
   };
 
@@ -297,6 +311,18 @@ function AppContent() {
             }
             setCurrentView('firstStep'); // Fallback
             return null;
+          case 'momentumMirror':
+            return (
+              <MomentumMirror
+                onContinue={handleMomentumMirrorContinue}
+              />
+            );
+          case 'dashboardTeaser':
+            return (
+              <DashboardTeaser
+                onContinue={handleDashboardTeaserContinue}
+              />
+            );
           case 'paywall': // This case is for non-authenticated users hitting paywall (e.g. after onboarding reflection)
             return (
               <Paywall

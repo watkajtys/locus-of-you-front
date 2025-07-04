@@ -13,6 +13,8 @@ const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId
   const onboardingAnswers = useStore((state) => state.onboardingAnswers);
   const session = useStore((state) => state.session);
   const setCurrentView = useStore((state) => state.setCurrentView); // For fallback
+  const setMomentumMirrorData = useStore((state) => state.setMomentumMirrorData);
+  const setDashboardTeaserData = useStore((state) => state.setDashboardTeaserData);
 
   const [reflectionMade, setReflectionMade] = useState(false);
   const [selectedOption, setSelectedOption] = useState('');
@@ -85,8 +87,16 @@ const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId
 
       const responseData = await response.json();
       console.log('Reflection sent successfully:', responseData);
-      // Worker might return a coach response, which could be displayed.
-      // For now, just proceed as original.
+      
+      // Store the momentum mirror and dashboard teaser data from the response
+      if (responseData.data) {
+        if (responseData.data.momentumMirror) {
+          setMomentumMirrorData(responseData.data.momentumMirror);
+        }
+        if (responseData.data.dashboardTeaser) {
+          setDashboardTeaserData(responseData.data.dashboardTeaser);
+        }
+      }
     } catch (err) {
       console.error('Failed to send reflection:', err);
       setError(err.message || 'Failed to send reflection. Please try again.');
@@ -104,10 +114,6 @@ const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId
     // setReflectionMade(true) is now called within sendReflectionToBackend upon success
   };
 
-  // Determine the dynamic question including the task
-  const coachQuestion = task
-    ? `Welcome back${userName ? ', ' + userName : ''}. How did it go with "${task}"?`
-    : `Welcome back${userName ? ', ' + userName : ''}. How did your first step go?`; // Fallback if task is not provided
 
   return (
     <AuraProvider>

@@ -25,26 +25,95 @@ export class DiagnosticChain {
 
   private createSystemPrompt(): SystemMessage {
     return new SystemMessage(
-      `You are an expert AI coach specializing in evidence-based psychological assessment, Self-Determination Theory (SDT), and Motivational Interviewing.
-      Your primary goal is to diagnose the user's core motivational needs: Autonomy, Competence, and Relatedness.
-      You will be given the user's latest message and their existing psychological profile.
-      Your task is to formulate a single, strategic, open-ended question that builds rapport and gently assesses their current motivational state.
-      - If their message hints at feeling controlled or pressured, focus on AUTONOMY.
-      - If their message suggests self-doubt or frustration with a skill, focus on COMPETENCE.
-      - If their message mentions loneliness or feeling disconnected, focus on RELATEDNESS.
-      Your response should be a JSON object containing:
-      1. "response": A string with the open-ended question for the user.
-      2. "strategy": A string indicating the primary SDT need you are assessing (e.g., 'SDT_AUTONOMY', 'SDT_COMPETENCE', 'SDT_RELATEDNESS').
-      3. "assessmentInsights": An object with any new insights you have gathered about the user's psychological state.`
+      `You are an expert AI coach specializing in evidence-based psychological assessment, Self-Determination Theory (SDT), Motivational Interviewing, and conversational coaching techniques.
+      
+      MISSION: Conduct a gentle, strategic assessment of the user's core motivational needs through a single, well-crafted question that builds rapport while gathering diagnostic insights.
+      
+      SDT ASSESSMENT FRAMEWORK:
+      Assess these three fundamental psychological needs:
+      
+      1. **AUTONOMY** - Signs to detect:
+         - Feeling controlled, pressured, or micromanaged
+         - Lack of choice or input in decisions
+         - Resentment about "shoulds" and external expectations
+         - Desire for self-direction and personal agency
+      
+      2. **COMPETENCE** - Signs to detect:
+         - Self-doubt, imposter syndrome, or skill frustration
+         - Feeling overwhelmed or underprepared
+         - Seeking mastery or capability in specific areas
+         - Need for achievable challenges and skill development
+      
+      3. **RELATEDNESS** - Signs to detect:
+         - Loneliness, isolation, or disconnection
+         - Lack of support or understanding from others
+         - Desire for belonging, community, or meaningful relationships
+         - Need for social connection around their goals
+      
+      MOTIVATIONAL INTERVIEWING PRINCIPLES:
+      - Ask open-ended questions that invite reflection
+      - Express empathy and understanding
+      - Avoid direct confrontation or advice-giving
+      - Help user explore their own motivations and barriers
+      - Use reflective listening techniques in your question framing
+      
+      QUESTION QUALITY STANDARDS:
+      - Must be genuinely curious and supportive
+      - Should feel like a conversation, not an interrogation
+      - Must respect their current emotional state
+      - Should help them feel heard and understood
+      - Must gather specific insights for intervention design
+      
+      RESPONSE FORMAT: Return a JSON object with:
+      {
+        "response": "A single, strategic open-ended question that builds rapport while assessing their primary SDT need. Must feel natural and supportive.",
+        "strategy": "Primary SDT need being assessed: 'SDT_AUTONOMY', 'SDT_COMPETENCE', or 'SDT_RELATEDNESS'",
+        "assessmentInsights": "Object containing new insights about their psychological state, motivation level, and specific needs discovered from their message"
+      }`
     );
   }
 
   private createHumanMessage(message: CoachingMessage, userProfile: UserProfile): HumanMessage {
+    const onboardingAnswers = message.context?.onboardingAnswers;
     const profileSummary = JSON.stringify(userProfile.psychologicalProfile, null, 2);
-    const content = `User Message: "${message.message}"
+    
+    const content = `USER'S COMPLETE CONTEXT:
 
-User's Psychological Profile:
-${profileSummary}`;
+CURRENT MESSAGE: "${message.message}"
+
+USER BACKGROUND:
+- User ID: ${userProfile.id}
+- Account Created: ${userProfile.createdAt}
+- Last Active: ${userProfile.lastActive}
+${userProfile.preferences ? `- User Preferences: ${JSON.stringify(userProfile.preferences)}` : '- No specific preferences set yet'}
+
+ONBOARDING INSIGHTS:
+${onboardingAnswers ? `
+- Primary Goal: "${onboardingAnswers.final_goal_context}"
+- Mindset Approach: ${onboardingAnswers.mindset} (developed = growth-oriented, stable = more fixed)
+- Personal Agency: ${onboardingAnswers.agency} (primary_driver = internal locus, external_factors = external locus)
+- Motivation Source: ${onboardingAnswers.motivation_source}
+- Challenge Approach: ${onboardingAnswers.approach_to_challenges}
+- Focus Style: ${onboardingAnswers.focus_style}
+- Risk Tolerance: ${onboardingAnswers.risk_tolerance}
+- Social Orientation: ${onboardingAnswers.social_orientation}
+` : 'No onboarding data available - focus on discovering these aspects through questioning'}
+
+PSYCHOLOGICAL PROFILE DATA:
+${profileSummary}
+
+SESSION CONTEXT:
+- Session Type: ${message.context?.sessionType || 'diagnostic'}
+- Urgency Level: ${message.context?.urgencyLevel || 'medium'}
+- Previous Messages Count: ${message.context?.previousMessages?.length || 0}
+
+ASSESSMENT STRATEGY:
+- Use supportive, empathetic tone appropriate for coaching
+- Consider their goal context when framing questions  
+- Build on any onboarding insights available
+- Focus on the SDT need that seems most relevant to their current message
+- Match complexity to their indicated challenge approach style`;
+    
     return new HumanMessage(content);
   }
 
