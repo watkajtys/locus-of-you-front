@@ -16,7 +16,7 @@ import {
 } from './types';
 import { GuardrailChain } from './chains/guardrail';
 // import { DiagnosticChain } from './chains/diagnostic'; // No longer directly used here
-// import { InterventionsChain } from './chains/interventions'; // No longer directly used here
+import { InterventionsChain } from './chains/interventions';
 // import { SnapshotChain } from './chains/snapshot'; // No longer directly used here
 
 // Import handlers

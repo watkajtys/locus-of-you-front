@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase'; // Import supabase
 import { CheckCircle, Circle, Check } from 'lucide-react';
 import { AuraProvider } from '../contexts/AuraProvider';
@@ -87,9 +87,14 @@ const FirstStepScreen = ({ onComplete, onChangeStep }) => { // Removed answers a
   const [task, setTask] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const hasFetchedMicrotask = useRef(false);
 
   useEffect(() => {
     console.log('FirstStepScreen useEffect triggered'); // Add this line
+    if (hasFetchedMicrotask.current) {
+      return; // Prevent duplicate fetches
+    }
+
     const fetchMicrotask = async () => {
       console.log('Inside fetchMicrotask: onboardingAnswers from store', onboardingAnswers);
       if (!onboardingAnswers || !onboardingAnswers.userId) {
@@ -187,6 +192,7 @@ const FirstStepScreen = ({ onComplete, onChangeStep }) => { // Removed answers a
     };
 
     fetchMicrotask();
+    hasFetchedMicrotask.current = true;
   }, [onboardingAnswers, setCurrentIsfsTask]); // Depend on onboardingAnswers from store
 
   // Handle task completion toggle
