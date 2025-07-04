@@ -1,13 +1,25 @@
 import React from 'react';
-import { useAuth } from '../hooks/authHooks';
+import useStore from '../store/store'; // Import Zustand store
 import { Loader2 } from 'lucide-react';
 import EnhancedAuth from './EnhancedAuth';
+// useAuth might still be used if hasRole is complex and relies on it,
+// or we might need to replicate its logic using store's session/userProfile.
+import { useAuth } from '../hooks/authHooks'; // Keep for hasRole, review later
 
 const ProtectedRoute = ({ children, requireRole = null, fallback = null }) => {
-  const { user, loading, hasRole, isAuthenticated } = useAuth();
+  const session = useStore((state) => state.session);
+  const isLoading = useStore((state) => state.isLoading); // Global loading state
+  const userProfile = useStore((state) => state.userProfile); // For role checking if needed
 
-  // Show loading state
-  if (loading) {
+  // Original useAuth hook, primarily for hasRole if it's complex.
+  // isAuthenticated can be derived from store's session.
+  // user object from useAuth might be different from store's session.user or userProfile.
+  const { user: authHookUser, loading: authHookLoading, hasRole } = useAuth();
+
+  const isAuthenticated = !!session; // Derived from Zustand store's session
+
+  // Show loading state (prefer global loading state from store if it covers auth loading)
+  if (isLoading || authHookLoading) { // Combine loading states
     return (
       <div 
         className="min-h-screen flex items-center justify-center"
@@ -22,7 +34,7 @@ const ProtectedRoute = ({ children, requireRole = null, fallback = null }) => {
             className="text-sm"
             style={{ color: 'var(--color-muted)' }}
           >
-            Verifying authentication...
+            Verifying authentication... {/* Or a more generic "Loading..." */}
           </p>
         </div>
       </div>
@@ -35,7 +47,11 @@ const ProtectedRoute = ({ children, requireRole = null, fallback = null }) => {
   }
 
   // Check role-based access
-  if (requireRole && !hasRole(requireRole)) {
+  // Ensure hasRole is called with the correct user object.
+  // If hasRole depends on claims within the session JWT, session.user might be enough.
+  // If it depends on profile data, userProfile might be used.
+  // The original useAuth().user (authHookUser) might be the source for hasRole.
+  if (requireRole && !hasRole(requireRole, authHookUser)) { // Pass authHookUser or relevant user object to hasRole
     return (
       <div 
         className="min-h-screen flex items-center justify-center p-6"

@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Added useEffect
+import { supabase } from '../lib/supabase'; // Import supabase
 import { AuraProvider } from '../contexts/AuraProvider';
+import useStore from '../store/store'; // Import Zustand store
 import AuraAvatar from './AuraAvatar';
 import AIMessageCard from './AIMessageCard';
 import Button from './Button';
-import Card from './Card'; // For styling options if needed
+import Card from './Card';
 
 
-const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
+const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId props
+  const currentIsfsTask = useStore((state) => state.currentIsfsTask);
+  const onboardingAnswers = useStore((state) => state.onboardingAnswers);
+  const session = useStore((state) => state.session);
+  const setCurrentView = useStore((state) => state.setCurrentView); // For fallback
+
   const [reflectionMade, setReflectionMade] = useState(false);
   const [selectedOption, setSelectedOption] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,53 +26,72 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
     { id: 'something_else', text: 'Something else came up.' },
   ];
 
+  const getUserIdForApi = () => {
+    if (session?.user?.id) return session.user.id;
+    if (onboardingAnswers?.userId) return onboardingAnswers.userId;
+    let anonId = localStorage.getItem('anonymous_reflection_id_fallback'); // Use a distinct key
+    if (!anonId) {
+        anonId = `anon_reflect_fb_${Date.now()}_${Math.random().toString(36).substr(2,9)}`;
+        localStorage.setItem('anonymous_reflection_id_fallback', anonId);
+    }
+    return anonId;
+  };
+
   const sendReflectionToBackend = async (reflectionOption) => {
-    if (!userId) {
+    const userIdToUse = getUserIdForApi();
+    if (!userIdToUse) { // Should be redundant due to getUserIdForApi always returning something
       console.error('User ID is missing, cannot send reflection.');
-      setError('User ID is missing. Cannot save reflection.'); // Show error to user
+      setError('User ID is missing. Cannot save reflection.');
       return;
     }
+
     setIsLoading(true);
     setError(null);
     try {
       const payload = {
-        userId: userId,
-        message: reflectionOption.text, // The user's selected reflection text
+        userId: userIdToUse,
+        message: reflectionOption.text,
         context: {
           sessionType: 'reflection',
-          previousTask: task || 'Unknown task', // The ISFS task they reflected on
-          reflectionId: reflectionOption.id, // e.g., 'easy', 'silly'
-          // You could also include the full onboardingAnswers here if the backend needs more context
-          // onboardingAnswers: onboardingAnswers,
+          previousTask: currentIsfsTask || localStorage.getItem('lastActiveIsfsTask') || 'Unknown task',
+          reflectionId: reflectionOption.id,
+          onboardingAnswers: onboardingAnswers, // Include onboarding answers for more context
         }
       };
 
       console.log("Sending reflection payload:", JSON.stringify(payload, null, 2));
 
+      let accessToken = null;
+      if (session?.access_token) {
+          accessToken = session.access_token;
+      } else if (session?.user) {
+          const { data: newSessionData } = await supabase.auth.getSession();
+          accessToken = newSessionData?.session?.access_token;
+      }
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
       const response = await fetch(`${import.meta.env.VITE_WORKER_API_URL}/api/coaching/message`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error occurred' }));
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error occurred during reflection submission.' }));
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
       }
 
       const responseData = await response.json();
       console.log('Reflection sent successfully:', responseData);
-      // No need to call onComplete here, it's handled by the "Are you ready for your next step?" button
+      // Worker might return a coach response, which could be displayed.
+      // For now, just proceed as original.
     } catch (err) {
       console.error('Failed to send reflection:', err);
       setError(err.message || 'Failed to send reflection. Please try again.');
-      // Do not proceed if sending reflection fails, allow user to see error.
-      // Potentially allow retry or inform user to contact support.
-      // For now, we'll just show the error and not setReflectionMade(true)
-      setIsLoading(false);
-      return; // Important: stop execution here
+      setIsLoading(false); // Ensure loading is stopped on error
+      return; // Stop execution here if reflection failed
     }
     setIsLoading(false);
     setReflectionMade(true); // Only set if API call was successful
@@ -85,12 +111,7 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
 
   return (
     <AuraProvider>
-      <div
-        className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
-        style={{ backgroundColor: 'var(--color-background)' }}
-      >
-        
-
+      <div className="min-h-screen flex flex-col items-center justify-center font-inter p-6" style={{ backgroundColor: 'var(--color-background)' }}>
         <div className="max-w-2xl mx-auto w-full space-y-8">
           <div className="text-center space-y-4">
             <div className="flex justify-center">
@@ -101,7 +122,11 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
           {!reflectionMade ? (
             <>
               <AIMessageCard
-                message={coachQuestion}
+                message={
+                  (currentIsfsTask || localStorage.getItem('lastActiveIsfsTask'))
+                    ? `Welcome back${onboardingAnswers?.name ? ', ' + onboardingAnswers.name : ''}. How did it go with "${currentIsfsTask || localStorage.getItem('lastActiveIsfsTask')}"?`
+                    : `Welcome back${onboardingAnswers?.name ? ', ' + onboardingAnswers.name : ''}. How did your first step go?`
+                }
                 cardType="COACH REFLECTION"
               />
               {error && (
@@ -114,9 +139,9 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
                   {reflectionOptions.map((option) => (
                     <Button
                       key={option.id}
-                      variant="outline" // Or another appropriate variant
+                      variant="outline"
                       size="large"
-                       onClick={() => handleOptionSelect(option)} // Pass the whole option object
+                      onClick={() => handleOptionSelect(option)}
                       className="w-full text-left justify-start py-4"
                       disabled={isLoading}
                     >
@@ -125,7 +150,7 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
                   ))}
                 </div>
               </Card>
-              {isLoading && !selectedOption && ( // General loading indicator if not specific to a button
+              {isLoading && !selectedOption && (
                 <div className="text-center py-4">
                   <p className="text-sm text-gray-500">Sending reflection...</p>
                 </div>
@@ -142,7 +167,7 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
                 <Button
                   variant="accent"
                   size="large"
-                  onClick={onComplete} // This will trigger transition to Paywall
+                  onClick={onComplete}
                   className="px-12 py-4"
                 >
                   Are you ready for your next step?
@@ -154,6 +179,24 @@ const ReflectionScreen = ({ task, onComplete, userName, userId }) => {
       </div>
     </AuraProvider>
   );
+
+  // Fallback UI if task is missing (should ideally be prevented by App.jsx's view logic)
+  if (!currentIsfsTask && !localStorage.getItem('lastActiveIsfsTask')) {
+    useEffect(() => {
+        if (currentView !== 'firstStep') setCurrentView('firstStep');
+    }, [setCurrentView]); // currentView removed from dep array
+
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ backgroundColor: 'var(--color-background)' }}>
+            <p className="text-lg mb-4" style={{ color: 'var(--color-text)' }}>
+                No task found to reflect upon. Please complete a first step.
+            </p>
+            <Button onClick={() => setCurrentView('firstStep')} variant="primary">
+                Go to First Step
+            </Button>
+        </div>
+    );
+  }
 };
 
 export default ReflectionScreen;
