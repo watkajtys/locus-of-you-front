@@ -76,7 +76,7 @@ export const CoachingMessageSchema = z.object({
     onboardingAnswers: OnboardingAnswersSchema.optional(),
     previousTask: z.string().optional(), // For 'reflection' sessionType: the task just completed
     reflectionId: z.string().optional(), // For 'reflection' sessionType: e.g., 'easy', 'silly', 'not_done'
-  }).optional()
+  }).default({})
 });
 
 export type CoachingMessage = z.infer<typeof CoachingMessageSchema>;
