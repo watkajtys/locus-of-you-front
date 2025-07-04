@@ -10,6 +10,8 @@ import {
   PsychologicalAssessment,
   OnboardingAnswers,
   Microtask,
+  MomentumMirrorData,
+  DashboardTeaserData,
 } from "../types";
 
 // Define the structure for the assessment data input
@@ -223,6 +225,72 @@ export class InterventionsChain {
     } catch (error) {
       console.error("Error parsing adapted microtask response:", error, "Attempted to parse:", jsonString);
       throw new Error("Failed to generate a valid adapted microtask. Raw: " + jsonString);
+    }
+  }
+
+  async generateMomentumMirrorFeedback(
+    previousTask: string,
+    reflectionId: string,
+    reflectionText: string,
+    userProfile: UserProfile
+  ): Promise<{ momentumMirror: MomentumMirrorData; dashboardTeaser: DashboardTeaserData }> {
+    const systemPrompt = new SystemMessage(
+      `You are a LocusOfYou AI coach providing celebratory feedback in the "Momentum Mirror" phase.
+      The user has just completed (or attempted) a microtask and provided reflection. Your role is to:
+
+      1. Generate a celebratory, personalized title and body that reframes their small action as meaningful progress
+      2. Create a short teaser sentence for the premium dashboard that hints at the deeper insights they could unlock
+
+      Guidelines for the Momentum Mirror:
+      - Title should be celebratory and specific (e.g., "You're Building Real Momentum!" or "That's How Change Happens!")
+      - Body should acknowledge their effort and reframe the small step as part of a larger pattern of growth
+      - Use the "Language of Agency" - focus on their choice, effort, and process rather than innate ability
+      - If they didn't complete the task, still celebrate the reflection and learning
+
+      Guidelines for Dashboard Teaser:
+      - One compelling sentence that hints at personalized insights they could unlock
+      - Should feel valuable and specific to their psychological profile
+      - Examples: "Discover your unique motivation patterns and unlock 3x faster progress" or "See how your mindset type can be your secret weapon for lasting change"
+
+      You MUST return a single, valid JSON object with the following structure and nothing else:
+      {
+        "momentumMirror": {
+          "title": "Celebratory, personalized title",
+          "body": "2-3 sentences reframing their action as meaningful progress, acknowledging their specific reflection"
+        },
+        "dashboardTeaser": {
+          "teaserText": "One compelling sentence about premium insights they could unlock"
+        }
+      }`
+    );
+
+    const humanMessage = new HumanMessage(
+      `Previous Task: "${previousTask}"
+      Reflection ID: "${reflectionId}"
+      User's Reflection: "${reflectionText}"
+      User's Psychological Profile: ${JSON.stringify(userProfile.psychologicalProfile, null, 2)}`
+    );
+
+    const response = await this.model.invoke([systemPrompt, humanMessage]);
+    console.log("Raw LLM response content for momentum mirror:", response.content);
+
+    let jsonString = response.content as string;
+    const jsonStringMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonStringMatch && jsonStringMatch[1]) {
+      jsonString = jsonStringMatch[1];
+    }
+    jsonString = jsonString.trim();
+
+    if (!jsonString && (response.content as string).trim().startsWith('{') && (response.content as string).trim().endsWith('}')) {
+      jsonString = (response.content as string).trim();
+    }
+
+    try {
+      const parsedResponse = JSON.parse(jsonString);
+      return parsedResponse;
+    } catch (error) {
+      console.error("Error parsing momentum mirror response:", error, "Attempted to parse:", jsonString);
+      throw new Error("Failed to generate valid momentum mirror feedback. Raw: " + jsonString);
     }
   }
 }

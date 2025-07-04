@@ -13,6 +13,8 @@ import SnapshotScreen from './components/SnapshotScreen';
 import FirstStepScreen from './components/FirstStepScreen';
 import Paywall from './components/Paywall';
 import ReflectionScreen from './components/ReflectionScreen';
+import MomentumMirror from './components/MomentumMirror';
+import DashboardTeaser from './components/DashboardTeaser';
 
 function AppContent() {
   const { theme } = useTheme();
@@ -23,6 +25,8 @@ function AppContent() {
   const onboardingAnswers = useStore((state) => state.onboardingAnswers);
   const currentIsfsTask = useStore((state) => state.currentIsfsTask);
   const storeHasSubscription = useStore((state) => state.hasSubscription);
+  const momentumMirrorData = useStore((state) => state.momentumMirrorData);
+  const dashboardTeaserData = useStore((state) => state.dashboardTeaserData);
 
   const setSession = useStore((state) => state.setSession);
   const setIsLoading = useStore((state) => state.setIsLoading);
@@ -127,7 +131,19 @@ function AppContent() {
 
   // Handle reflection completion
   const handleReflectionComplete = () => {
-    console.log('Reflection completed, proceeding to paywall.');
+    console.log('Reflection completed, proceeding to momentum mirror.');
+    setCurrentView('momentumMirror');
+  };
+
+  // Handle momentum mirror continuation
+  const handleMomentumMirrorContinue = () => {
+    console.log('Momentum mirror completed, proceeding to dashboard teaser.');
+    setCurrentView('dashboardTeaser');
+  };
+
+  // Handle dashboard teaser action
+  const handleDashboardTeaserAction = () => {
+    console.log('Dashboard teaser action, proceeding to paywall.');
     setCurrentView('paywall');
   };
 
@@ -296,6 +312,26 @@ function AppContent() {
               );
             }
             setCurrentView('firstStep'); // Fallback
+            return null;
+          case 'momentumMirror':
+            if (momentumMirrorData) {
+              return (
+                <MomentumMirror
+                  onContinue={handleMomentumMirrorContinue}
+                />
+              );
+            }
+            setCurrentView('reflection'); // Fallback if no momentum mirror data
+            return null;
+          case 'dashboardTeaser':
+            if (dashboardTeaserData) {
+              return (
+                <DashboardTeaser
+                  onBuildPlan={handleDashboardTeaserAction}
+                />
+              );
+            }
+            setCurrentView('momentumMirror'); // Fallback if no dashboard teaser data
             return null;
           case 'paywall': // This case is for non-authenticated users hitting paywall (e.g. after onboarding reflection)
             return (
