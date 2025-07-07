@@ -13,6 +13,9 @@ const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId
   const onboardingAnswers = useStore((state) => state.onboardingAnswers);
   const session = useStore((state) => state.session);
   const setCurrentView = useStore((state) => state.setCurrentView); // For fallback
+  const setMomentumMirrorData = useStore((state) => state.setMomentumMirrorData);
+  const setDashboardTeaserData = useStore((state) => state.setDashboardTeaserData);
+  const setCurrentIsfsTask = useStore((state) => state.setCurrentIsfsTask);
 
   const [reflectionMade, setReflectionMade] = useState(false);
   const [selectedOption, setSelectedOption] = useState('');
@@ -85,8 +88,17 @@ const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId
 
       const responseData = await response.json();
       console.log('Reflection sent successfully:', responseData);
-      // Worker might return a coach response, which could be displayed.
-      // For now, just proceed as original.
+      
+      // Store the new momentum mirror and dashboard teaser data from backend response
+      if (responseData.data?.momentumMirror) {
+        setMomentumMirrorData(responseData.data.momentumMirror);
+      }
+      if (responseData.data?.dashboardTeaser) {
+        setDashboardTeaserData(responseData.data.dashboardTeaser);
+      }
+      if (responseData.data?.nextAdaptedTask) {
+        setCurrentIsfsTask(responseData.data.nextAdaptedTask.task);
+      }
     } catch (err) {
       console.error('Failed to send reflection:', err);
       setError(err.message || 'Failed to send reflection. Please try again.');
@@ -167,10 +179,10 @@ const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId
                 <Button
                   variant="accent"
                   size="large"
-                  onClick={onComplete}
+                  onClick={() => setCurrentView('momentumMirror')}
                   className="px-12 py-4"
                 >
-                  Are you ready for your next step?
+                  See Your Momentum
                 </Button>
               </div>
             </>

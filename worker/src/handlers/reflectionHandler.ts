@@ -4,7 +4,9 @@ import {
   Env,
   SessionHandler,
   InterventionConfig,
-  Microtask, // Assuming Microtask is the type for adaptedMicrotask
+  Microtask,
+  MomentumMirrorData,
+  DashboardTeaserData,
 } from '../types';
 import { InterventionsChain } from '../chains/interventions';
 
@@ -13,7 +15,7 @@ export const handleReflection: SessionHandler = async (
   userProfile: UserProfile,
   env: Env,
   _executionCtx: ExecutionContext,
-): Promise<{ message: string; nextAdaptedTask: Microtask }> => {
+): Promise<{ message: string; nextAdaptedTask: Microtask; momentumMirror: MomentumMirrorData; dashboardTeaser: DashboardTeaserData }> => {
   const previousTask = coachingMessage.context?.previousTask;
   const reflectionId = coachingMessage.context?.reflectionId;
   const reflectionText = coachingMessage.message; // User's textual reflection
@@ -47,12 +49,27 @@ export const handleReflection: SessionHandler = async (
     userProfile
   );
 
+  // Generate momentum mirror feedback
+  const { momentumMirror, dashboardTeaser } = await interventionsChain.generateMomentumMirrorFeedback(
+    previousTask,
+    reflectionId,
+    reflectionText,
+    userProfile
+  );
+
   // Storing the adapted microtask to KV
   await env.USER_SESSIONS_KV.put(`nextAdaptedTask_${userProfile.id}`, JSON.stringify(adaptedMicrotask));
   console.log(`Stored nextAdaptedTask_${userProfile.id}: ${JSON.stringify(adaptedMicrotask)}`);
 
+  // Store momentum mirror and dashboard teaser data
+  await env.USER_SESSIONS_KV.put(`momentumMirror_${userProfile.id}`, JSON.stringify(momentumMirror));
+  await env.USER_SESSIONS_KV.put(`dashboardTeaser_${userProfile.id}`, JSON.stringify(dashboardTeaser));
+  console.log(`Stored momentum mirror and dashboard teaser for user ${userProfile.id}`);
+
   return {
     message: "Reflection processed and next task generated.",
-    nextAdaptedTask: adaptedMicrotask
+    nextAdaptedTask: adaptedMicrotask,
+    momentumMirror,
+    dashboardTeaser
   };
 };
