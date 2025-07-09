@@ -146,17 +146,45 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
       question: "What's the first thing that comes to mind?",
       options: (answers) => { // Options are now a function of previous answers
         switch (answers.goal_category) {
+          case 'career':
+            return [
+              { id: 'A', label: "Feeling stuck or unmotivated", value: 'stuck' },
+              { id: 'B', label: "Improving my skills", value: 'skills' },
+              { id: 'C', label: "Finding a new job or role", value: 'job_search' },
+              { id: 'D', label: "Something else...", value: 'other' },
+            ];
+          case 'health':
+            return [
+              { id: 'A', label: "Being more physically active", value: 'activity' },
+              { id: 'B', label: "Eating healthier", value: 'diet' },
+              { id: 'C', label: "Improving my sleep", value: 'sleep' },
+              { id: 'D', label: "Something else...", value: 'other' },
+            ];
           case 'home':
             return [
               { id: 'A', label: "A cluttered space", value: 'clutter' },
               { id: 'B', label: "Unfinished projects", value: 'projects' },
               { id: 'C', label: "Wasted time", value: 'time' },
+              { id: 'D', label: "Something else...", value: 'other' },
             ];
-          // Add cases for other categories
+          case 'growth':
+              return [
+                { id: 'A', label: "Learning a new skill", value: 'learning' },
+                { id: 'B', label: "Building better habits", value: 'habits' },
+                { id: 'C', label: "Becoming more confident", value: 'confidence' },
+                { id: 'D', label: "Something else...", value: 'other' },
+              ];
           default:
             return [];
         }
       }
+    },
+    {
+      id: 'goal_custom',
+      type: 'textInput',
+      message: "Great, let's get specific. What's the goal on your mind?",
+      question: "What's the goal on your mind?",
+      placeholder: 'e.g., "Finish my online course," "Declutter the garage," or "Start a daily walking habit."'
     }
   ];
 
@@ -271,7 +299,14 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
     
     console.log('DEBUG: newAnswers in handleAnswerSelect:', newAnswers);
     setTimeout(async () => {
-      if (currentQuestion < questions.length - 1) {
+      // If the user selected "other", go to the custom goal input
+      if (questionId === 'goal_subcategory' && answerValue === 'other') {
+        setQuestionVisible(false);
+        setTimeout(() => {
+          setCurrentQuestion(currentQuestion + 1); // Move to the text input
+          setIsTransitioning(false);
+        }, 200);
+      } else if (currentQuestion < questions.length - 2) { // Adjusted condition to account for the new text input question
         setQuestionVisible(false);
         setTimeout(() => {
           setCurrentQuestion(currentQuestion + 1);

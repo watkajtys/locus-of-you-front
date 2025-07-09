@@ -145,6 +145,7 @@ app.post('/api/coaching/message', async (c) => {
     if (error instanceof Error) {
       if (error.name === 'ZodError') {
         // Zod validation error
+        console.error("ZodError details:", (error as any).issues);
         return c.json({ success: false, error: { message: 'Validation failed', code: 'VALIDATION_ERROR', details: (error as any).issues } }, 400);
       } else {
         // Other known errors

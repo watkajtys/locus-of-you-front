@@ -35,7 +35,8 @@ export const OnboardingAnswersSchema = z.object({
   focus_style: z.enum(['dive_deep', 'comfortable_switching']),
   risk_tolerance: z.enum(['safe_reliable', 'riskier_payoff']),
   social_orientation: z.enum(['quiet_solo', 'social_collaborative']),
-  final_goal_context: z.string().min(1),
+  goal_category: z.string().min(1),
+  goal_subcategory: z.string().min(1),
   userId: z.string().optional(), // Add userId as an optional field
 });
 
