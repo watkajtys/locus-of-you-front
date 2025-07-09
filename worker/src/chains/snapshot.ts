@@ -151,7 +151,7 @@ export class SnapshotChain {
   public async generateSnapshot(onboardingAnswers: OnboardingAnswers, userProfile: UserProfile) {
     const archetype = this.determineArchetype(onboardingAnswers, userProfile);
     const insights = this.generateInsights(onboardingAnswers, userProfile);
-    const userGoal = onboardingAnswers.final_goal_context || "improving your overall well-being";
+    const userGoal = onboardingAnswers.goal_category || "improving your overall well-being";
     const narrativeSummary = this.generateNarrativeSummary(archetype, userGoal);
 
     return {
