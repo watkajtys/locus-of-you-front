@@ -128,13 +128,35 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
         : "Excellent. You're a \"social processor\" who gains momentum from collaboration. We can build accountability and partnership right into your plan."
     },
     {
-      id: 'final_goal_context',
-      type: 'textInput',
-      message: "Okay, last question. What's one challenge you're facing or one goal you're striving for right now?", // This will be dynamically set
-      question: "What's one challenge you're facing or one goal you're striving for right now?",
-      cardType: "GOAL CONTEXT",
-      placeholder: "Type your response here..."
-      // No coachResponseLogic for the final text input as it leads to Phase 3
+      id: 'goal_category',
+      type: 'choice',
+      message: "Okay, last part. To make sure we're effective, let's pinpoint your focus. Which area of your life feels most important right now?",
+      question: "Which area of your life feels most important right now?",
+      options: [
+        { id: 'A', label: "Career & Work", value: 'career' },
+        { id: 'B', label: "Health & Wellness", value: 'health' },
+        { id: 'C', label: "Home & Organization", value: 'home' },
+        { id: 'D', label: "Personal Growth", value: 'growth' }
+      ]
+    },
+    {
+      id: 'goal_subcategory',
+      type: 'choice',
+      message: "Got it. When you think about that, what's the first thing that comes to mind?",
+      question: "What's the first thing that comes to mind?",
+      options: (answers) => { // Options are now a function of previous answers
+        switch (answers.goal_category) {
+          case 'home':
+            return [
+              { id: 'A', label: "A cluttered space", value: 'clutter' },
+              { id: 'B', label: "Unfinished projects", value: 'projects' },
+              { id: 'C', label: "Wasted time", value: 'time' },
+            ];
+          // Add cases for other categories
+          default:
+            return [];
+        }
+      }
     }
   ];
 
@@ -237,6 +259,11 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
     if (currentQuestionData.coachResponseLogic) {
       const response = currentQuestionData.coachResponseLogic(answerValue);
       setCoachResponses(prev => ({ ...prev, [questionId]: response }));
+    }
+
+    // Dynamically generate options for the next question if needed
+    if (questions[currentQuestion + 1]?.options && typeof questions[currentQuestion + 1].options === 'function') {
+      // Ensure this logic is correctly placed or handled if options depend on the *current* answer
     }
     
     const newProgress = ((currentQuestion + 1) / questions.length) * 100;
@@ -439,7 +466,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
                 {/* Choice Options */}
                 {currentQuestionData.type === 'choice' && (
                   <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                    {currentQuestionData.options.map((option) => (
+                    {(typeof currentQuestionData.options === 'function' ? currentQuestionData.options(answers) : currentQuestionData.options).map((option) => (
                       <button
                         key={option.id}
                         type="button"

@@ -119,19 +119,13 @@ export class InterventionsChain {
     userProfile: UserProfile
   ): Promise<Microtask> {
     const systemPrompt = new SystemMessage(
-      `You are an AI coach specializing in helping users take their first impossibly small step towards a goal.
-      Based on the user's onboarding answers and psychological profile, generate a single, extremely small, actionable task.
-      The task should be so small it feels almost trivial, designed to build momentum and reduce friction.
-      
-      You will receive:
-      1. The user's onboarding answers (goal, mindset, locus of control, personality traits).
-      2. The user's comprehensive psychological profile.
+      `You are an AI coach. Your goal is to generate a single, impossibly small first step.
+      You will receive the user's onboarding answers.
+      Your rationale MUST explicitly reference their answers to build trust.
 
-      You MUST return a single, valid JSON object with the following structure and nothing else:
-      {
-        "rationale": "A brief, clear explanation of why this specific microtask was chosen for them, linking it to their onboarding answers and profile.",
-        "task": "The single, impossibly small, actionable task."
-      }`
+      **Example Rationale:** "Because you mentioned your goal is to '{goal_context}' and that you're motivated by '{motivation_source}', we're starting with a task that creates a visible, tangible result."
+
+      You MUST return a single, valid JSON object with "rationale" and "task" keys.`
     );
 
     const humanMessage = new HumanMessage(
@@ -238,14 +232,19 @@ export class InterventionsChain {
       `You are a LocusOfYou AI coach providing celebratory feedback in the "Momentum Mirror" phase.
       The user has just completed (or attempted) a microtask and provided reflection. Your role is to:
 
-      1. Generate a celebratory, personalized title and body that reframes their small action as meaningful progress
-      2. Create a short teaser sentence for the premium dashboard that hints at the deeper insights they could unlock
+      1. Generate a validating and celebratory message for the "Momentum Mirror". This message will be split into a title and body.
+      2. Create a short teaser sentence for the premium dashboard.
 
-      Guidelines for the Momentum Mirror:
-      - Title should be celebratory and specific (e.g., "You're Building Real Momentum!" or "That's How Change Happens!")
-      - Body should acknowledge their effort and reframe the small step as part of a larger pattern of growth
-      - Use the "Language of Agency" - focus on their choice, effort, and process rather than innate ability
-      - If they didn't complete the task, still celebrate the reflection and learning
+      Guidelines for the Momentum Mirror content:
+      - The **title** should start with a validating phrase like "Thanks for sharing that, that's useful information." or "Got it, thanks for the update."
+      - The **body** should then continue with:
+          - A phrase like "Taking these small, consistent steps is the key to building real momentum."
+          - A personalized acknowledgment of their effort, reframing their small step (or their reflection on not doing the step) as meaningful progress or learning.
+          - Use the "Language of Agency" - focus on their choice, effort, and process.
+          - If they didn't complete the task, still celebrate the reflection and learning.
+      - Example Title: "Thanks for sharing that - it's really helpful."
+      - Example Body: "Taking these small, consistent steps is the key. It's great you took a moment to reflect on how that went, whether you did the task or not. Each check-in like this helps us fine-tune your path forward."
+
 
       Guidelines for Dashboard Teaser:
       - One compelling sentence that hints at personalized insights they could unlock

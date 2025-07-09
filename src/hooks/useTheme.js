@@ -38,3 +38,28 @@ export const useTheme = () => {
 
   return { theme, toggleTheme };
 };
+
+export const applyThemeForArchetype = (archetype) => {
+  const root = document.documentElement;
+  let themeOverrides = {};
+
+  switch (archetype) {
+    case 'Visionary Achiever':
+    case 'Opportunistic Realist':
+      themeOverrides = {
+        '--color-accent': '#f59e0b', // A more vibrant, energetic color
+      };
+      break;
+    case 'Steady Builder':
+    case 'Reliable Executor':
+       themeOverrides = {
+        '--color-primary': '#dbeafe', // A more structured, stable color
+      };
+      break;
+    // Add more cases for other archetypes
+  }
+
+  for (const [property, value] of Object.entries(themeOverrides)) {
+    root.style.setProperty(property, value);
+  }
+};

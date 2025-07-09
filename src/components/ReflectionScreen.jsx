@@ -24,13 +24,35 @@ const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId
   const [selectedOption, setSelectedOption] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [reflectionStep, setReflectionStep] = useState(1);
+  const [firstChoice, setFirstChoice] = useState(null);
 
-  const reflectionOptions = [
-    { id: 'easy', text: 'I did it. It felt surprisingly easy.' },
-    { id: 'silly', text: 'I did it, but it felt a bit silly.' },
-    { id: 'not_done', text: 'I didn\'t get around to it.' },
+  const reflectionOptionsStep1 = [
+    { id: 'done', text: 'I did it.' },
+    { id: 'not_done', text: 'I didn\'t get to it.' },
     { id: 'something_else', text: 'Something else came up.' },
   ];
+
+  const reflectionOptionsStep2 = {
+    done: [
+      { id: 'easy', text: 'It felt surprisingly easy.' },
+      { id: 'challenging', text: 'It was a bit challenging.' },
+      { id: 'silly', text: 'It felt a bit silly, but I did it.' },
+      { id: 'good', text: 'It felt good to get it done.'}
+    ],
+    not_done: [
+      { id: 'forgot', text: 'I forgot.' },
+      { id: 'too_busy', text: 'I was too busy.' },
+      { id: 'not_motivated', text: 'I wasn\'t motivated.' },
+      { id: 'unsure', text: 'I wasn\'t sure how to start.'}
+    ],
+    something_else: [
+      { id: 'unexpected', text: 'Something unexpected happened.' },
+      { id: 'higher_priority', text: 'Something more important came up.' },
+      { id: 'change_of_plans', text: 'My plans changed.' },
+    ],
+  };
+
 
   const getUserIdForApi = () => {
     if (session?.user?.id) return session.user.id;
@@ -109,15 +131,39 @@ const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId
       return; // Stop execution here if reflection failed
     }
     setIsLoading(false);
-    setReflectionMade(true); // Only set if API call was successful
+    setReflectionMade(true);
+    // Directly call onComplete which should be handled by App.jsx to change view
+    if (onComplete) {
+      onComplete();
+    }
   };
 
 
-  const handleOptionSelect = (option) => { // Pass the whole option object
-    setSelectedOption(option.text); // Keep UI state with text for button loading indicator
-    sendReflectionToBackend(option); // Send the whole option object
-    // setReflectionMade(true) is now called within sendReflectionToBackend upon success
+  const handleFirstChoice = (option) => {
+    setFirstChoice(option);
+    setSelectedOption(''); // Reset selected option for UI feedback for step 2
+    setReflectionStep(2);
   };
+
+  const handleSecondChoice = (secondOption) => {
+    if (!firstChoice) {
+      // This should not happen if UI is correctly managed
+      setError("Error: First choice was not recorded. Please start over.");
+      setReflectionStep(1); // Reset to first step
+      return;
+    }
+    const combinedReflectionId = `${firstChoice.id}_${secondOption.id}`;
+    const combinedText = `${firstChoice.text} - ${secondOption.text}`; // Or however you want to combine
+
+    setSelectedOption(secondOption.text); // For UI feedback on the button
+    sendReflectionToBackend({ id: combinedReflectionId, text: combinedText });
+  };
+
+  // Determine current options based on reflectionStep and firstChoice
+  const currentReflectionOptions = reflectionStep === 1
+    ? reflectionOptionsStep1
+    : (firstChoice ? reflectionOptionsStep2[firstChoice.id] || [] : []);
+
 
   if (!currentIsfsTask && !localStorage.getItem('lastActiveIsfsTask')) {
     return <ReflectionFallback />;
@@ -150,12 +196,12 @@ const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId
               )}
               <Card className="p-6 md:p-8">
                 <div className="space-y-4">
-                  {reflectionOptions.map((option) => (
+                  {currentReflectionOptions.map((option) => (
                     <Button
                       key={option.id}
                       variant="outline"
                       size="large"
-                      onClick={() => handleOptionSelect(option)}
+                      onClick={() => reflectionStep === 1 ? handleFirstChoice(option) : handleSecondChoice(option)}
                       className="w-full text-left justify-start py-4"
                       disabled={isLoading}
                     >
