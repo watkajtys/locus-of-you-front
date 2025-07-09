@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase'; // Import supabase
 import { CheckCircle, Circle, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+
 import { AuraProvider } from '../contexts/AuraProvider';
+import { supabase } from '../lib/supabase'; // Import supabase
 import useStore from '../store/store'; // Import Zustand store
-import AuraAvatar from './AuraAvatar';
+
 import AIMessageCard from './AIMessageCard';
+import AuraAvatar from './AuraAvatar';
 import Button from './Button';
 
 
@@ -261,7 +263,8 @@ const FirstStepScreen = ({ onComplete, onChangeStep }) => { // Removed answers a
                 />
                 <div className="relative">
                   <ConfettiExplosion isActive={showConfetti} onComplete={handleConfettiComplete} />
-                  <div
+                  <button
+                    type="button"
                     className={`relative shadow-lg border rounded-tl-xl rounded-bl-xl rounded-br-xl pt-8 px-8 pb-8 md:px-10 md:pb-10 transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 cursor-pointer ${isTaskCompleted ? 'bg-green-50 border-green-200 hover:bg-green-100' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
                     style={{ backgroundColor: isTaskCompleted ? '#f0fdf4' : 'var(--color-card)', borderColor: isTaskCompleted ? '#bbf7d0' : 'var(--color-border)'}}
                     onClick={handleTaskClick}
@@ -290,7 +293,7 @@ const FirstStepScreen = ({ onComplete, onChangeStep }) => { // Removed answers a
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 </div>
                 <div className="text-center mt-6">
                     <p className="text-lg" style={{color: 'var(--color-text)'}}>

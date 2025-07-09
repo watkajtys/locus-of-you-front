@@ -1,8 +1,10 @@
 import React from 'react';
+
 import { AuraProvider } from '../contexts/AuraProvider';
 import useStore from '../store/store';
-import AuraAvatar from './AuraAvatar';
+
 import AIMessageCard from './AIMessageCard';
+import AuraAvatar from './AuraAvatar';
 import Button from './Button';
 
 const MomentumMirror = ({ onContinue }) => {
@@ -52,26 +54,7 @@ const MomentumMirror = ({ onContinue }) => {
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes pulse-subtle {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.95; }
-        }
-        
-        @keyframes bounce-subtle {
-          0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-          40% { transform: translateY(-2px); }
-          60% { transform: translateY(-1px); }
-        }
-        
-        .animate-pulse-subtle {
-          animation: pulse-subtle 2s ease-in-out infinite;
-        }
-        
-        .animate-bounce-subtle {
-          animation: bounce-subtle 2s ease-in-out infinite;
-        }
-      `}</style>
+      
     </AuraProvider>
   );
 };

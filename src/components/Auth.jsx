@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
 import { Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
-import Card from './Card';
+import React, { useState } from 'react';
+
+import { supabase } from '../lib/supabase';
+
 import Button from './Button';
+import Card from './Card';
 
 const Auth = () => {
   const [email, setEmail] = useState('');

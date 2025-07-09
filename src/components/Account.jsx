@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
 import { LogOut, User, Mail, Crown, Settings } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { logOutRevenueCat } from '../lib/revenuecat';
+import { supabase } from '../lib/supabase';
 import useStore from '../store/store'; // Import Zustand store
-import Card from './Card';
-import Button from './Button';
+
 import Avatar from './Avatar';
+import Button from './Button';
+import Card from './Card';
 
 const Account = () => {
   const session = useStore((state) => state.session);
@@ -150,6 +152,7 @@ const Account = () => {
               {/* Email */}
               <div className="space-y-2">
                 <label 
+                  htmlFor="email-address"
                   className="block text-sm font-medium"
                   style={{ color: 'var(--color-text)' }}
                 >
@@ -161,6 +164,7 @@ const Account = () => {
                     style={{ color: 'var(--color-muted)' }}
                   />
                   <input
+                    id="email-address"
                     type="email"
                     value={userProfile?.email || session?.user?.email || ''}
                     disabled
@@ -177,6 +181,7 @@ const Account = () => {
               {/* User ID (for reference) */}
               <div className="space-y-2">
                 <label 
+                  htmlFor="user-id"
                   className="block text-sm font-medium"
                   style={{ color: 'var(--color-text)' }}
                 >
@@ -188,6 +193,7 @@ const Account = () => {
                     style={{ color: 'var(--color-muted)' }}
                   />
                   <input
+                    id="user-id"
                     type="text"
                     value={userProfile?.id || session?.user?.id || ''}
                     disabled

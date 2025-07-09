@@ -1,4 +1,5 @@
 import { Purchases } from '@revenuecat/purchases-js';
+
 import { supabase } from './supabase';
 
 // RevenueCat configuration

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+
 import { checkSubscriptionStatus, restorePurchases } from '../lib/revenuecat';
+import { supabase } from '../lib/supabase';
 
 export const useSubscription = (user) => {
   const [subscriptionStatus, setSubscriptionStatus] = useState({

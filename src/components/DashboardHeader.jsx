@@ -1,5 +1,6 @@
-import React from 'react';
 import { Flame, Star, Target } from 'lucide-react';
+import React from 'react';
+
 import Card from './Card';
 
 const DashboardHeader = ({ dailyStreak, weeklyProgress, totalWins }) => {

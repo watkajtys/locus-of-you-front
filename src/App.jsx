@@ -1,20 +1,21 @@
 import React, { useEffect } from 'react';
-import { supabase } from './lib/supabase';
-import { useTheme } from './hooks/useTheme';
-import { AuthProvider } from './hooks/useAuth'; // AuthProvider might be refactored or removed if session is globally managed
-import { initializeRevenueCat, setRevenueCatUserId, logOutRevenueCat } from './lib/revenuecat';
-import { useSubscription } from './hooks/useSubscription';
-import useStore from './store/store'; // Import the Zustand store
-import EnhancedAuth from './components/EnhancedAuth';
-import ProtectedRoute from './components/ProtectedRoute';
+
 import AppShell from './components/AppShell';
-import DynamicOnboarding from './components/DynamicOnboarding';
-import SnapshotScreen from './components/SnapshotScreen';
-import FirstStepScreen from './components/FirstStepScreen';
-import Paywall from './components/Paywall';
-import ReflectionScreen from './components/ReflectionScreen';
-import MomentumMirror from './components/MomentumMirror';
 import DashboardTeaser from './components/DashboardTeaser';
+import DynamicOnboarding from './components/DynamicOnboarding';
+import EnhancedAuth from './components/EnhancedAuth';
+import FirstStepScreen from './components/FirstStepScreen';
+import MomentumMirror from './components/MomentumMirror';
+import Paywall from './components/Paywall';
+import ProtectedRoute from './components/ProtectedRoute';
+import ReflectionScreen from './components/ReflectionScreen';
+import SnapshotScreen from './components/SnapshotScreen';
+import { AuthProvider } from './hooks/useAuth'; // AuthProvider might be refactored or removed if session is globally managed
+import { useSubscription } from './hooks/useSubscription';
+import { useTheme } from './hooks/useTheme';
+import { initializeRevenueCat, setRevenueCatUserId, logOutRevenueCat } from './lib/revenuecat';
+import { supabase } from './lib/supabase';
+import useStore from './store/store'; // Import the Zustand store
 
 function AppContent() {
   const { theme } = useTheme();

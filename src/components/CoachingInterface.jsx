@@ -1,10 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+
 import { AuraProvider } from '../contexts/AuraProvider';
-import AuraAvatar from './AuraAvatar';
-import AIMessageCard from './AIMessageCard';
-import Button from './Button';
 import { supabase } from '../lib/supabase'; // Import supabase
+
+import AIMessageCard from './AIMessageCard';
+import AuraAvatar from './AuraAvatar';
+import Button from './Button';
+
 
 const CoachingInterface = ({ session, hasSubscription }) => {
   const [messages, setMessages] = useState([
@@ -180,24 +183,7 @@ const CoachingInterface = ({ session, hasSubscription }) => {
           {isLoading && (
             <div className="flex justify-start">
               <div className="max-w-2xl w-full">
-                <div
-                  className="px-6 py-4 rounded-2xl shadow-sm border flex items-center space-x-3"
-                  style={{
-                    backgroundColor: 'var(--color-card)',
-                    borderColor: 'var(--color-border)'
-                  }}
-                >
-                  <Loader2 
-                    className="w-5 h-5 animate-spin"
-                    style={{ color: 'var(--color-accent)' }}
-                  />
-                  <span 
-                    className="text-sm italic"
-                    style={{ color: 'var(--color-muted)' }}
-                  >
-                    AI is thinking...
-                  </span>
-                </div>
+                <LoadingSpinner text="AI is thinking..." />
               </div>
             </div>
           )}

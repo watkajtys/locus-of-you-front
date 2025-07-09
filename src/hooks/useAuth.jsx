@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+
 import { supabase } from '../lib/supabase';
+
 import { AuthContext } from './authHooks';
 
 export const AuthProvider = ({ children }) => {

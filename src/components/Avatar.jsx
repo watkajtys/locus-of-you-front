@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import { Upload, User, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+
 import { supabase } from '../lib/supabase';
 
 const Avatar = ({ session, size = 80, url, onUpload }) => {

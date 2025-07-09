@@ -1,11 +1,13 @@
 import React from 'react';
+
 import { AuraProvider } from '../contexts/AuraProvider';
 import useStore from '../store/store';
-import AuraAvatar from './AuraAvatar';
+
 import AIMessageCard from './AIMessageCard';
+import AuraAvatar from './AuraAvatar';
 import Button from './Button';
-import DashboardHeader from './DashboardHeader';
 import CumulativeGraph from './CumulativeGraph';
+import DashboardHeader from './DashboardHeader';
 
 const DashboardTeaser = ({ onBuildPlan }) => {
   const dashboardTeaserData = useStore((state) => state.dashboardTeaserData);

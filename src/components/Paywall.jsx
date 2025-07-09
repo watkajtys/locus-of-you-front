@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
 import { Check, Zap, Brain, Target, BarChart3, BookOpen, Sparkles, Crown, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
-import useStore from '../store/store'; // Import Zustand store
-import Card from './Card';
-import Button from './Button';
+import React, { useState, useEffect } from 'react';
+
 import { 
   purchaseSubscription, 
   getOfferings, 
   PRODUCT_IDS,
   checkSubscriptionStatus 
 } from '../lib/revenuecat';
+import useStore from '../store/store'; // Import Zustand store
+
+import Button from './Button';
+import Card from './Card';
+import LoadingSpinner from './LoadingSpinner';
 
 
 const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = false }) => {
@@ -155,22 +158,11 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
   if (loadingOfferings) {
     return (
       <div 
-        className="min-h-screen flex items-center justify-center font-inter"
-        style={{ backgroundColor: '#0f172a' }}
-      >
-        <div className="text-center space-y-4">
-          <Loader2 
-            className="w-8 h-8 animate-spin mx-auto"
-            style={{ color: '#f97316' }}
-          />
-          <p 
-            className="text-lg"
-            style={{ color: '#94a3b8' }}
-          >
-            Loading subscription options...
-          </p>
-        </div>
-      </div>
+      className="min-h-screen flex items-center justify-center font-inter"
+      style={{ backgroundColor: '#0f172a' }}
+    >
+      <LoadingSpinner text="Loading subscription options..." />
+    </div>
     );
   }
 
@@ -311,7 +303,8 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
                 </div>
               </div>
 
-              <div
+              <button
+                type="button"
                 className={`
                   relative p-8 rounded-xl transition-all duration-300 cursor-pointer
                   ${selectedPlan === 'annual' 
@@ -386,11 +379,12 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
             </div>
 
             {/* Monthly Plan */}
-            <div
+            <button
+              type="button"
               className={`
                 p-8 rounded-xl transition-all duration-300 cursor-pointer
                 ${selectedPlan === 'monthly' 
@@ -471,7 +465,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
                   </div>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -496,8 +490,9 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
             {premiumFeatures.map((feature, index) => {
               const IconComponent = feature.icon;
               return (
-                <div
+                <button
                   key={index}
+                  type="button"
                   className="flex items-start space-x-4 p-6 rounded-xl transition-all duration-300 hover:scale-102"
                   style={{
                     backgroundColor: '#1e293b',
@@ -531,7 +526,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
                       strokeWidth={2}
                     />
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

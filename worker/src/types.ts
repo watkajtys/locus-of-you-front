@@ -135,6 +135,7 @@ export interface GuardrailConfig extends ChainConfig {
 export interface DiagnosticConfig extends ChainConfig {
   assessmentFrameworks: ('ET' | 'SDT' | 'CBT' | 'ACT')[];
   maxQuestions: number;
+  assessmentAreas: string[];
 }
 
 export interface InterventionConfig extends ChainConfig {
@@ -143,13 +144,41 @@ export interface InterventionConfig extends ChainConfig {
   microtaskSystemPrompt?: string; // Add this line
 }
 
+export enum ErrorCode {
+  // General Errors
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+  PROCESSING_ERROR = 'PROCESSING_ERROR',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  NOT_FOUND = 'NOT_FOUND',
+
+  // Authentication & Authorization
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+  INVALID_TOKEN = 'INVALID_TOKEN',
+
+  // API & Network
+  BAD_REQUEST = 'BAD_REQUEST',
+  INVALID_SESSION_TYPE = 'INVALID_SESSION_TYPE',
+  MISSING_ONBOARDING_ANSWERS = 'MISSING_ONBOARDING_ANSWERS',
+  MISSING_REFLECTION_DATA = 'MISSING_REFLECTION_DATA',
+
+  // KV & Database
+  KV_NOT_CONFIGURED = 'KV_NOT_CONFIGURED',
+  DB_ERROR = 'DB_ERROR',
+
+  // AI & Chains
+  CRISIS_DETECTED = 'CRISIS_DETECTED',
+  CHAIN_EXECUTION_ERROR = 'CHAIN_EXECUTION_ERROR',
+  LLM_ERROR = 'LLM_ERROR',
+}
+
 // API Response Types
 export interface APIResponse<T = any> {
   success: boolean;
   data?: T;
   error?: {
     message: string;
-    code: string;
+    code: ErrorCode;
     details?: any;
   };
   metadata?: {
@@ -172,8 +201,9 @@ export interface Env {
   ENVIRONMENT: 'development' | 'staging' | 'production';
   
   // KV Namespaces
-  RATE_LIMIT_KV?: KVNamespace;
-  USER_SESSIONS_KV?: KVNamespace;
+  PROFILES_KV?: KVNamespace;
+  SESSIONS_KV?: KVNamespace;
+  SNAPSHOTS_KV?: KVNamespace;
   COACHING_HISTORY_KV?: KVNamespace;
   
   // D1 Database (optional)
@@ -287,6 +317,6 @@ export type SessionHandler = (
   coachingMessage: CoachingMessage,
   userProfile: UserProfile,
   env: Env,
-  executionCtx: ExecutionContext,
+  executionCtx: import('hono').Context['executionCtx'],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ) => Promise<any>;

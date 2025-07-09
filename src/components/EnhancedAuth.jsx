@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { useAuth } from '../hooks/authHooks';
 import { Mail, Lock, User, AlertCircle, CheckCircle, Eye, EyeOff, KeyRound } from 'lucide-react';
-import Card from './Card';
+import React, { useState } from 'react';
+
+import { useAuth } from '../hooks/authHooks';
+
 import Button from './Button';
+import Card from './Card';
 
 
 const EnhancedAuth = () => {
@@ -362,7 +364,7 @@ const EnhancedAuth = () => {
               disabled={loading}
               className="w-full"
             >
-              {loading ? 'Loading...' : (
+              {loading ? <LoadingSpinner size="sm" /> : (
                 mode === 'signup' ? 'Create Account' :
                 mode === 'signin' ? 'Sign In' :
                 'Send Reset Email'

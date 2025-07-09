@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react'; // Added useEffect
-import { supabase } from '../lib/supabase';
 import { ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react'; // Added useEffect
+
 import { AuraProvider } from '../contexts/AuraProvider';
+import { supabase } from '../lib/supabase';
 import useStore from '../store/store'; // Import Zustand store
-import AuraAvatar from './AuraAvatar';
+
 import AIMessageCard from './AIMessageCard';
-import Card from './Card';
+import AuraAvatar from './AuraAvatar';
 import Button from './Button';
+import Card from './Card';
 
 const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip props are kept as App.jsx passes them
   const setOnboardingAnswers = useStore((state) => state.setOnboardingAnswers);
@@ -438,8 +440,9 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
                 {currentQuestionData.type === 'choice' && (
                   <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                     {currentQuestionData.options.map((option) => (
-                      <div
+                      <button
                         key={option.id}
+                        type="button"
                         className={`
                           bg-white rounded-xl shadow-sm border transition-all duration-300 ease-in-out
                           p-6 md:p-8 group relative overflow-hidden
@@ -508,7 +511,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
                             />
                           </div>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}

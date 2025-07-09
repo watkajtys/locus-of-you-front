@@ -11,7 +11,7 @@ export const handleOnboardingDiagnostic: SessionHandler = async (
   coachingMessage: CoachingMessage,
   userProfile: UserProfile,
   env: Env,
-  _executionCtx: ExecutionContext,
+  _executionCtx: import('hono').Context['executionCtx'],
 ): Promise<{ message: string; snapshotData: SnapshotData }> => {
   const onboardingAnswers = coachingMessage.context?.onboardingAnswers;
   if (!onboardingAnswers) {

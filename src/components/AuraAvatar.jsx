@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { useAura, AURA_STATES } from '../contexts/auraConstants';
 
 const AuraAvatar = ({ size = 128, className = '' }) => {
@@ -58,7 +59,7 @@ const AuraAvatar = ({ size = 128, className = '' }) => {
   return (
     <div
       className={`aura-circle ${className}`}
-      style={getStateStyles(auraState)}
+      style={{ backgroundColor: 'red' }}
       role="img"
       aria-label={`Aura avatar in ${auraState} state`}
     >

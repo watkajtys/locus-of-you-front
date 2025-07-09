@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react'; // Added useEffect
-import { supabase } from '../lib/supabase'; // Import supabase
+
 import { AuraProvider } from '../contexts/AuraProvider';
+import { supabase } from '../lib/supabase'; // Import supabase
 import useStore from '../store/store'; // Import Zustand store
-import AuraAvatar from './AuraAvatar';
+
 import AIMessageCard from './AIMessageCard';
+import AuraAvatar from './AuraAvatar';
 import Button from './Button';
 import Card from './Card';
+import ReflectionFallback from './ReflectionFallback';
 
 
 const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId props
@@ -116,10 +119,9 @@ const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId
     // setReflectionMade(true) is now called within sendReflectionToBackend upon success
   };
 
-  // Determine the dynamic question including the task
-  const coachQuestion = task
-    ? `Welcome back${userName ? ', ' + userName : ''}. How did it go with "${task}"?`
-    : `Welcome back${userName ? ', ' + userName : ''}. How did your first step go?`; // Fallback if task is not provided
+  if (!currentIsfsTask && !localStorage.getItem('lastActiveIsfsTask')) {
+    return <ReflectionFallback />;
+  }
 
   return (
     <AuraProvider>
@@ -191,24 +193,6 @@ const ReflectionScreen = ({ onComplete }) => { // Removed task, userName, userId
       </div>
     </AuraProvider>
   );
-
-  // Fallback UI if task is missing (should ideally be prevented by App.jsx's view logic)
-  if (!currentIsfsTask && !localStorage.getItem('lastActiveIsfsTask')) {
-    useEffect(() => {
-        if (currentView !== 'firstStep') setCurrentView('firstStep');
-    }, [setCurrentView]); // currentView removed from dep array
-
-    return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ backgroundColor: 'var(--color-background)' }}>
-            <p className="text-lg mb-4" style={{ color: 'var(--color-text)' }}>
-                No task found to reflect upon. Please complete a first step.
-            </p>
-            <Button onClick={() => setCurrentView('firstStep')} variant="primary">
-                Go to First Step
-            </Button>
-        </div>
-    );
-  }
 };
 
 export default ReflectionScreen;

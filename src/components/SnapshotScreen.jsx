@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import { Brain, Target, Lightbulb, TrendingUp, Users, Zap, ChevronRight, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
 import { AuraProvider } from '../contexts/AuraProvider';
+import { supabase } from '../lib/supabase';
 import useStore from '../store/store'; // Import Zustand store
-import AuraAvatar from './AuraAvatar';
+
 import AIMessageCard from './AIMessageCard';
-import Card from './Card';
+import AuraAvatar from './AuraAvatar';
 import Button from './Button';
+import Card from './Card';
 
 
 // Spectrum Bar Component for Personal Agency

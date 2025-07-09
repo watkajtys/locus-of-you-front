@@ -14,7 +14,7 @@ export const handleReflection: SessionHandler = async (
   coachingMessage: CoachingMessage,
   userProfile: UserProfile,
   env: Env,
-  _executionCtx: ExecutionContext,
+  _executionCtx: import('hono').Context['executionCtx'],
 ): Promise<{ message: string; nextAdaptedTask: Microtask; momentumMirror: MomentumMirrorData; dashboardTeaser: DashboardTeaserData }> => {
   const previousTask = coachingMessage.context?.previousTask;
   const reflectionId = coachingMessage.context?.reflectionId;
@@ -30,7 +30,8 @@ export const handleReflection: SessionHandler = async (
     throw new Error('USER_SESSIONS_KV or GOOGLE_API_KEY not configured');
   }
 
-  // In a real app, configs might come from a KV store or be more dynamic
+  // In a real app, configs might come from
+  // a KV store or be more dynamic
   const interventionConfig: InterventionConfig = {
     interventionTypes: ['behavioral', 'cognitive'], // Adjust as needed for reflection adaptation
     personalityFactors: true,

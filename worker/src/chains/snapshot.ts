@@ -4,25 +4,28 @@ export class SnapshotChain {
   constructor() {}
 
   // Determine user's archetype based on their answers
-  private determineArchetype = (answers: OnboardingAnswers): string => {
-    const mindset = answers.mindset;
-    const locus = answers.locus;
-    const focus = answers.regulatory_focus;
-    
+  private determineArchetype = (onboardingAnswers: OnboardingAnswers, userProfile: UserProfile): string => {
+    const mindset = onboardingAnswers.mindset;
+    const locus = userProfile.psychologicalProfile?.locus;
+    const focus = userProfile.psychologicalProfile?.regulatory_focus;
+
+    // Map 'developed' to 'growth' and 'stable' to 'fixed' for archetype determination
+    const mappedMindset = mindset === 'developed' ? 'growth' : 'fixed';
+
     // Simple archetype determination logic
-    if (mindset === 'growth' && locus === 'internal' && focus === 'promotion') {
+    if (mappedMindset === 'growth' && locus === 'internal' && focus === 'promotion') {
       return 'Visionary Achiever';
-    } else if (mindset === 'growth' && locus === 'internal' && focus === 'prevention') {
+    } else if (mappedMindset === 'growth' && locus === 'internal' && focus === 'prevention') {
       return 'Steady Builder';
-    } else if (mindset === 'growth' && locus === 'external' && focus === 'promotion') {
+    } else if (mappedMindset === 'growth' && locus === 'external' && focus === 'promotion') {
       return 'Adaptive Optimist';
-    } else if (mindset === 'growth' && locus === 'external' && focus === 'prevention') {
+    } else if (mappedMindset === 'growth' && locus === 'external' && focus === 'prevention') {
       return 'Compassionate Achiever';
-    } else if (mindset === 'fixed' && locus === 'internal' && focus === 'promotion') {
+    } else if (mappedMindset === 'fixed' && locus === 'internal' && focus === 'promotion') {
       return 'Determined Specialist';
-    } else if (mindset === 'fixed' && locus === 'internal' && focus === 'prevention') {
+    } else if (mappedMindset === 'fixed' && locus === 'internal' && focus === 'prevention') {
       return 'Reliable Executor';
-    } else if (mindset === 'fixed' && locus === 'external' && focus === 'promotion') {
+    } else if (mappedMindset === 'fixed' && locus === 'external' && focus === 'promotion') {
       return 'Opportunistic Realist';
     } else {
       return 'Thoughtful Planner';
@@ -30,10 +33,17 @@ export class SnapshotChain {
   };
 
   // Generate supportive descriptions based on user's answers
-  private generateSupportiveDescription = (answers: OnboardingAnswers, insight: Insight): string => {
+  private generateSupportiveDescription = (onboardingAnswers: OnboardingAnswers, userProfile: UserProfile, insight: Insight): string => {
+    const mindset = onboardingAnswers.mindset;
+    const locus = userProfile.psychologicalProfile?.locus;
+    const regulatory_focus = userProfile.psychologicalProfile?.regulatory_focus;
+
+    // Map 'developed' to 'growth' and 'stable' to 'fixed' for description generation
+    const mappedMindset = mindset === 'developed' ? 'growth' : 'fixed';
+
     if (insight.type === 'spectrum') {
       // Personal Agency - Focus on starting point, not judgment  
-      if (answers.locus === 'external') {
+      if (locus === 'external') {
         return "You currently tend to focus on external circumstances. This is a common and understandable pattern, and it provides a clear starting point for developing your sense of personal agency and influence.";
       } else {
         return "Your natural inclination is towards personal action and control. This internal orientation is a powerful foundation we can build upon to achieve your goals and expand your influence.";
@@ -42,7 +52,7 @@ export class SnapshotChain {
     
     if (insight.type === 'balance') {
       // Growth Mindset - Frame as malleable belief, not fixed trait
-      if (answers.mindset === 'fixed') {
+      if (mappedMindset === 'fixed') {
         return "Your current perspective suggests a belief that abilities are largely fixed. The exciting news is that this perspective itself is dynamic and can be cultivated. We'll focus on strategies to foster a more growth-oriented outlook.";
       } else {
         return "Your strong belief in the ability to develop and grow is an incredible asset. This growth-oriented mindset will serve as the cornerstone for all the strategies we co-create.";
@@ -51,9 +61,9 @@ export class SnapshotChain {
     
     if (insight.type === 'ring') {
       // Achievement Orientation - Frame both as strategic strengths
-      if (answers.regulatory_focus === 'promotion') {
+      if (regulatory_focus === 'promotion') {
         return "Your primary focus is on pursuing new opportunities and achieving gains. This promotion-focused approach infuses your goal achievement strategies with energy and ambition.";
-      } else if (answers.regulatory_focus === 'prevention') {
+      } else if (regulatory_focus === 'prevention') {
         return "Your primary focus is on ensuring stability and mitigating potential problems. This prevention-focused approach brings meticulous planning and a keen awareness of risks to your strategies.";
       } else {
         return "Your focus demonstrates a balance between pursuing opportunities and ensuring stability. This allows you to strategically leverage both promotional energy and preventive wisdom in your approach.";
@@ -64,11 +74,17 @@ export class SnapshotChain {
   };
 
   // Generate insights with supportive, non-judgmental framing
-  private generateInsights = (answers: OnboardingAnswers): Insight[] => {
+  private generateInsights = (onboardingAnswers: OnboardingAnswers, userProfile: UserProfile): Insight[] => {
     const insights = [];
+    const mindset = onboardingAnswers.mindset;
+    const locus = userProfile.psychologicalProfile?.locus;
+    const regulatory_focus = userProfile.psychologicalProfile?.regulatory_focus;
+
+    // Map 'developed' to 'growth' and 'stable' to 'fixed' for insight generation
+    const mappedMindset = mindset === 'developed' ? 'growth' : 'fixed';
     
     // Personal Agency insight - SPECTRUM BAR with reframed labels
-    const locusScore = answers.locus === 'internal' ? 4.2 : 2.3;
+    const locusScore = locus === 'internal' ? 4.2 : 2.3;
     const personalAgencyInsight: Insight = {
       type: 'spectrum',
       title: 'Personal Agency',
@@ -77,11 +93,11 @@ export class SnapshotChain {
       minLabel: 'Focus on Circumstance',  // Changed from "External"
       maxLabel: 'Focus on Action'         // Changed from "Internal"
     };
-    personalAgencyInsight.description = this.generateSupportiveDescription(answers, personalAgencyInsight);
+    personalAgencyInsight.description = this.generateSupportiveDescription(onboardingAnswers, userProfile, personalAgencyInsight);
     insights.push(personalAgencyInsight);
     
     // Growth Mindset insight - BELIEF BALANCE BAR with supportive framing
-    const mindsetScore = answers.mindset === 'growth' ? 4.5 : 2.0;
+    const mindsetScore = mappedMindset === 'growth' ? 4.5 : 2.0;
     const growthMindsetInsight: Insight = {
       type: 'balance',
       title: 'Growth Mindset',
@@ -90,11 +106,11 @@ export class SnapshotChain {
       leftLabel: 'Growth Belief',          // Emphasized as "belief"
       rightLabel: 'Current Fixed Belief'   // Framed as "current" not permanent
     };
-    growthMindsetInsight.description = this.generateSupportiveDescription(answers, growthMindsetInsight);
+    growthMindsetInsight.description = this.generateSupportiveDescription(onboardingAnswers, userProfile, growthMindsetInsight);
     insights.push(growthMindsetInsight);
     
     // Achievement Orientation insight - FOCUS RING with both as strengths
-    const focusScore = answers.regulatory_focus === 'promotion' ? 4.0 : 2.5;
+    const focusScore = regulatory_focus === 'promotion' ? 4.0 : 2.5;
     const achievementInsight: Insight = {
       type: 'ring',
       title: 'Achievement Orientation',
@@ -103,7 +119,7 @@ export class SnapshotChain {
       leftLabel: 'Promotion Focus',
       rightLabel: 'Prevention Focus'
     };
-    achievementInsight.description = this.generateSupportiveDescription(answers, achievementInsight);
+    achievementInsight.description = this.generateSupportiveDescription(onboardingAnswers, userProfile, achievementInsight);
     insights.push(achievementInsight);
     
     return insights;
@@ -133,9 +149,9 @@ export class SnapshotChain {
   };
 
   public async generateSnapshot(onboardingAnswers: OnboardingAnswers, userProfile: UserProfile) {
-    const archetype = this.determineArchetype(onboardingAnswers);
-    const insights = this.generateInsights(onboardingAnswers);
-    const userGoal = onboardingAnswers.final_focus || "improving your overall well-being";
+    const archetype = this.determineArchetype(onboardingAnswers, userProfile);
+    const insights = this.generateInsights(onboardingAnswers, userProfile);
+    const userGoal = onboardingAnswers.final_goal_context || "improving your overall well-being";
     const narrativeSummary = this.generateNarrativeSummary(archetype, userGoal);
 
     return {

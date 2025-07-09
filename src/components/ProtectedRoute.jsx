@@ -1,10 +1,13 @@
-import React from 'react';
-import useStore from '../store/store'; // Import Zustand store
 import { Loader2 } from 'lucide-react';
+import React from 'react';
+
+import { useAuth } from '../hooks/authHooks'; // Keep for hasRole, review later
+import useStore from '../store/store'; // Import Zustand store
+
 import EnhancedAuth from './EnhancedAuth';
+
 // useAuth might still be used if hasRole is complex and relies on it,
 // or we might need to replicate its logic using store's session/userProfile.
-import { useAuth } from '../hooks/authHooks'; // Keep for hasRole, review later
 
 const ProtectedRoute = ({ children, requireRole = null, fallback = null }) => {
   const session = useStore((state) => state.session);

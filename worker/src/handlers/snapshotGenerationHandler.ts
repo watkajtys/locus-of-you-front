@@ -10,7 +10,7 @@ export const handleSnapshotGeneration: SessionHandler = async (
   _coachingMessage: CoachingMessage, // Not directly used, but part of the SessionHandler signature
   userProfile: UserProfile,
   env: Env,
-  _executionCtx: ExecutionContext,
+  _executionCtx: import('hono').Context['executionCtx'],
 ): Promise<SnapshotData> => {
   if (!env.USER_SESSIONS_KV) {
     throw new Error('USER_SESSIONS_KV not configured');

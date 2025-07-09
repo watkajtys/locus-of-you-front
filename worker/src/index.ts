@@ -14,9 +14,11 @@ import {
   OnboardingAnswersSchema,
   SessionHandler,
 } from './types';
+import { guardrailConfig, interventionConfig } from './config';
 import { GuardrailChain } from './chains/guardrail';
-// import { DiagnosticChain } from './chains/diagnostic'; // No longer directly used here
 import { InterventionsChain } from './chains/interventions';
+// import { DiagnosticChain } from './chains/diagnostic'; // No longer directly used here
+import { ErrorCode } from './types';
 // import { SnapshotChain } from './chains/snapshot'; // No longer directly used here
 
 // Import handlers
@@ -61,21 +63,23 @@ app.post('/api/coaching/message', async (c) => {
     const { userId, sessionId, context, message } = coachingMessage;
 
     // 2. Initialize GuardrailChain (other chains are initialized in their handlers)
-    const guardrailConfig: GuardrailConfig = { crisisKeywords: [], escalationThreshold: 0.95, maxTokens: 500, temperature: 0.1, model: 'gemini-2.5-flash', systemPrompt: '' };
-    const guardrailChain = new GuardrailChain(guardrailConfig, env);
+        const guardrailChain = new GuardrailChain(guardrailConfig, env);
 
     // 3. Guardrail First: Assess for safety
     const safetyAssessment = await guardrailChain.assessSafety(coachingMessage);
     if (!safetyAssessment.shouldProceed) {
-      return c.json({ success: false, error: { message: safetyAssessment.response, code: 'CRISIS_DETECTED' } }, 400);
+      return c.json({ success: false, error: { message: safetyAssessment.response, code: ErrorCode.CRISIS_DETECTED } }, 400);
     }
 
     // 4. Fetch user profile from KV, or create a default one
     if (!env.USER_SESSIONS_KV) {
-      return c.json({ success: false, error: { message: 'USER_SESSIONS_KV not configured', code: 'KV_NOT_CONFIGURED' } }, 500);
+      return c.json({ success: false, error: { message: 'USER_SESSIONS_KV not configured', code: ErrorCode.KV_NOT_CONFIGURED } }, 500);
+    }
+    if (!env.PROFILES_KV) {
+      return c.json({ success: false, error: { message: 'PROFILES_KV not configured', code: ErrorCode.KV_NOT_CONFIGURED } }, 500);
     }
     let userProfile: UserProfile;
-    const profileString = await env.USER_SESSIONS_KV.get(userId);
+    const profileString = await env.PROFILES_KV.get(userId);
     if (!profileString) {
       userProfile = UserProfileSchema.parse({
         id: userId,
@@ -93,12 +97,12 @@ app.post('/api/coaching/message', async (c) => {
     const handler = sessionHandlers[sessionType];
 
     if (!handler) {
-      return c.json({ success: false, error: { message: `Invalid session type: ${sessionType}`, code: 'INVALID_SESSION_TYPE' } }, 400);
+      return c.json({ success: false, error: { message: `Invalid session type: ${sessionType}`, code: ErrorCode.INVALID_SESSION_TYPE } }, 400);
     }
 
     // Specific pre-handler checks that were in the original if/else blocks
     if (sessionType === 'onboarding_diagnostic' && !context?.onboardingAnswers) {
-      return c.json({ success: false, error: { message: 'Onboarding answers not provided for onboarding_diagnostic session type.', code: 'MISSING_ONBOARDING_ANSWERS' } }, 400);
+      return c.json({ success: false, error: { message: 'Onboarding answers not provided for onboarding_diagnostic session type.', code: ErrorCode.MISSING_ONBOARDING_ANSWERS } }, 400);
     }
     if (sessionType === 'reflection') {
       if (!context?.previousTask || !context?.reflectionId) {
@@ -162,10 +166,13 @@ app.post('/api/microtask/generate', async (c) => {
 
     // Fetch user profile
     if (!env.USER_SESSIONS_KV) {
-      return c.json({ success: false, error: { message: 'USER_SESSIONS_KV not configured', code: 'KV_NOT_CONFIGURED' } }, 500);
+      return c.json({ success: false, error: { message: 'USER_SESSIONS_KV not configured', code: ErrorCode.KV_NOT_CONFIGURED } }, 500);
+    }
+    if (!env.PROFILES_KV) {
+      return c.json({ success: false, error: { message: 'PROFILES_KV not configured', code: ErrorCode.KV_NOT_CONFIGURED } }, 500);
     }
     let userProfile: UserProfile;
-    const profileString = await env.USER_SESSIONS_KV.get(userId);
+    const profileString = await env.PROFILES_KV.get(userId);
     if (!profileString) {
       // If no profile, create a basic one for microtask generation
       userProfile = UserProfileSchema.parse({
@@ -179,8 +186,7 @@ app.post('/api/microtask/generate', async (c) => {
       userProfile = UserProfileSchema.parse(JSON.parse(profileString));
     }
 
-    const interventionConfig: InterventionConfig = { interventionTypes: ['behavioral', 'cognitive'], personalityFactors: true, maxTokens: 1000, temperature: 0.4, model: 'gemini-2.5-flash', systemPrompt: '' };
-    const interventionsChain = new InterventionsChain(env.GOOGLE_API_KEY, interventionConfig);
+        const interventionsChain = new InterventionsChain(env.GOOGLE_API_KEY, interventionConfig);
 
     const microtask = await interventionsChain.generateFirstMicrotask(parsedOnboardingAnswers, userProfile);
 
@@ -211,7 +217,7 @@ app.post('/api/microtask/generate', async (c) => {
 
 // 404 Handler
 app.notFound((c) => {
-  return c.json({ success: false, error: { message: 'Not Found', code: 'NOT_FOUND' } }, 404);
+  return c.json({ success: false, error: { message: 'Not Found', code: ErrorCode.NOT_FOUND } }, 404);
 });
 
 export default app;
