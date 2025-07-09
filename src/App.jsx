@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 
+// Import applyThemeForArchetype
+import { applyThemeForArchetype } from './hooks/useTheme';
 import AppShell from './components/AppShell';
 import DashboardTeaser from './components/DashboardTeaser';
 import DynamicOnboarding from './components/DynamicOnboarding';
@@ -119,7 +121,12 @@ function AppContent() {
 
   // Handle snapshot continuation
   const handleSnapshotContinue = () => {
+    // Existing logic to set view to 'firstStep'
     console.log('Continuing from snapshot to first step');
+    const userArchetype = useStore.getState().onboardingAnswers?.archetype; // Assuming archetype is stored
+    if (userArchetype) {
+      applyThemeForArchetype(userArchetype);
+    }
     setCurrentView('firstStep');
   };
 
