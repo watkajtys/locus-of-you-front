@@ -1,68 +1,29 @@
-import React from 'react';
-
+import React, { useEffect } from 'react';
 import { useAura, AURA_STATES } from '../contexts/auraConstants';
+import ThreeJSAura from './ThreeJSAura';
 
 const AuraAvatar = ({ size = 128, className = '' }) => {
-  const { auraState } = useAura();
+  const { auraState, updateAuraState, isSleep } = useAura();
 
-  // Map aura states to animation durations
-  const getAnimationDuration = (state) => {
-    switch (state) {
-      case AURA_STATES.IDLE:
-        return '15s';
-      case AURA_STATES.PROCESSING:
-        return '5s';
-      case AURA_STATES.SUCCESS:
-        return '8s';
-      case AURA_STATES.ERROR:
-        return '3s';
-      default:
-        return '15s';
+  useEffect(() => {
+    // If the initial state is SLEEP, transition to IDLE after a delay
+    if (isSleep) {
+      const timer = setTimeout(() => {
+        updateAuraState(AURA_STATES.IDLE);
+      }, 1500); // 1.5 second delay
+
+      return () => clearTimeout(timer); // Cleanup the timer if the component unmounts
     }
-  };
-
-  // Get additional state-specific styles
-  const getStateStyles = (state) => {
-    const baseStyles = {
-      '--aura-animation-duration': getAnimationDuration(state),
-      '--aura-size': `${size}px`
-    };
-
-    // Add state-specific color variations
-    switch (state) {
-      case AURA_STATES.SUCCESS:
-        return {
-          ...baseStyles,
-          '--aura-color-1': '#10b981', // emerald-500
-          '--aura-color-2': '#d1fae5', // emerald-100
-          '--aura-color-3': '#6ee7b7'  // emerald-300
-        };
-      case AURA_STATES.ERROR:
-        return {
-          ...baseStyles,
-          '--aura-color-1': '#ef4444', // red-500
-          '--aura-color-2': '#fee2e2', // red-100
-          '--aura-color-3': '#fca5a5'  // red-300
-        };
-      case AURA_STATES.PROCESSING:
-        return {
-          ...baseStyles,
-          '--aura-color-1': '#8b5cf6', // violet-500
-          '--aura-color-2': '#ede9fe', // violet-100
-          '--aura-color-3': '#c4b5fd'  // violet-300
-        };
-      default:
-        return baseStyles;
-    }
-  };
+  }, [isSleep, updateAuraState]); // Depend on isSleep to run only when it changes to/from true
 
   return (
     <div
-      className={`aura-circle ${className}`}
-      style={{ backgroundColor: 'red' }}
+      className={`aura-container ${className}`} // Use a more generic class name if needed
+      style={{ width: size, height: size }} // Control the container size
       role="img"
       aria-label={`Aura avatar in ${auraState} state`}
     >
+      <ThreeJSAura auraState={auraState} />
     </div>
   );
 };

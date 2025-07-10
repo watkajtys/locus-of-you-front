@@ -11,8 +11,13 @@ export const useAura = () => {
 };
 
 export const AURA_STATES = {
-  IDLE: 'idle',
-  PROCESSING: 'processing',
-  SUCCESS: 'success',
-  ERROR: 'error'
+  IDLE: 'IDLE', // Changed to uppercase to match ThreeJSAura
+  PROCESSING: 'PROCESSING', // Changed to uppercase
+  SUCCESS: 'SUCCESS', // Changed to uppercase
+  ERROR: 'ERROR', // Changed to uppercase
+  SLEEP: 'SLEEP',
+  LISTENING: 'LISTENING',
+  RECEIVED: 'RECEIVED',
+  OPEN: 'OPEN', // Added for plate animation control
+  CLOSE: 'CLOSE' // Added for plate animation control
 };
