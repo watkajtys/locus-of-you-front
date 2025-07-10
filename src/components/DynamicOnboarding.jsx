@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronLeft } from 'lucide-react'; // Added ChevronLeft
 import React, { useState, useEffect } from 'react'; // Added useEffect
 
 import { AuraProvider } from '../contexts/AuraProvider';
@@ -19,7 +19,13 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [progress, setProgress] = useState(0);
   // Initialize local answers with store's answers if available, for resumption
-  const [answers, setAnswers] = useState(existingOnboardingAnswers || {});
+  const [answers, setAnswers] = useState(() => {
+    const savedAnswers = localStorage.getItem('onboardingAnswers');
+    if (savedAnswers) {
+      return JSON.parse(savedAnswers);
+    }
+    return existingOnboardingAnswers || {};
+  });
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   // const [sliderValue, setSliderValue] = useState(3); // Removed as no slider questions in new flow
   const [textInput, setTextInput] = useState('');
@@ -188,13 +194,70 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
     }
   ];
 
-  // Reset input states when question changes
-  React.useEffect(() => {
-    setSelectedAnswer(null);
-    // setSliderValue(3); // Removed
-    setTextInput('');
+  // Effect to initialize and update based on localStorage and currentQuestion
+  useEffect(() => {
+    const savedAnswers = localStorage.getItem('onboardingAnswers');
+    if (savedAnswers) {
+      const parsedAnswers = JSON.parse(savedAnswers);
+      setAnswers(parsedAnswers);
+      setOnboardingAnswers(parsedAnswers); // Update Zustand store
+
+      // Determine current question based on saved answers
+      // This logic assumes questions are answered sequentially and keys in 'answers' correspond to question IDs
+      let lastAnsweredQuestionIndex = -1;
+      for (let i = 0; i < questions.length; i++) {
+        if (parsedAnswers.hasOwnProperty(questions[i].id)) {
+          lastAnsweredQuestionIndex = i;
+        } else {
+          break; // Stop at the first unanswered question
+        }
+      }
+
+      // If all questions answered, go to summary or completion
+      // Otherwise, go to the next unanswered question or the last answered one if user wants to review
+      // For simplicity here, we'll set it to the question after the last answered one, or 0 if none.
+      // More sophisticated logic might be needed for "review" mode vs "continue" mode.
+      const nextQuestionIndex = lastAnsweredQuestionIndex + 1 < questions.length ? lastAnsweredQuestionIndex + 1 : lastAnsweredQuestionIndex;
+      setCurrentQuestion(nextQuestionIndex >= 0 ? nextQuestionIndex : 0);
+
+      // Update progress based on loaded answers
+      const newProgress = ((Object.keys(parsedAnswers).length) / questions.length) * 100;
+      setProgress(newProgress);
+
+    } else {
+      // If no saved answers, ensure store is also clear or reflects initial state
+      setOnboardingAnswers({}); // Or existingOnboardingAnswers if that's preferred initial
+    }
+
+    // Reset input states for the current question
+    setSelectedAnswer(answers[questions[currentQuestion]?.id] || null);
+    setTextInput(answers[questions[currentQuestion]?.id] || '');
     setQuestionVisible(true);
-  }, [currentQuestion]);
+  }, []); // Run once on mount to load initial state
+
+  // Reset input states when question changes, but preserve filled data if navigating back/forth
+  useEffect(() => {
+    if (questions[currentQuestion]) {
+      const questionId = questions[currentQuestion].id;
+      setSelectedAnswer(answers[questionId] || null);
+      setTextInput(answers[questionId] || '');
+    }
+    setQuestionVisible(true);
+  }, [currentQuestion, answers, questions]);
+
+  const handleBack = () => {
+    if (currentQuestion > 0) {
+      setIsTransitioning(true);
+      setQuestionVisible(false);
+      setTimeout(() => {
+        setCurrentQuestion(currentQuestion - 1);
+        const newProgress = ((currentQuestion -1) / questions.length) * 100;
+        setProgress(newProgress);
+        setIsTransitioning(false);
+        // setSelectedAnswer will be set by the useEffect hook that depends on currentQuestion
+      }, 200); // Delay for transition
+    }
+  };
 
   const currentQuestionData = questions[currentQuestion];
   const previousQuestionData = currentQuestion > 0 ? questions[currentQuestion -1] : null;
@@ -282,6 +345,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
       [questionId]: answerValue
     };
     setAnswers(newAnswers);
+    localStorage.setItem('onboardingAnswers', JSON.stringify(newAnswers));
+    setOnboardingAnswers(newAnswers); // Update Zustand store
 
     // Store coach response for this question
     if (currentQuestionData.coachResponseLogic) {
@@ -382,6 +447,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
       [currentQuestionData.id]: textInput.trim()
     };
     setAnswers(newAnswers);
+    localStorage.setItem('onboardingAnswers', JSON.stringify(newAnswers));
+    setOnboardingAnswers(newAnswers); // Update Zustand store
     
     const newProgress = 100;
     setProgress(newProgress);
@@ -620,15 +687,39 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip
         </div>
 
         {/* Bottom Navigation */}
-        <div 
-          className="flex-shrink-0 border-t backdrop-blur-sm"
-          style={{ 
+        <div
+          className="flex-shrink-0 border-t backdrop-blur-sm sticky bottom-0" // Added sticky and bottom-0
+          style={{
             backgroundColor: 'var(--color-card)',
             borderColor: 'var(--color-border)',
             opacity: '0.98'
           }}
         >
           <div className="max-w-4xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between space-x-4">
+              {/* Back Button */}
+              {currentQuestion > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  disabled={isTransitioning || isLoading}
+                  className="flex-1 min-h-[44px]"
+                >
+                  <ChevronLeft className="w-5 h-5 mr-2" />
+                  Back
+                </Button>
+              )}
+
+              {/* Placeholder for Skip/Login when currentQuestion is 0 or if no Back button */}
+              {currentQuestion === 0 && (
+                 <div className="flex-1"></div> // Takes up space if back button isn't shown
+              )}
+
+              {/* Original Skip for Now / Log In Buttons - Conditionally rendered or adjusted */}
+              {/* For now, let's assume these are less prominent or replaced by a single "Next/Complete" concept implicitly */}
+              {/* Or, they could be part of a different section or appear contextually */}
+
+            {/*</div>*/}
             {/*<div className="flex items-center justify-between space-x-4">*/}
             {/*  /!* Secondary - Skip for Now Button *!/*/}
             {/*  <button*/}
