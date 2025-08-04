@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
 import { Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
-import Card from './Card';
+import React, { useState } from 'react';
+
+import { supabase } from '../lib/supabase';
+
 import Button from './Button';
+import Card from './Card';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -108,7 +110,8 @@ const Auth = () => {
   const isLoading = isSignUpLoading || isSignInLoading;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--color-background)' }}>
+    <div className="min-h-screen flex items-center justify-center p-6 relative" style={{ backgroundColor: 'var(--color-background)' }}>
+      
       <Card className="w-full max-w-md p-8 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -233,28 +236,7 @@ const Auth = () => {
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="space-y-3 pt-2">
-            <Button
-              variant="accent"
-              size="large"
-              onClick={handleSignIn}
-              disabled={isLoading}
-              className="w-full"
-            >
-              {isSignInLoading ? 'Loading...' : 'Sign In'}
-            </Button>
-            
-            <Button
-              variant="secondary"
-              size="large"
-              onClick={handleSignUp}
-              disabled={isLoading}
-              className="w-full"
-            >
-              {isSignUpLoading ? 'Loading...' : 'Sign Up'}
-            </Button>
-          </div>
+          
         </form>
 
         {/* Footer */}

@@ -1,10 +1,12 @@
-import React from 'react';
-import { useTheme } from '../hooks/useTheme';
-import { AuraProvider } from '../contexts/AuraProvider';
-import DashboardHeader from './DashboardHeader';
-import CumulativeGraph from './CumulativeGraph';
-import Card from './Card';
 import { Brain, Target, TrendingUp, Calendar, Award, Zap } from 'lucide-react';
+import React from 'react';
+
+import { AuraProvider } from '../contexts/AuraProvider';
+import { useTheme } from '../hooks/useTheme';
+
+import Card from './Card';
+import CumulativeGraph from './CumulativeGraph';
+import DashboardHeader from './DashboardHeader';
 
 const Dashboard = ({ session, hasSubscription = false }) => {
   const { theme } = useTheme();

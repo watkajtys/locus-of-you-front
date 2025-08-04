@@ -1,10 +1,15 @@
-import React from 'react';
-import { Brain, Target, Lightbulb, TrendingUp, Users, Zap, ChevronRight } from 'lucide-react';
+import { Brain, Target, Lightbulb, TrendingUp, Users, Zap, ChevronRight, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
 import { AuraProvider } from '../contexts/AuraProvider';
-import AuraAvatar from './AuraAvatar';
+import { supabase } from '../lib/supabase';
+import useStore from '../store/store'; // Import Zustand store
+
 import AIMessageCard from './AIMessageCard';
-import Card from './Card';
+import AuraAvatar from './AuraAvatar';
 import Button from './Button';
+import Card from './Card';
+
 
 // Spectrum Bar Component for Personal Agency
 const SpectrumBar = ({ title, description, userScore, minLabel, maxLabel }) => {
@@ -247,120 +252,146 @@ const FocusRing = ({ title, description, userScore, leftLabel, rightLabel }) => 
   );
 };
 
-const SnapshotScreen = ({ answers, onContinue }) => {
-  // Determine user's archetype based on their answers
-  const determineArchetype = (answers) => {
-    const mindset = answers.mindset;
-    const locus = answers.locus;
-    const focus = answers.regulatory_focus;
-    
-    // Simple archetype determination logic
-    if (mindset === 'growth' && locus === 'internal' && focus === 'promotion') {
-      return 'Visionary Achiever';
-    } else if (mindset === 'growth' && locus === 'internal' && focus === 'prevention') {
-      return 'Steady Builder';
-    } else if (mindset === 'growth' && locus === 'external' && focus === 'promotion') {
-      return 'Adaptive Optimist';
-    } else if (mindset === 'growth' && locus === 'external' && focus === 'prevention') {
-      return 'Compassionate Achiever';
-    } else if (mindset === 'fixed' && locus === 'internal' && focus === 'promotion') {
-      return 'Determined Specialist';
-    } else if (mindset === 'fixed' && locus === 'internal' && focus === 'prevention') {
-      return 'Reliable Executor';
-    } else if (mindset === 'fixed' && locus === 'external' && focus === 'promotion') {
-      return 'Opportunistic Realist';
-    } else {
-      return 'Thoughtful Planner';
-    }
-  };
+const SnapshotScreen = ({ onContinue }) => { // Removed answers prop
+  const onboardingAnswers = useStore((state) => state.onboardingAnswers);
+  const setCurrentView = useStore((state) => state.setCurrentView); // For fallback navigation
 
-  // Generate supportive descriptions based on user's answers
-  const generateSupportiveDescription = (answers, insight) => {
-    if (insight.type === 'spectrum') {
-      // Personal Agency - Focus on starting point, not judgment  
-      if (answers.locus === 'external') {
-        return "Your current style is to focus more on external circumstances. This is a common pattern, and it gives us a clear starting point for building your sense of personal agency.";
-      } else {
-        return "Your natural focus is on personal action and control. This internal orientation is a strong foundation we can build upon for achieving your goals.";
+  const [archetype, setArchetype] = useState('');
+  const [insights, setInsights] = useState([]);
+  const [userGoal, setUserGoal] = useState('');
+  const [narrativeSummary, setNarrativeSummary] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchSnapshotData = async () => {
+      // Ensure onboardingAnswers are available before fetching
+      if (!onboardingAnswers) {
+        console.warn("SnapshotScreen: onboardingAnswers not available yet. Skipping fetch.");
+        // Optionally, set an error or redirect, or wait for App.jsx to provide answers.
+        // If App.jsx ensures this screen is only shown when answers are ready, this check is a safeguard.
+        setError("Onboarding data is missing. Please complete onboarding first.");
+        setIsLoading(false);
+        return;
       }
-    }
-    
-    if (insight.type === 'balance') {
-      // Growth Mindset - Frame as malleable belief, not fixed trait
-      if (answers.mindset === 'fixed') {
-        return "Your profile shows a current belief that abilities are mostly fixed. The great news is that this belief itself is a skill that can be developed. We'll focus on strategies that strengthen a growth-oriented perspective.";
-      } else {
-        return "Your belief in the ability to develop and grow is a powerful asset. This growth-oriented mindset will be the foundation for all the strategies we build together.";
+
+      setIsLoading(true); // Set loading true at the start of fetch attempt
+      setError(null); // Clear previous errors
+
+      try {
+        let userId;
+        let accessToken = null;
+
+        // Try to get authenticated user first
+        const { data: { user: authenticatedUser } } = await supabase.auth.getUser();
+        if (authenticatedUser) {
+          userId = authenticatedUser.id;
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) throw sessionError;
+          accessToken = sessionData.session?.access_token;
+        } else {
+          // Fallback to anonymous ID from onboarding answers if stored there, or localStorage
+          userId = onboardingAnswers.userId || localStorage.getItem('anonymous_onboarding_id');
+          if (!userId) {
+            // This is a less ideal fallback, should not happen if onboarding stored userId
+            console.warn("SnapshotScreen: No user ID found in session or onboarding answers.");
+            userId = `anon_snapshot_fallback_${Date.now()}`;
+          }
+        }
+
+        const workerApiUrl = import.meta.env.VITE_WORKER_API_URL;
+        if (!workerApiUrl) {
+          throw new Error('VITE_WORKER_API_URL is not defined in environment variables.');
+        }
+
+        const payload = {
+          userId: userId,
+          sessionId: `snapshot_${userId}_${Date.now()}`,
+          context: {
+            sessionType: 'snapshot_generation',
+            onboardingAnswers: onboardingAnswers // Use onboardingAnswers from store
+          },
+          message: "Generate motivational snapshot based on onboarding answers."
+        };
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+
+        const response = await fetch(`${workerApiUrl}/api/coaching/message`, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || `Worker request failed with status ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        setArchetype(result.data?.archetype || 'Unknown Archetype');
+        setInsights(result.data?.insights || []);
+        // Use final_goal_context from onboardingAnswers for userGoal
+        setUserGoal(onboardingAnswers.final_goal_context || result.data?.userGoal || "your goals");
+        setNarrativeSummary(result.data?.narrativeSummary || "Could not generate a narrative summary at this time.");
+
+      } catch (err) {
+        console.error('Error fetching snapshot data:', err);
+        setError(err.message || 'An unexpected error occurred while fetching snapshot data.');
+      } finally {
+        setIsLoading(false);
       }
-    }
-    
-    if (insight.type === 'ring') {
-      // Achievement Orientation - Frame both as strategic strengths
-      if (answers.regulatory_focus === 'promotion') {
-        return "Your focus leans toward pursuing new opportunities and gains. This promotion-focused approach brings energy and ambition to your goal achievement strategies.";
-      } else if (answers.regulatory_focus === 'prevention') {
-        return "Your focus leans toward ensuring stability and avoiding problems. This prevention-focused approach brings careful planning and risk awareness to your strategies.";
-      } else {
-        return "Your focus is balanced between pursuing opportunities and ensuring stability. This means you can leverage both promotional energy and preventive wisdom in your approach.";
-      }
-    }
-    
-    return insight.description;
-  };
-
-  // Generate insights with supportive, non-judgmental framing
-  const generateInsights = (answers) => {
-    const insights = [];
-    
-    // Personal Agency insight - SPECTRUM BAR with reframed labels
-    const locusScore = answers.locus === 'internal' ? 4.2 : 2.3;
-    const personalAgencyInsight = {
-      type: 'spectrum',
-      title: 'Personal Agency',
-      userScore: locusScore,
-      minLabel: 'Focus on Circumstance',  // Changed from "External"
-      maxLabel: 'Focus on Action'         // Changed from "Internal"
     };
-    personalAgencyInsight.description = generateSupportiveDescription(answers, personalAgencyInsight);
-    insights.push(personalAgencyInsight);
-    
-    // Growth Mindset insight - BELIEF BALANCE BAR with supportive framing
-    const mindsetScore = answers.mindset === 'growth' ? 4.5 : 2.0;
-    const growthMindsetInsight = {
-      type: 'balance',
-      title: 'Growth Mindset',
-      userScore: mindsetScore,
-      leftLabel: 'Growth Belief',          // Emphasized as "belief"
-      rightLabel: 'Current Fixed Belief'   // Framed as "current" not permanent
-    };
-    growthMindsetInsight.description = generateSupportiveDescription(answers, growthMindsetInsight);
-    insights.push(growthMindsetInsight);
-    
-    // Achievement Orientation insight - FOCUS RING with both as strengths
-    const focusScore = answers.regulatory_focus === 'promotion' ? 4.0 : 2.5;
-    const achievementInsight = {
-      type: 'ring',
-      title: 'Achievement Orientation',
-      userScore: focusScore,
-      leftLabel: 'Promotion Focus',
-      rightLabel: 'Prevention Focus'
-    };
-    achievementInsight.description = generateSupportiveDescription(answers, achievementInsight);
-    insights.push(achievementInsight);
-    
-    return insights;
-  };
 
-  const archetype = determineArchetype(answers);
-  const insights = generateInsights(answers);
-  const userGoal = answers.final_focus || "improving your overall well-being";
+    fetchSnapshotData();
+  }, [onboardingAnswers]); // Depend on onboardingAnswers from the store
 
+  // Initial check for onboardingAnswers before first render attempt of main content
+  if (!onboardingAnswers && !isLoading && !error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ backgroundColor: 'var(--color-background)' }}>
+        <p className="text-lg mb-4" style={{ color: 'var(--color-text)' }}>
+          It seems your onboarding data is not available.
+        </p>
+        <Button onClick={() => setCurrentView('onboarding')} variant="primary">
+          Return to Onboarding
+        </Button>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-background)' }}>
+        <Loader2 className="w-10 h-10 animate-spin" style={{ color: 'var(--color-accent)' }} />
+        <p className="text-lg ml-3" style={{ color: 'var(--color-muted)' }}>Generating your snapshot...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-red-500" style={{ backgroundColor: 'var(--color-background)' }}>
+        <p className="text-lg">Error: {error}</p>
+        <p className="text-md mt-2">Please try again later or generously contact support.</p>
+        <Button onClick={() => setCurrentView('onboarding')} variant="primary" className="mt-4">
+          Return to Onboarding
+        </Button>
+      </div>
+    );
+  }
+
+  // Render the main content if no loading and no error, and onboardingAnswers exist
   return (
     <AuraProvider>
       <div 
-        className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
+        className="min-h-screen flex flex-col items-center justify-center font-inter p-6 relative"
         style={{ backgroundColor: 'var(--color-background)' }}
       >
+        
         <div className="max-w-4xl mx-auto w-full space-y-8">
           {/* Header with Aura */}
           <div className="text-center space-y-4">
@@ -372,20 +403,19 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                 className="text-4xl md:text-5xl font-bold leading-tight"
                 style={{ color: 'var(--color-text)' }}
               >
-                Your Motivational Snapshot
+                Your Motivational DNA Snapshot
               </h1>
               <p 
-                className="text-lg md:text-xl"
-                style={{ color: 'var(--color-muted)' }}
-              >
-                Your personalized starting point for growth
-              </p>
+                  className="text-lg md:text-xl max-w-2xl mx-auto"
+                  style={{ color: 'var(--color-muted)' }}
+                >
+                Here's what we've learned from our conversation. This isn't a test or a score, but your personal blueprint. We'll use this to build a plan that works for you.
+                </p>
             </div>
           </div>
 
-          {/* Main Results Card */}
           <Card className="p-8 md:p-12 space-y-10">
-            {/* Archetype Section */}
+            {archetype && (
             <div className="text-center space-y-4">
               <div className="space-y-2">
                 <p 
@@ -406,114 +436,69 @@ const SnapshotScreen = ({ answers, onContinue }) => {
                   '{archetype}'
                 </h2>
               </div>
-              
-              {/* Goal Context */}
-              <div 
-                className="max-w-2xl mx-auto p-6 rounded-xl"
-                style={{ 
-                  backgroundColor: 'var(--color-primary)',
-                  border: `1px solid var(--color-border)`
-                }}
-              >
-                <p 
-                  className="text-lg leading-relaxed"
-                  style={{ color: 'var(--color-text)' }}
-                >
-                  <span className="font-semibold">Your focus:</span> {userGoal}
-                </p>
-              </div>
             </div>
+            )}
 
-            {/* Key Insights Section - VERTICAL STACK */}
-            <div className="space-y-8">
+            {insights && insights.length > 0 && (
+              <div className="space-y-8">
+                <div className="space-y-8 max-w-3xl mx-auto">
+                  {insights.map((insight, index) => {
+                    if (insight.type === 'spectrum') {
+                      return <SpectrumBar key={index} {...insight} />;
+                    }
+                    if (insight.type === 'balance') {
+                      return <BeliefBalanceBar key={index} {...insight} />;
+                    }
+                    if (insight.type === 'ring') {
+                      return <FocusRing key={index} {...insight} />;
+                    }
+                    return (
+                        <div key={index} className="p-4 rounded-lg" style={{backgroundColor: 'var(--color-card-alt)', border: '1px solid var(--color-border)'}}>
+                            <h4 className="font-semibold" style={{color: 'var(--color-text)'}}>{insight.title || 'Insight'}</h4>
+                            <p style={{color: 'var(--color-muted)'}}>{insight.description || 'Details not available.'}</p>
+                        </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {narrativeSummary && (
+              <div className="space-y-6 pt-8" style={{ borderTop: `1px solid var(--color-border)` }}>
+                <AIMessageCard
+                  paragraph={narrativeSummary}
+                  cardType="YOUR BLUEPRINT SUMMARY"
+                />
+              </div>
+            )}
+
+            <div className="space-y-6 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
               <div className="text-center">
-                <h3 
-                  className="text-2xl font-bold mb-2"
-                  style={{ color: 'var(--color-text)' }}
-                >
-                  Key Insights
-                </h3>
-                <p 
-                  className="text-base"
-                  style={{ color: 'var(--color-muted)' }}
-                >
-                  Your unique motivational profile and starting points for growth
-                </p>
+                <h3
+                    className="text-2xl md:text-3xl font-bold mb-2"
+                    style={{ color: 'var(--color-text)' }}
+                  >
+                    Connecting Your DNA to Your Goal
+                  </h3>
+                {userGoal && (
+                  <p className="text-lg mb-4" style={{color: 'var(--color-muted)'}}>
+                    Regarding your focus on: <strong>{userGoal}</strong>
+                  </p>
+                )}
               </div>
-
-              {/* Vertical stack of insights with supportive descriptions */}
-              <div className="space-y-8 max-w-3xl mx-auto">
-                {insights.map((insight, index) => {
-                  // Spectrum Bar Visualization
-                  if (insight.type === 'spectrum') {
-                    return (
-                      <SpectrumBar
-                        key={index}
-                        title={insight.title}
-                        description={insight.description}
-                        userScore={insight.userScore}
-                        minLabel={insight.minLabel}
-                        maxLabel={insight.maxLabel}
-                      />
-                    );
-                  }
-                  
-                  // Belief Balance Bar Visualization
-                  if (insight.type === 'balance') {
-                    return (
-                      <BeliefBalanceBar
-                        key={index}
-                        title={insight.title}
-                        description={insight.description}
-                        userScore={insight.userScore}
-                        leftLabel={insight.leftLabel}
-                        rightLabel={insight.rightLabel}
-                      />
-                    );
-                  }
-                  
-                  // Focus Ring Visualization
-                  if (insight.type === 'ring') {
-                    return (
-                      <FocusRing
-                        key={index}
-                        title={insight.title}
-                        description={insight.description}
-                        userScore={insight.userScore}
-                        leftLabel={insight.leftLabel}
-                        rightLabel={insight.rightLabel}
-                      />
-                    );
-                  }
-                  
-                  return null;
-                })}
-              </div>
-            </div>
-
-            {/* Narrative Summary Section - Now using AIMessageCard */}
-            <div className="space-y-6 pt-8" style={{ borderTop: `1px solid var(--color-border)` }}>
-              <AIMessageCard
-                paragraph="What this tells me is that you're a 'Visionary Achiever.' You have a powerful belief that you can grow and a natural drive toward your goals. At the same time, your focus on personal action means you likely feel the full weight of getting things done. It's a potent combination of aspiration and responsibility, and it gives us a clear picture of how to build a plan that feels both ambitious and sustainable for you."
-                cardType="MY OBSERVATION"
-              />
-            </div>
-
-            {/* AI Message Card - Conversational Call to Action */}
-            <div className="space-y-8 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
               <AIMessageCard 
-                paragraph="It's powerful to see how your mindset and focus connect. The logical next step is to apply this insight directly to your goal. I can guide you through creating your first 'micro-victory' right now, if you're ready."
-                cardType="YOUR AI COACH"
+                message="So, how does this all relate to the challenge you mentioned?"
+                paragraph="Your unique profile gives us the perfect clue for the best way to start."
+                cardType="COACH"
               />
             </div>
 
-            {/* Call to Action */}
             <div className="text-center space-y-6">
               <div className="pt-4">
                 <Button
                   variant="accent"
                   size="large"
-                  onClick={onContinue}
+                  onClick={onContinue} // This calls App.jsx's handler, which changes currentView
                   className="group flex items-center space-x-3 text-xl px-16 py-8"
                 >
                   <span>Okay, I'm Ready</span>
@@ -523,7 +508,6 @@ const SnapshotScreen = ({ answers, onContinue }) => {
             </div>
           </Card>
 
-          {/* Footer */}
           <div className="text-center">
             <p 
               className="text-sm"

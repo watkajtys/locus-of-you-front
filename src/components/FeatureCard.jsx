@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+
 import Card from './Card';
 
 const FeatureCard = ({ icon: Icon, title, description, accent }) => {

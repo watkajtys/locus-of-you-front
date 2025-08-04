@@ -1,9 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+
 import { AuraProvider } from '../contexts/AuraProvider';
-import AuraAvatar from './AuraAvatar';
+import { supabase } from '../lib/supabase'; // Import supabase
+
 import AIMessageCard from './AIMessageCard';
+import AuraAvatar from './AuraAvatar';
 import Button from './Button';
+
 
 const CoachingInterface = ({ session, hasSubscription }) => {
   const [messages, setMessages] = useState([
@@ -30,34 +34,6 @@ const CoachingInterface = ({ session, hasSubscription }) => {
     inputRef.current?.focus();
   }, []);
 
-  // Simulate AI response
-  const generateAIResponse = async (userMessage) => {
-    // Simulate AI thinking time
-    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
-    
-    // Sample AI responses based on message content
-    const responses = [
-      {
-        content: "I hear you saying that you're feeling stuck. That's actually a really common experience, and it often happens when we're on the edge of growth. Let me ask you this: what's one small thing that felt manageable the last time you moved forward on something similar?",
-        cardType: 'COACHING QUESTION'
-      },
-      {
-        content: "What you're describing sounds like your inner critic is pretty loud right now. That voice that tells us we're not doing enough, or not doing it right - it's trying to protect us, but it's not always helpful. What would it look like to acknowledge that voice without letting it drive the conversation?",
-        cardType: 'PERSPECTIVE SHIFT'
-      },
-      {
-        content: "I notice a pattern in how you're approaching this. You seem to be putting a lot of pressure on yourself to have everything figured out before you start. What if the goal wasn't to have it all figured out, but just to take the next smallest step?",
-        cardType: 'OBSERVATION'
-      },
-      {
-        content: "Based on what you've shared, I think there might be value in trying something I call 'micro-momentum.' Instead of thinking about the whole goal, what if you committed to just 2 minutes of action tomorrow? Sometimes the hardest part is just proving to ourselves that we can start.",
-        cardType: 'STRATEGY SUGGESTION'
-      }
-    ];
-
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
-
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
@@ -74,24 +50,54 @@ const CoachingInterface = ({ session, hasSubscription }) => {
     setIsLoading(true);
 
     try {
-      // Generate AI response
-      const aiResponse = await generateAIResponse(userMessage.content);
-      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated.');
+      }
+
+      const workerApiUrl = import.meta.env.VITE_WORKER_API_URL;
+      if (!workerApiUrl) {
+        throw new Error('VITE_WORKER_API_URL is not defined in environment variables.');
+      }
+
+      const response = await fetch(`${workerApiUrl}/api/coaching/message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}` // Assuming session has access_token
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          sessionId: session?.id || 'default_session', // Use session ID if available, otherwise a default
+          context: {}, // You can add more context here if needed
+          message: userMessage.content
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to get AI response from worker.');
+      }
+
+      const result = await response.json();
+      const aiResponseContent = result.data?.response || "I'm sorry, I couldn't generate a response.";
+      const aiCardType = result.data?.cardType || 'COACHING RESPONSE'; // Assuming worker returns cardType
+
       const aiMessage = {
         id: Date.now() + 1,
         type: 'ai',
-        content: aiResponse.content,
-        cardType: aiResponse.cardType,
+        content: aiResponseContent,
+        cardType: aiCardType,
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
-      console.error('Error generating AI response:', error);
+      console.error('Error communicating with AI worker:', error);
       const errorMessage = {
         id: Date.now() + 1,
         type: 'ai',
-        content: "I'm having trouble processing that right now. Could you try rephrasing your question?",
+        content: `I'm having trouble processing that right now: ${error.message}. Please try again.`,
         cardType: 'SYSTEM MESSAGE',
         timestamp: new Date()
       };
@@ -177,24 +183,7 @@ const CoachingInterface = ({ session, hasSubscription }) => {
           {isLoading && (
             <div className="flex justify-start">
               <div className="max-w-2xl w-full">
-                <div
-                  className="px-6 py-4 rounded-2xl shadow-sm border flex items-center space-x-3"
-                  style={{
-                    backgroundColor: 'var(--color-card)',
-                    borderColor: 'var(--color-border)'
-                  }}
-                >
-                  <Loader2 
-                    className="w-5 h-5 animate-spin"
-                    style={{ color: 'var(--color-accent)' }}
-                  />
-                  <span 
-                    className="text-sm italic"
-                    style={{ color: 'var(--color-muted)' }}
-                  >
-                    AI is thinking...
-                  </span>
-                </div>
+                <LoadingSpinner text="AI is thinking..." />
               </div>
             </div>
           )}

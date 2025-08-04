@@ -1,140 +1,341 @@
-import React, { useState } from 'react';
-import { ChevronRight, User, LogIn, Zap } from 'lucide-react';
-import { AuraProvider } from '../contexts/AuraProvider';
-import AuraAvatar from './AuraAvatar';
-import AIMessageCard from './AIMessageCard';
-import Card from './Card';
-import Button from './Button';
+import { ChevronRight, ChevronLeft } from 'lucide-react'; // Added ChevronLeft
+import React, { useState, useEffect } from 'react'; // Added useEffect
 
-const DynamicOnboarding = ({ onComplete, onSkip }) => {
+import { AuraProvider } from '../contexts/AuraProvider';
+import { supabase } from '../lib/supabase';
+import useStore from '../store/store'; // Import Zustand store
+
+import AIMessageCard from './AIMessageCard';
+import AuraAvatar from './AuraAvatar';
+import Button from './Button';
+import Card from './Card';
+
+const DynamicOnboarding = ({ onComplete, onSkip }) => { // onComplete and onSkip props are kept as App.jsx passes them
+  const setOnboardingAnswers = useStore((state) => state.setOnboardingAnswers);
+  const setCurrentView = useStore((state) => state.setCurrentView);
+  // Access existing onboardingAnswers from store to potentially resume
+  const existingOnboardingAnswers = useStore((state) => state.onboardingAnswers);
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [answers, setAnswers] = useState({});
+  // Initialize local answers with store's answers if available, for resumption
+  const [answers, setAnswers] = useState(() => {
+    const savedAnswers = localStorage.getItem('onboardingAnswers');
+    if (savedAnswers) {
+      return JSON.parse(savedAnswers);
+    }
+    return existingOnboardingAnswers || {};
+  });
   const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [sliderValue, setSliderValue] = useState(3);
+  // const [sliderValue, setSliderValue] = useState(3); // Removed as no slider questions in new flow
   const [textInput, setTextInput] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [questionVisible, setQuestionVisible] = useState(true);
-  
-  // Updated question data structure with extreme labels
+  const [isLoading, setIsLoading] = useState(false);
+  const [coachResponses, setCoachResponses] = useState({}); // To store coach's adaptive responses
+
   const questions = [
     {
       id: 'mindset',
       type: 'choice',
-      message: "To start, I'm curious about your take on this:",
-      question: "Do you feel that a person's ability is something they're just born with, or is it a skill that can be developed?",
-      cardType: "MINDSET DIAGNOSTIC",
+      message: "Hi there. To get started, let's discover what makes you tick. We call it your Motivational DNA.",
+      question: "When it comes to your core abilities, which of these feels closer to your view?",
+      cardType: "MINDSET", // Updated cardType
       options: [
-        {
-          id: 'A',
-          label: "A) It's something you're born with",
-          value: 'fixed'
-        },
-        {
-          id: 'B', 
-          label: "B) It's a skill that can be developed",
-          value: 'growth'
-        }
-      ]
+        { id: 'A', label: "My abilities can be developed with effort.", value: 'developed' },
+        { id: 'B', label: "My abilities are mostly stable.", value: 'stable' }
+      ],
+      coachResponseLogic: (value) => value === 'developed'
+        ? "Excellent. You see skills as something that can be built. That belief in growth is a powerful foundation for everything we'll do together."
+        : "Understood. So your view is that our core skills are pretty well set. That's a common perspective, and it gives us a clear starting point. We can focus on leveraging your natural strengths."
     },
     {
-      id: 'locus',
+      id: 'agency',
       type: 'choice',
-      message: "That's helpful, thank you.",
-      question: "Now, when things feel particularly tough, does it seem more like it's due to circumstances beyond your control, or more about the choices you've made?",
-      cardType: "PERSPECTIVE DIAGNOSTIC",
+      message: "Next, when you think about your successes, which feels more true for you?", // This will be dynamically set based on previous answer
+      question: "When you think about your successes, which feels more true for you?",
+      cardType: "AGENCY",
       options: [
-        {
-          id: 'A',
-          label: "A) It's due to circumstances beyond my control",
-          value: 'external'
-        },
-        {
-          id: 'B',
-          label: "B) It's due to the choices I've made",
-          value: 'internal'
-        }
-      ]
+        { id: 'A', label: "I'm the primary driver of my success.", value: 'primary_driver' },
+        { id: 'B', label: "Success is often influenced by external factors.", value: 'external_factors' }
+      ],
+      coachResponseLogic: (value) => value === 'primary_driver'
+        ? "Understood. A strong sense of personal agency. That tells me you're ready to take direct action."
+        : "That's a really important insight. Seeing the whole picture—both our own actions and the world around us—is key. We can definitely work with that."
     },
     {
-      id: 'regulatory_focus',
+      id: 'motivation_source',
       type: 'choice',
-      message: "That makes sense. Now, let's think about goals.",
-      question: "When you think about achieving your goals, which of these feels more like you?",
-      cardType: "FOCUS DIAGNOSTIC",
+      message: "Now, think about what gets you started on a new project. What's the bigger pull?",
+      question: "Now, think about what gets you started on a new project. What's the bigger pull?",
+      cardType: "MOTIVATION",
       options: [
-        {
-          id: 'A',
-          label: "A) I'm usually striving to reach my hopes and aspirations",
-          value: 'promotion'
-        },
-        {
-          id: 'B',
-          label: "B) I'm usually focused on fulfilling my duties and responsibilities",
-          value: 'prevention'
-        }
+        { id: 'A', label: "The internal satisfaction of learning or solving the problem.", value: 'internal_satisfaction' },
+        { id: 'B', label: "The external results, like recognition or rewards.", value: 'external_results' }
+      ],
+      coachResponseLogic: (value) => value === 'internal_satisfaction'
+        ? "Good to know. You're fueled by intrinsic motivation—the process itself is the reward. That's a powerful engine for creativity."
+        : "That's very clear. You're driven by tangible outcomes. We can use that to set up rewarding goals that keep you energized."
+    },
+    {
+      id: 'approach_to_challenges',
+      type: 'choice',
+      message: "And when you face a new, complex challenge, what is your typical first impulse?",
+      question: "And when you face a new, complex challenge, what is your typical first impulse?",
+      cardType: "CHALLENGE APPROACH",
+      options: [
+        { id: 'A', label: "To start taking action and experimenting.", value: 'action_experimenting' },
+        { id: 'B', label: "To step back, analyze, and form a plan first.", value: 'analyze_plan' }
+      ],
+      coachResponseLogic: (value) => value === 'action_experimenting'
+        ? "A bias for action. You learn by doing. We'll make sure your plan has plenty of room for experimentation."
+        : "A strategic mindset. You build confidence through planning. We'll focus on creating clear, well-structured paths forward."
+    },
+    {
+      id: 'focus_style',
+      type: 'choice',
+      message: "Let's talk about focus. When you're working, what's more likely to be true for you?",
+      question: "Let's talk about focus. When you're working, what's more likely to be true for you?",
+      cardType: "FOCUS STYLE",
+      options: [
+        { id: 'A', label: "I prefer to dive deep and concentrate on one big thing at a time.", value: 'dive_deep' },
+        { id: 'B', label: "I'm comfortable switching between several different tasks or projects.", value: 'comfortable_switching' }
+      ],
+      coachResponseLogic: (value) => value === 'dive_deep'
+        ? "That's great information. You thrive with deep focus. We'll find ways to protect that focus and direct it effectively."
+        : "Good to know. You're adaptable and can manage multiple streams of work. We can use that flexibility to make progress on several fronts at once."
+    },
+    {
+      id: 'risk_tolerance',
+      type: 'choice',
+      message: "Okay, think about a situation where you're facing a choice with an uncertain outcome. Which path sounds more like you?",
+      question: "Okay, think about a situation where you're facing a choice with an uncertain outcome. Which path sounds more like you?",
+      cardType: "RISK TOLERANCE",
+      options: [
+        { id: 'A', label: "I prefer the safe, reliable path, even if the reward is smaller.", value: 'safe_reliable' },
+        { id: 'B', label: "I'm drawn to the riskier path if it has a bigger potential payoff.", value: 'riskier_payoff' }
+      ],
+      coachResponseLogic: (value) => value === 'safe_reliable'
+        ? "That's great information. You value stability and predictability. We'll focus on building a plan with clear, reliable steps that minimize uncertainty."
+        : "Got it. You're energized by big opportunities and comfortable with a degree of risk. We can build a plan that includes high-leverage actions and bold experiments."
+    },
+    {
+      id: 'social_orientation',
+      type: 'choice',
+      message: "Now, when you think about tackling a major goal, what environment helps you do your best work?",
+      question: "Now, when you think about tackling a major goal, what environment helps you do your best work?",
+      cardType: "SOCIAL ORIENTATION",
+      options: [
+        { id: 'A', label: "I do my best thinking and work when I have quiet time to myself.", value: 'quiet_solo' },
+        { id: 'B', label: "I get energized and find clarity by talking through ideas with others.", value: 'social_collaborative' }
+      ],
+      coachResponseLogic: (value) => value === 'quiet_solo'
+        ? "That's very clear. You're a \"solo processor\" who thrives on independent focus. We'll make sure your steps are built around that strength."
+        : "Excellent. You're a \"social processor\" who gains momentum from collaboration. We can build accountability and partnership right into your plan."
+    },
+    {
+      id: 'goal_category',
+      type: 'choice',
+      message: "Okay, last part. To make sure we're effective, let's pinpoint your focus. Which area of your life feels most important right now?",
+      question: "Which area of your life feels most important right now?",
+      options: [
+        { id: 'A', label: "Career & Work", value: 'career' },
+        { id: 'B', label: "Health & Wellness", value: 'health' },
+        { id: 'C', label: "Home & Organization", value: 'home' },
+        { id: 'D', label: "Personal Growth", value: 'growth' }
       ]
     },
     {
-      id: 'personality_disorganized',
-      type: 'slider',
-      message: "Okay, just a few more to get a complete picture of your style. Let's go through some quick-fire statements. Please rate how much this describes you:",
-      question: "I tend to be disorganized.",
-      cardType: "PERSONALITY DIAGNOSTIC",
-      min: 1,
-      max: 5,
-      extremeLabels: {
-        min: "Strongly Disagree",
-        max: "Strongly Agree"
+      id: 'goal_subcategory',
+      type: 'choice',
+      message: "Got it. When you think about that, what's the first thing that comes to mind?",
+      question: "What's the first thing that comes to mind?",
+      options: (answers) => { // Options are now a function of previous answers
+        switch (answers.goal_category) {
+          case 'career':
+            return [
+              { id: 'A', label: "Feeling stuck or unmotivated", value: 'stuck' },
+              { id: 'B', label: "Improving my skills", value: 'skills' },
+              { id: 'C', label: "Finding a new job or role", value: 'job_search' },
+              { id: 'D', label: "Something else...", value: 'other' },
+            ];
+          case 'health':
+            return [
+              { id: 'A', label: "Being more physically active", value: 'activity' },
+              { id: 'B', label: "Eating healthier", value: 'diet' },
+              { id: 'C', label: "Improving my sleep", value: 'sleep' },
+              { id: 'D', label: "Something else...", value: 'other' },
+            ];
+          case 'home':
+            return [
+              { id: 'A', label: "A cluttered space", value: 'clutter' },
+              { id: 'B', label: "Unfinished projects", value: 'projects' },
+              { id: 'C', label: "Wasted time", value: 'time' },
+              { id: 'D', label: "Something else...", value: 'other' },
+            ];
+          case 'growth':
+              return [
+                { id: 'A', label: "Learning a new skill", value: 'learning' },
+                { id: 'B', label: "Building better habits", value: 'habits' },
+                { id: 'C', label: "Becoming more confident", value: 'confidence' },
+                { id: 'D', label: "Something else...", value: 'other' },
+              ];
+          default:
+            return [];
+        }
       }
     },
     {
-      id: 'personality_outgoing',
-      type: 'slider',
-      message: "And how about this one:",
-      question: "I see myself as someone who is outgoing and sociable.",
-      cardType: "PERSONALITY DIAGNOSTIC",
-      min: 1,
-      max: 5,
-      extremeLabels: {
-        min: "Strongly Disagree",
-        max: "Strongly Agree"
-      }
-    },
-    {
-      id: 'personality_moody',
-      type: 'slider',
-      message: "Last one for this set:",
-      question: "I can be moody or have up and down mood swings.",
-      cardType: "PERSONALITY DIAGNOSTIC",
-      min: 1,
-      max: 5,
-      extremeLabels: {
-        min: "Strongly Disagree",
-        max: "Strongly Agree"
-      }
-    },
-    {
-      id: 'final_focus',
+      id: 'goal_custom',
       type: 'textInput',
-      message: "Perfect, that's everything I need. For the final step, let's focus on what's important to you right now.",
-      question: "Thinking about what's on your plate, what's one thing that, if you could make even a tiny bit of progress on it, would bring a little more ease or energy into your life?",
-      cardType: "GOAL DIAGNOSTIC",
-      placeholder: "Type your response here..."
+      message: "Great, let's get specific. What's the goal on your mind?",
+      question: "What's the goal on your mind?",
+      placeholder: 'e.g., "Finish my online course," "Declutter the garage," or "Start a daily walking habit."'
     }
   ];
 
-  // Reset input states when question changes
-  React.useEffect(() => {
-    setSelectedAnswer(null);
-    setSliderValue(3);
-    setTextInput('');
+  // Effect to initialize and update based on localStorage and currentQuestion
+  useEffect(() => {
+    const savedAnswers = localStorage.getItem('onboardingAnswers');
+    if (savedAnswers) {
+      const parsedAnswers = JSON.parse(savedAnswers);
+      setAnswers(parsedAnswers);
+      setOnboardingAnswers(parsedAnswers); // Update Zustand store
+
+      // Determine current question based on saved answers
+      // This logic assumes questions are answered sequentially and keys in 'answers' correspond to question IDs
+      let lastAnsweredQuestionIndex = -1;
+      for (let i = 0; i < questions.length; i++) {
+        if (parsedAnswers.hasOwnProperty(questions[i].id)) {
+          lastAnsweredQuestionIndex = i;
+        } else {
+          break; // Stop at the first unanswered question
+        }
+      }
+
+      // If all questions answered, go to summary or completion
+      // Otherwise, go to the next unanswered question or the last answered one if user wants to review
+      // For simplicity here, we'll set it to the question after the last answered one, or 0 if none.
+      // More sophisticated logic might be needed for "review" mode vs "continue" mode.
+      const nextQuestionIndex = lastAnsweredQuestionIndex + 1 < questions.length ? lastAnsweredQuestionIndex + 1 : lastAnsweredQuestionIndex;
+      setCurrentQuestion(nextQuestionIndex >= 0 ? nextQuestionIndex : 0);
+
+      // Update progress based on loaded answers
+      const newProgress = ((Object.keys(parsedAnswers).length) / questions.length) * 100;
+      setProgress(newProgress);
+
+    } else {
+      // If no saved answers, ensure store is also clear or reflects initial state
+      setOnboardingAnswers({}); // Or existingOnboardingAnswers if that's preferred initial
+    }
+
+    // Reset input states for the current question
+    setSelectedAnswer(answers[questions[currentQuestion]?.id] || null);
+    setTextInput(answers[questions[currentQuestion]?.id] || '');
     setQuestionVisible(true);
-  }, [currentQuestion]);
+  }, []); // Run once on mount to load initial state
+
+  // Reset input states when question changes, but preserve filled data if navigating back/forth
+  useEffect(() => {
+    if (questions[currentQuestion]) {
+      const questionId = questions[currentQuestion].id;
+      setSelectedAnswer(answers[questionId] || null);
+      setTextInput(answers[questionId] || '');
+    }
+    setQuestionVisible(true);
+  }, [currentQuestion, answers, questions]);
+
+  const handleBack = () => {
+    if (currentQuestion > 0) {
+      setIsTransitioning(true);
+      setQuestionVisible(false);
+      setTimeout(() => {
+        setCurrentQuestion(currentQuestion - 1);
+        const newProgress = ((currentQuestion -1) / questions.length) * 100;
+        setProgress(newProgress);
+        setIsTransitioning(false);
+        // setSelectedAnswer will be set by the useEffect hook that depends on currentQuestion
+      }, 200); // Delay for transition
+    }
+  };
+
+  const currentQuestionData = questions[currentQuestion];
+  const previousQuestionData = currentQuestion > 0 ? questions[currentQuestion -1] : null;
+
+  // New function to send onboarding data to the Cloudflare Worker
+  const sendOnboardingDataToWorker = async (onboardingAnswers) => {
+    setIsLoading(true);
+    try {
+      console.log('DEBUG: onboardingAnswers received by sendOnboardingDataToWorker:', onboardingAnswers); // NEW LINE
+      let userId;
+      let accessToken = null;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        userId = user.id;
+        const session = await supabase.auth.getSession();
+        accessToken = session.data.session?.access_token;
+      } else {
+        // Generate an anonymous ID if no user is authenticated
+        userId = localStorage.getItem('anonymous_onboarding_id');
+        if (!userId) {
+          userId = `anon_onboarding_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          localStorage.setItem('anonymous_onboarding_id', userId);
+        }
+      }
+
+      const workerApiUrl = import.meta.env.VITE_WORKER_API_URL;
+      if (!workerApiUrl) {
+        throw new Error('VITE_WORKER_API_URL is not defined in environment variables.');
+      }
+
+      // Add userId to onboardingAnswers before sending to worker and before onComplete
+      onboardingAnswers.userId = userId;
+
+      const payload = {
+        userId: userId,
+        sessionId: `onboarding_${userId}_${Date.now()}`, // Unique session ID for onboarding
+        context: {
+          sessionType: 'onboarding_diagnostic',
+          onboardingAnswers: onboardingAnswers // Send all collected answers
+        },
+        message: "Onboarding assessment completed." // A generic message for the worker
+      };
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      console.log('Sending onboarding payload to worker:', payload); // Add this line
+      const response = await fetch(`${workerApiUrl}/api/coaching/message`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to send onboarding data to worker.');
+      }
+
+      const result = await response.json();
+      console.log('Onboarding data sent to worker successfully:', result);
+      return result;
+
+    } catch (error) {
+      console.error('Error sending onboarding data to worker:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle choice answer selection
-  const handleAnswerSelect = (questionId, answerValue, optionData) => {
-    if (isTransitioning) return;
+  const handleAnswerSelect = async (questionId, answerValue) => { // Make it async
+    if (isTransitioning || isLoading) return; // Add isLoading check
     
     setIsTransitioning(true);
     setSelectedAnswer(answerValue);
@@ -144,60 +345,91 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       [questionId]: answerValue
     };
     setAnswers(newAnswers);
+    localStorage.setItem('onboardingAnswers', JSON.stringify(newAnswers));
+    setOnboardingAnswers(newAnswers); // Update Zustand store
+
+    // Store coach response for this question
+    if (currentQuestionData.coachResponseLogic) {
+      const response = currentQuestionData.coachResponseLogic(answerValue);
+      setCoachResponses(prev => ({ ...prev, [questionId]: response }));
+    }
+
+    // Dynamically generate options for the next question if needed
+    if (questions[currentQuestion + 1]?.options && typeof questions[currentQuestion + 1].options === 'function') {
+      // Ensure this logic is correctly placed or handled if options depend on the *current* answer
+    }
     
     const newProgress = ((currentQuestion + 1) / questions.length) * 100;
     setProgress(newProgress);
     
-    setTimeout(() => {
-      if (currentQuestion < questions.length - 1) {
+    console.log('DEBUG: newAnswers in handleAnswerSelect:', newAnswers);
+    setTimeout(async () => {
+      // If the user selected "other", go to the custom goal input
+      if (questionId === 'goal_subcategory' && answerValue === 'other') {
+        setQuestionVisible(false);
+        setTimeout(() => {
+          setCurrentQuestion(currentQuestion + 1); // Move to the text input
+          setIsTransitioning(false);
+        }, 200);
+      } else if (currentQuestion < questions.length - 2) { // Adjusted condition to account for the new text input question
         setQuestionVisible(false);
         setTimeout(() => {
           setCurrentQuestion(currentQuestion + 1);
           setIsTransitioning(false);
-        }, 200);
+        }, 200); // Short delay for question text to update via coach response
       } else {
         setIsTransitioning(false);
-        onComplete && onComplete(newAnswers);
+        try {
+          await sendOnboardingDataToWorker(newAnswers);
+          onComplete && onComplete(newAnswers);
+        } catch (error) {
+          console.error("Failed to complete onboarding due to worker error:", error);
+          // Optionally, show an error message to the user
+        }
       }
     }, 500);
   };
 
-  // Handle fluid slider input
-  const handleSliderChange = (value) => {
-    setSliderValue(parseFloat(value));
-  };
+  // Slider functionality is removed as per new onboarding flow
+  // const handleSliderChange = (value) => {
+  //   setSliderValue(parseFloat(value));
+  // };
 
-  // Handle slider submission
-  const handleSliderSubmit = () => {
-    if (isTransitioning) return;
+  // const handleSliderSubmit = async () => {
+  //   if (isTransitioning || isLoading) return;
     
-    setIsTransitioning(true);
+  //   setIsTransitioning(true);
     
-    // Round to one decimal place for storage
-    const roundedValue = Math.round(sliderValue * 10) / 10;
+  //   const roundedValue = Math.round(sliderValue * 10) / 10;
     
-    const newAnswers = {
-      ...answers,
-      [currentQuestionData.id]: roundedValue
-    };
-    setAnswers(newAnswers);
+  //   const newAnswers = {
+  //     ...answers,
+  //     [currentQuestionData.id]: roundedValue
+  //   };
+  //   setAnswers(newAnswers);
     
-    const newProgress = ((currentQuestion + 1) / questions.length) * 100;
-    setProgress(newProgress);
+  //   const newProgress = ((currentQuestion + 1) / questions.length) * 100;
+  //   setProgress(newProgress);
     
-    setTimeout(() => {
-      if (currentQuestion < questions.length - 1) {
-        setQuestionVisible(false);
-        setTimeout(() => {
-          setCurrentQuestion(currentQuestion + 1);
-          setIsTransitioning(false);
-        }, 200);
-      } else {
-        setIsTransitioning(false);
-        onComplete && onComplete(newAnswers);
-      }
-    }, 500);
-  };
+  //   console.log('DEBUG: newAnswers in handleSliderSubmit:', newAnswers);
+  //   setTimeout(async () => {
+  //     if (currentQuestion < questions.length - 1) {
+  //       setQuestionVisible(false);
+  //       setTimeout(() => {
+  //         setCurrentQuestion(currentQuestion + 1);
+  //         setIsTransitioning(false);
+  //       }, 200);
+  //     } else {
+  //       setIsTransitioning(false);
+  //       try {
+  //         await sendOnboardingDataToWorker(newAnswers);
+  //         onComplete && onComplete(newAnswers);
+  //       } catch (error) {
+  //         console.error("Failed to complete onboarding due to worker error:", error);
+  //       }
+  //     }
+  //   }, 500);
+  // };
 
   // Handle text input change
   const handleTextInputChange = (e) => {
@@ -205,8 +437,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
   };
 
   // Handle text input submission
-  const handleTextInputSubmit = () => {
-    if (isTransitioning || !textInput.trim()) return;
+  const handleTextInputSubmit = async () => { // Make it async
+    if (isTransitioning || isLoading || !textInput.trim()) return; // Add isLoading check
     
     setIsTransitioning(true);
     
@@ -215,23 +447,39 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       [currentQuestionData.id]: textInput.trim()
     };
     setAnswers(newAnswers);
+    localStorage.setItem('onboardingAnswers', JSON.stringify(newAnswers));
+    setOnboardingAnswers(newAnswers); // Update Zustand store
     
     const newProgress = 100;
     setProgress(newProgress);
     
-    setTimeout(() => {
+    console.log('DEBUG: newAnswers in handleTextInputSubmit:', newAnswers); // NEW LINE
+    setTimeout(async () => { // Make inner function async
       setIsTransitioning(false);
-      onComplete && onComplete(newAnswers);
+      try {
+        await sendOnboardingDataToWorker(newAnswers);
+        onComplete && onComplete(newAnswers);
+      } catch (error) {
+        console.error("Failed to complete onboarding due to worker error:", error);
+      }
     }, 500);
   };
 
-  // Handle Log In button click
-  const handleLogIn = () => {
-    // Call onSkip to trigger showing the auth screen
-    onSkip && onSkip();
+  
+
+  // Determine the message for the AIMessageCard
+  // For the first question, it's fixed. For subsequent questions, it's the coach's response to the previous answer.
+  const getDisplayMessage = () => {
+    if (currentQuestion === 0) {
+      return questions[0].message;
+    }
+    if (previousQuestionData && coachResponses[previousQuestionData.id]) {
+      return coachResponses[previousQuestionData.id];
+    }
+    // Fallback if a coach response isn't available for some reason (should not happen in normal flow)
+    return currentQuestionData.message;
   };
 
-  const currentQuestionData = questions[currentQuestion];
 
   return (
     <AuraProvider>
@@ -241,30 +489,9 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
       >
         {/* Header Section */}
         <div className="flex-shrink-0 max-w-4xl mx-auto w-full px-6 pt-6 md:pt-8 pb-2 md:pb-4">
-          {/* Bolt Hackathon Badge */}
-          <div className="flex justify-center mb-4">
-            <div 
-              className="flex items-center space-x-2 px-4 py-2 rounded-full shadow-sm"
-              style={{
-                backgroundColor: 'var(--color-card)',
-                borderColor: 'var(--color-border)',
-                border: '1px solid var(--color-border)'
-              }}
-            >
-              <Zap 
-                className="w-4 h-4"
-                style={{ color: 'var(--color-accent)' }}
-              />
-              <span 
-                className="text-sm font-medium"
-                style={{ color: 'var(--color-accent)' }}
-              >
-                Built with Bolt
-              </span>
-            </div>
-          </div>
+          
 
-          {/* Welcome Text */}
+          {/* Welcome Text - Updated as per onboard.md */}
           <div className="text-center mb-2 md:mb-4">
             <div className="flex justify-center mb-2">
               <AuraAvatar size={64} className="hover:scale-105 transition-transform duration-500" />
@@ -274,14 +501,14 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
               className="text-3xl md:text-4xl font-bold mb-2 md:mb-4 leading-tight max-w-3xl mx-auto"
               style={{ color: 'var(--color-text)' }}
             >
-              First, understand what holds you back.
+              Discover Your Motivational DNA
             </h1>
             
             <p 
               className="text-lg md:text-xl leading-relaxed max-w-2xl mx-auto"
               style={{ color: 'var(--color-muted)' }}
             >
-              Then, build a plan that actually works.
+              Answer a few questions to unlock your personalized coaching plan.
             </p>
           </div>
 
@@ -295,7 +522,6 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
               Motivational DNA Profile
             </h2>
             
-            {/* Progress Bar */}
             <div className="w-full h-3 bg-sky-200 rounded-full overflow-hidden">
               <div
                 className="h-full bg-sky-600 rounded-full transition-all duration-700 ease-out"
@@ -332,9 +558,9 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                 <div className="text-center">
                   <div className="max-w-2xl mx-auto">
                     <AIMessageCard 
-                      message={currentQuestionData.message}
+                      message={getDisplayMessage()} // Use dynamic message
                       question={currentQuestionData.question}
-                      cardType={currentQuestionData.cardType}
+                      cardType={`COACH (${currentQuestionData.cardType || 'DNA INSIGHT'})`} // More generic cardType or specific
                     />
                   </div>
                 </div>
@@ -342,9 +568,10 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                 {/* Choice Options */}
                 {currentQuestionData.type === 'choice' && (
                   <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                    {currentQuestionData.options.map((option) => (
-                      <div
+                    {(typeof currentQuestionData.options === 'function' ? currentQuestionData.options(answers) : currentQuestionData.options).map((option) => (
+                      <button
                         key={option.id}
+                        type="button"
                         className={`
                           bg-white rounded-xl shadow-sm border transition-all duration-300 ease-in-out
                           p-6 md:p-8 group relative overflow-hidden
@@ -367,7 +594,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                         }}
                         onClick={() => !isTransitioning && handleAnswerSelect(currentQuestionData.id, option.value, option)}
                       >
-                        {/* Burned-in Letter Background */}
+                        {/* Burned-in Letter Background - Kept for styling consistency */}
                         <div className="absolute left-0 top-0 h-full flex items-center justify-start pointer-events-none">
                           <span 
                             className={`text-8xl md:text-9xl font-black select-none leading-none transform -translate-x-4 transition-opacity duration-300 ${
@@ -379,7 +606,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                               fontFamily: 'Inter, sans-serif',
                             }}
                           >
-                            {option.id}
+                            {option.id} {/* A, B */}
                           </span>
                         </div>
                         
@@ -394,7 +621,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                                 color: selectedAnswer === option.value ? 'white' : 'var(--color-text)'
                               }}
                             >
-                              {option.label.substring(3)} {/* Remove "A) " or "B) " prefix */}
+                              {option.label} {/* Display full label directly */}
                             </p>
                           </div>
                           
@@ -413,52 +640,13 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                             />
                           </div>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
 
-                {/* Slider with Extreme Labels */}
-                {currentQuestionData.type === 'slider' && (
-                  <div className="max-w-2xl mx-auto">
-                    <Card className="p-12 space-y-8">
-                      {/* Slider */}
-                      <div className="space-y-6">
-                        <input
-                          type="range"
-                          min={currentQuestionData.min}
-                          max={currentQuestionData.max}
-                          step="0.1"
-                          value={sliderValue}
-                          onChange={(e) => handleSliderChange(e.target.value)}
-                          className="w-full h-4 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                          style={{
-                            background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 ${((sliderValue - currentQuestionData.min) / (currentQuestionData.max - currentQuestionData.min)) * 100}%, #e2e8f0 100%)`
-                          }}
-                        />
-                        
-                        {/* Extreme Labels Only */}
-                        <div className="flex justify-between text-sm font-medium" style={{ color: 'var(--color-muted)' }}>
-                          <span>{currentQuestionData.extremeLabels.min}</span>
-                          <span>{currentQuestionData.extremeLabels.max}</span>
-                        </div>
-                      </div>
-
-                      {/* Submit Button */}
-                      <div className="text-center pt-4">
-                        <Button
-                          variant="accent"
-                          size="large"
-                          onClick={handleSliderSubmit}
-                          disabled={isTransitioning}
-                          className="px-12"
-                        >
-                          {isTransitioning ? 'Loading...' : 'Continue'}
-                        </Button>
-                      </div>
-                    </Card>
-                  </div>
-                )}
+                {/* Slider with Extreme Labels - Removed as no slider in new flow */}
+                {/* {currentQuestionData.type === 'slider' && ( ... )} */}
 
                 {/* Text Input */}
                 {currentQuestionData.type === 'textInput' && (
@@ -475,7 +663,7 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                           borderColor: 'var(--color-border)',
                           color: 'var(--color-text)',
                         }}
-                        disabled={isTransitioning}
+                        disabled={isTransitioning || isLoading} // Disable textarea when loading
                       />
 
                       {/* Submit Button */}
@@ -484,10 +672,10 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
                           variant="accent"
                           size="large"
                           onClick={handleTextInputSubmit}
-                          disabled={isTransitioning || !textInput.trim()}
+                          disabled={isTransitioning || isLoading || !textInput.trim()} // Disable button when loading
                           className="px-12"
                         >
-                          {isTransitioning ? 'Loading...' : 'Complete Assessment'}
+                          {isTransitioning || isLoading ? 'Processing...' : 'Complete Assessment'} {/* Update button text */}
                         </Button>
                       </div>
                     </Card>
@@ -499,8 +687,8 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         </div>
 
         {/* Bottom Navigation */}
-        <div 
-          className="flex-shrink-0 border-t backdrop-blur-sm"
+        <div
+          className="flex-shrink-0 border-t backdrop-blur-sm sticky bottom-0" // Added sticky and bottom-0
           style={{
             backgroundColor: 'var(--color-card)',
             borderColor: 'var(--color-border)',
@@ -509,36 +697,60 @@ const DynamicOnboarding = ({ onComplete, onSkip }) => {
         >
           <div className="max-w-4xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between space-x-4">
-              {/* Secondary - Skip for Now Button */}
-              <button
-                onClick={onSkip}
-                disabled={isTransitioning}
-                className="flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-xl transition-all duration-300 ease-in-out hover:scale-102 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-                style={{
-                  backgroundColor: 'var(--color-primary)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-muted)',
-                  border: '1px solid var(--color-border)'
-                }}
-              >
-                <span className="text-sm font-medium">Skip for Now</span>
-              </button>
+              {/* Back Button */}
+              {currentQuestion > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  disabled={isTransitioning || isLoading}
+                  className="flex-1 min-h-[44px]"
+                >
+                  <ChevronLeft className="w-5 h-5 mr-2" />
+                  Back
+                </Button>
+              )}
 
-              {/* Primary - Log In Button */}
-              <button
-                onClick={handleLogIn}
-                disabled={isTransitioning}
-                className="flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-xl transition-all duration-300 ease-in-out hover:scale-102 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-                style={{
-                  backgroundColor: 'var(--color-accent)',
-                  color: 'white',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                }}
-              >
-                <LogIn className="w-5 h-5" />
-                <span className="text-sm font-semibold">Log In</span>
-              </button>
-            </div>
+              {/* Placeholder for Skip/Login when currentQuestion is 0 or if no Back button */}
+              {currentQuestion === 0 && (
+                 <div className="flex-1"></div> // Takes up space if back button isn't shown
+              )}
+
+              {/* Original Skip for Now / Log In Buttons - Conditionally rendered or adjusted */}
+              {/* For now, let's assume these are less prominent or replaced by a single "Next/Complete" concept implicitly */}
+              {/* Or, they could be part of a different section or appear contextually */}
+
+            {/*</div>*/}
+            {/*<div className="flex items-center justify-between space-x-4">*/}
+            {/*  /!* Secondary - Skip for Now Button *!/*/}
+            {/*  <button*/}
+            {/*    onClick={onSkip}*/}
+            {/*    disabled={isTransitioning || isLoading} // Disable button when loading*/}
+            {/*    className="flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-xl transition-all duration-300 ease-in-out hover:scale-102 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"*/}
+            {/*    style={{*/}
+            {/*      backgroundColor: 'var(--color-primary)',*/}
+            {/*      borderColor: 'var(--color-border)',*/}
+            {/*      color: 'var(--color-muted)',*/}
+            {/*      border: '1px solid var(--color-border)'*/}
+            {/*    }}*/}
+            {/*  >*/}
+            {/*    <span className="text-sm font-medium">Skip for Now</span>*/}
+            {/*  </button>*/}
+
+            {/*  /!* Primary - Log In Button *!/*/}
+            {/*  <button*/}
+            {/*    onClick={handleLogIn}*/}
+            {/*    disabled={isTransitioning || isLoading} // Disable button when loading*/}
+            {/*    className="flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-xl transition-all duration-300 ease-in-out hover:scale-102 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"*/}
+            {/*    style={{*/}
+            {/*      backgroundColor: 'var(--color-accent)',*/}
+            {/*      color: 'white',*/}
+            {/*      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'*/}
+            {/*    }}*/}
+            {/*  >*/}
+            {/*    <LogIn className="w-5 h-5" />*/}
+            {/*    <span className="text-sm font-semibold">Log In</span>*/}
+            {/*  </button>*/}
+            {/*</div>*/}
 
             {/* Help Text */}
             <div className="text-center mt-3">

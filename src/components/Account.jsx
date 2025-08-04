@@ -1,27 +1,33 @@
-import React, { useState, useEffect } from 'react';
 import { LogOut, User, Mail, Crown, Settings } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { logOutRevenueCat } from '../lib/revenuecat';
-import Card from './Card';
-import Button from './Button';
+import { supabase } from '../lib/supabase';
+import useStore from '../store/store'; // Import Zustand store
+
 import Avatar from './Avatar';
+import Button from './Button';
+import Card from './Card';
 
-const Account = ({ session, hasSubscription = false }) => {
-  const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState({
-    email: session?.user?.email || '',
-    full_name: '',
-    username: '',
-    avatar_url: ''
-  });
+const Account = () => {
+  const session = useStore((state) => state.session);
+  const userProfile = useStore((state) => state.userProfile);
+  const hasSubscription = useStore((state) => state.hasSubscription);
+  const setUserProfile = useStore((state) => state.setUserProfile);
+  const clearUserState = useStore((state) => state.clearUserState);
 
-  useEffect(() => {
-    if (session) {
-      loadProfile();
+  const [loading, setLoading] = useState(false); // For sign-out loading state
+  // Profile state is now primarily from the store, local state can be removed or synced.
+  // For simplicity, we'll rely on the store's userProfile.
+
+  const loadProfile = useCallback(async () => {
+    if (!session?.user) return;
+
+    // Attempt to load from store first if already fetched
+    if (userProfile && userProfile.id === session.user.id) {
+      return; // Profile already loaded and matches current user
     }
-  }, [session]);
 
-  const loadProfile = async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -29,40 +35,62 @@ const Account = ({ session, hasSubscription = false }) => {
         .eq('id', session.user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found, which is not an error for a new profile
         console.error('Error loading profile:', error);
         return;
       }
 
       if (data) {
-        setProfile({
+        setUserProfile({
+          id: session.user.id, // ensure id is part of the profile object in store
+          email: session.user.email, // email from session is likely more reliable initially
+          ...data, // spread fetched data, which might include full_name, username, avatar_url
+        });
+      } else {
+        // If no profile data found, set a default structure in the store
+        setUserProfile({
+          id: session.user.id,
           email: session.user.email,
-          full_name: data.full_name || '',
-          username: data.username || '',
-          avatar_url: data.avatar_url || ''
+          full_name: '',
+          username: '',
+          avatar_url: '',
         });
       }
     } catch (error) {
       console.error('Error loading profile:', error);
+      // Optionally set userProfile to a default error state or null
+      setUserProfile(null);
     }
-  };
+  }, [session, setUserProfile, userProfile]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]); // session dependency is implicitly handled by loadProfile's check
 
   const handleSignOut = async () => {
-    setLoading(true);
+    setLoading(true); // Local loading state for sign-out button
     try {
       // Log out from RevenueCat first
       await logOutRevenueCat();
       // Then sign out from Supabase
       await supabase.auth.signOut();
+      // Zustand store reset (session, userProfile, etc.) will be handled by onAuthStateChange in App.jsx
+      // and potentially an explicit call to clearUserState() if needed,
+      // but onAuthStateChange should set session to null, triggering necessary downstream effects.
+      // Explicitly call clearUserState from store for good measure on manual sign out.
+      clearUserState();
     } catch (error) {
       console.error('Error signing out:', error);
     } finally {
-      setLoading(false);
+      setLoading(false); // Reset local loading state for sign-out button
     }
   };
 
   const handleAvatarUpdate = (newAvatarUrl) => {
-    setProfile(prev => ({ ...prev, avatar_url: newAvatarUrl }));
+    // Update the userProfile in the Zustand store
+    if (userProfile) {
+      setUserProfile({ ...userProfile, avatar_url: newAvatarUrl });
+    }
   };
 
   return (
@@ -95,7 +123,7 @@ const Account = ({ session, hasSubscription = false }) => {
               <Avatar 
                 session={session}
                 size={80}
-                url={profile.avatar_url}
+                url={userProfile?.avatar_url}
                 onUpload={handleAvatarUpdate}
               />
             </div>
@@ -124,6 +152,7 @@ const Account = ({ session, hasSubscription = false }) => {
               {/* Email */}
               <div className="space-y-2">
                 <label 
+                  htmlFor="email-address"
                   className="block text-sm font-medium"
                   style={{ color: 'var(--color-text)' }}
                 >
@@ -135,8 +164,9 @@ const Account = ({ session, hasSubscription = false }) => {
                     style={{ color: 'var(--color-muted)' }}
                   />
                   <input
+                    id="email-address"
                     type="email"
-                    value={profile.email}
+                    value={userProfile?.email || session?.user?.email || ''}
                     disabled
                     className="w-full pl-10 pr-4 py-3 border rounded-lg bg-opacity-50 cursor-not-allowed"
                     style={{
@@ -151,6 +181,7 @@ const Account = ({ session, hasSubscription = false }) => {
               {/* User ID (for reference) */}
               <div className="space-y-2">
                 <label 
+                  htmlFor="user-id"
                   className="block text-sm font-medium"
                   style={{ color: 'var(--color-text)' }}
                 >
@@ -162,8 +193,9 @@ const Account = ({ session, hasSubscription = false }) => {
                     style={{ color: 'var(--color-muted)' }}
                   />
                   <input
+                    id="user-id"
                     type="text"
-                    value={session?.user?.id || ''}
+                    value={userProfile?.id || session?.user?.id || ''}
                     disabled
                     className="w-full pl-10 pr-4 py-3 border rounded-lg bg-opacity-50 cursor-not-allowed text-xs"
                     style={{

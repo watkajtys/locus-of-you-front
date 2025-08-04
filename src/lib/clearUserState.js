@@ -3,8 +3,8 @@
  * This will reset the application to a clean, unauthenticated state
  */
 
-import { supabase } from './supabase';
 import { logOutRevenueCat } from './revenuecat';
+import { supabase } from './supabase';
 
 /**
  * Clear all user-related data and reset application state

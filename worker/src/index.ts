@@ -9,14 +9,36 @@ import {
   UserProfile,
   UserProfileSchema,
   GuardrailConfig,
-  DiagnosticConfig,
-  InterventionConfig
+  // DiagnosticConfig, // No longer directly used in this file
+  InterventionConfig,
+  OnboardingAnswersSchema,
+  SessionHandler,
 } from './types';
+import { guardrailConfig, interventionConfig } from './config';
 import { GuardrailChain } from './chains/guardrail';
-import { DiagnosticChain } from './chains/diagnostic';
 import { InterventionsChain } from './chains/interventions';
+// import { DiagnosticChain } from './chains/diagnostic'; // No longer directly used here
+import { ErrorCode } from './types';
+// import { SnapshotChain } from './chains/snapshot'; // No longer directly used here
+
+// Import handlers
+import { handleOnboardingDiagnostic } from './handlers/onboardingDiagnosticHandler';
+import { handleSnapshotGeneration } from './handlers/snapshotGenerationHandler';
+import { handleDiagnostic } from './handlers/diagnosticHandler';
+import { handleIntervention } from './handlers/interventionHandler';
+import { handleReflection } from './handlers/reflectionHandler';
 
 const app = new Hono<{ Bindings: Env }>();
+
+// Handler Map
+const sessionHandlers: Record<string, SessionHandler> = {
+  onboarding_diagnostic: handleOnboardingDiagnostic,
+  snapshot_generation: handleSnapshotGeneration,
+  diagnostic: handleDiagnostic,
+  intervention: handleIntervention,
+  reflection: handleReflection,
+  // goal_setting is in types but not in the original if/else, so not included for now
+};
 
 // Middleware
 app.use('*', cors());
@@ -34,32 +56,30 @@ app.get('/health', (c) => {
 app.post('/api/coaching/message', async (c) => {
   const { env, executionCtx } = c;
   try {
-    // 1. Parse and validate incoming message
     const body = await c.req.json();
+    console.log("Worker received request body:", body); // NEW LINE
+    // 1. Parse and validate incoming message
     const coachingMessage = CoachingMessageSchema.parse(body);
     const { userId, sessionId, context, message } = coachingMessage;
 
-    // 2. Initialize Chains with environment-specific configs
-    const guardrailConfig: GuardrailConfig = { crisisKeywords: [], escalationThreshold: 0.95, maxTokens: 500, temperature: 0.1, model: 'gemini-2.5-flash', systemPrompt: '' };
-    const diagnosticConfig: DiagnosticConfig = { assessmentFrameworks: ['SDT'], maxQuestions: 1, maxTokens: 500, temperature: 0.3, model: 'gemini-2.5-flash', systemPrompt: '' };
-    const interventionConfig: InterventionConfig = { interventionTypes: ['behavioral', 'cognitive'], personalityFactors: true, maxTokens: 1000, temperature: 0.4, model: 'gemini-2.5-flash', systemPrompt: '' };
-
-    const guardrailChain = new GuardrailChain(guardrailConfig, env);
-    const diagnosticChain = new DiagnosticChain(env.GOOGLE_API_KEY, diagnosticConfig);
-    const interventionsChain = new InterventionsChain(env.GOOGLE_API_KEY, interventionConfig);
+    // 2. Initialize GuardrailChain (other chains are initialized in their handlers)
+        const guardrailChain = new GuardrailChain(guardrailConfig, env);
 
     // 3. Guardrail First: Assess for safety
     const safetyAssessment = await guardrailChain.assessSafety(coachingMessage);
     if (!safetyAssessment.shouldProceed) {
-      return c.json({ success: false, error: { message: safetyAssessment.response, code: 'CRISIS_DETECTED' } }, 400);
+      return c.json({ success: false, error: { message: safetyAssessment.response, code: ErrorCode.CRISIS_DETECTED } }, 400);
     }
 
     // 4. Fetch user profile from KV, or create a default one
     if (!env.USER_SESSIONS_KV) {
-      return c.json({ success: false, error: { message: 'USER_SESSIONS_KV not configured', code: 'KV_NOT_CONFIGURED' } }, 500);
+      return c.json({ success: false, error: { message: 'USER_SESSIONS_KV not configured', code: ErrorCode.KV_NOT_CONFIGURED } }, 500);
+    }
+    if (!env.PROFILES_KV) {
+      return c.json({ success: false, error: { message: 'PROFILES_KV not configured', code: ErrorCode.KV_NOT_CONFIGURED } }, 500);
     }
     let userProfile: UserProfile;
-    const profileString = await env.USER_SESSIONS_KV.get(userId);
+    const profileString = await env.PROFILES_KV.get(userId);
     if (!profileString) {
       userProfile = UserProfileSchema.parse({
         id: userId,
@@ -72,28 +92,35 @@ app.post('/api/coaching/message', async (c) => {
       userProfile = UserProfileSchema.parse(JSON.parse(profileString));
     }
 
-    let finalResponseData: any;
+    // 5. Determine sessionType and delegate to handler
+    const sessionType = context?.sessionType || 'diagnostic'; // Default to 'diagnostic' if not provided
+    const handler = sessionHandlers[sessionType];
 
-    // 5. Conditional Logic based on sessionType
-    const sessionType = context?.sessionType || 'diagnostic';
-
-    if (sessionType === 'diagnostic') {
-      finalResponseData = await diagnosticChain.assessUser(coachingMessage, userProfile);
-    } else if (sessionType === 'intervention') {
-      const assessmentData = await diagnosticChain.assessUser(coachingMessage, userProfile);
-      // TODO: Update user profile with new assessment insights
-      finalResponseData = await interventionsChain.prescribeIntervention(coachingMessage, userProfile, assessmentData);
-    } else {
-      return c.json({ success: false, error: { message: `Invalid session type: ${sessionType}`, code: 'INVALID_SESSION_TYPE' } }, 400);
+    if (!handler) {
+      return c.json({ success: false, error: { message: `Invalid session type: ${sessionType}`, code: ErrorCode.INVALID_SESSION_TYPE } }, 400);
     }
+
+    // Specific pre-handler checks that were in the original if/else blocks
+    if (sessionType === 'onboarding_diagnostic' && !context?.onboardingAnswers) {
+      return c.json({ success: false, error: { message: 'Onboarding answers not provided for onboarding_diagnostic session type.', code: ErrorCode.MISSING_ONBOARDING_ANSWERS } }, 400);
+    }
+    if (sessionType === 'reflection') {
+      if (!context?.previousTask || !context?.reflectionId) {
+        return c.json({ success: false, error: { message: 'Previous task and reflectionId are required for reflection session type.', code: 'MISSING_REFLECTION_DATA' } }, 400);
+      }
+    }
+
+    const finalResponseData = await handler(coachingMessage, userProfile, env, executionCtx);
 
     // 6. Asynchronously save conversation history
     if (!env.COACHING_HISTORY_KV) {
       console.warn('COACHING_HISTORY_KV not configured, skipping history save.');
-    } else {
+    }
+    // Save history for diagnostic, intervention, and reflection messages
+    else if (sessionType === 'diagnostic' || sessionType === 'intervention' || sessionType === 'reflection') {
         const historyKey = `${userId}:${sessionId || 'default'}:${new Date().toISOString()}`;
         const historyRecord = {
-          userMessage: coachingMessage,
+          userMessage: coachingMessage, // This now includes context like previousTask and reflectionId for 'reflection' type
           aiResponse: finalResponseData,
           timestamp: new Date().toISOString(),
         };
@@ -116,7 +143,74 @@ app.post('/api/coaching/message', async (c) => {
   } catch (error) {
     console.error("Error in coaching endpoint:", error);
     if (error instanceof Error) {
-        return c.json({ success: false, error: { message: error.message, code: 'VALIDATION_ERROR' } }, 400);
+      if (error.name === 'ZodError') {
+        // Zod validation error
+        console.error("ZodError details:", (error as any).issues);
+        return c.json({ success: false, error: { message: 'Validation failed', code: 'VALIDATION_ERROR', details: (error as any).issues } }, 400);
+      } else {
+        // Other known errors
+        return c.json({ success: false, error: { message: error.message, code: 'PROCESSING_ERROR' } }, 400);
+      }
+    }
+    return c.json({ success: false, error: { message: 'An unknown server error occurred', code: 'UNKNOWN_ERROR' } }, 500);
+  }
+});
+
+app.post('/api/microtask/generate', async (c) => {
+  const { env } = c;
+  try {
+    const body = await c.req.json();
+    const { onboardingAnswers, userId } = body;
+
+    // Validate onboardingAnswers
+    const parsedOnboardingAnswers = OnboardingAnswersSchema.parse(onboardingAnswers);
+
+    // Fetch user profile
+    if (!env.USER_SESSIONS_KV) {
+      return c.json({ success: false, error: { message: 'USER_SESSIONS_KV not configured', code: ErrorCode.KV_NOT_CONFIGURED } }, 500);
+    }
+    if (!env.PROFILES_KV) {
+      return c.json({ success: false, error: { message: 'PROFILES_KV not configured', code: ErrorCode.KV_NOT_CONFIGURED } }, 500);
+    }
+    let userProfile: UserProfile;
+    const profileString = await env.PROFILES_KV.get(userId);
+    if (!profileString) {
+      // If no profile, create a basic one for microtask generation
+      userProfile = UserProfileSchema.parse({
+        id: userId,
+        createdAt: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        preferences: {},
+        psychologicalProfile: {},
+      });
+    } else {
+      userProfile = UserProfileSchema.parse(JSON.parse(profileString));
+    }
+
+        const interventionsChain = new InterventionsChain(env.GOOGLE_API_KEY, interventionConfig);
+
+    const microtask = await interventionsChain.generateFirstMicrotask(parsedOnboardingAnswers, userProfile);
+
+    const apiResponse: APIResponse = {
+      success: true,
+      data: microtask,
+      metadata: {
+        requestId: c.req.header('cf-request-id') || '',
+        timestamp: new Date().toISOString(),
+        processingTime: 0
+      }
+    };
+
+    return c.json(apiResponse);
+
+  } catch (error) {
+    console.error("Error in microtask generation endpoint:", error);
+    if (error instanceof Error) {
+      if (error.name === 'ZodError') {
+        return c.json({ success: false, error: { message: 'Validation failed', code: 'VALIDATION_ERROR', details: (error as any).issues } }, 400);
+      } else {
+        return c.json({ success: false, error: { message: error.message, code: 'PROCESSING_ERROR' } }, 400);
+      }
     }
     return c.json({ success: false, error: { message: 'An unknown server error occurred', code: 'UNKNOWN_ERROR' } }, 500);
   }
@@ -124,7 +218,7 @@ app.post('/api/coaching/message', async (c) => {
 
 // 404 Handler
 app.notFound((c) => {
-  return c.json({ success: false, error: { message: 'Not Found', code: 'NOT_FOUND' } }, 404);
+  return c.json({ success: false, error: { message: 'Not Found', code: ErrorCode.NOT_FOUND } }, 404);
 });
 
 export default app;

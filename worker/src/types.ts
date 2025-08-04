@@ -26,6 +26,46 @@ export const UserProfileSchema = z.object({
 
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
+// Onboarding Answers Type
+export const OnboardingAnswersSchema = z.object({
+  mindset: z.enum(['developed', 'stable']),
+  agency: z.enum(['primary_driver', 'external_factors']),
+  motivation_source: z.enum(['internal_satisfaction', 'external_results']),
+  approach_to_challenges: z.enum(['action_experimenting', 'analyze_plan']),
+  focus_style: z.enum(['dive_deep', 'comfortable_switching']),
+  risk_tolerance: z.enum(['safe_reliable', 'riskier_payoff']),
+  social_orientation: z.enum(['quiet_solo', 'social_collaborative']),
+  goal_category: z.string().min(1),
+  goal_subcategory: z.string().min(1),
+  userId: z.string().optional(), // Add userId as an optional field
+});
+
+export type OnboardingAnswers = z.infer<typeof OnboardingAnswersSchema>;
+
+// Insight Types for Snapshot
+export const InsightSchema = z.object({
+  type: z.enum(['spectrum', 'balance', 'ring']),
+  title: z.string(),
+  description: z.string(),
+  userScore: z.number(),
+  minLabel: z.string().optional(),
+  maxLabel: z.string().optional(),
+  leftLabel: z.string().optional(),
+  rightLabel: z.string().optional(),
+});
+
+export type Insight = z.infer<typeof InsightSchema>;
+
+// Snapshot Data Type
+export const SnapshotDataSchema = z.object({
+  archetype: z.string(),
+  insights: z.array(InsightSchema),
+  userGoal: z.string(),
+  narrativeSummary: z.string(),
+});
+
+export type SnapshotData = z.infer<typeof SnapshotDataSchema>;
+
 // Coaching Message Types
 export const CoachingMessageSchema = z.object({
   message: z.string().min(1).max(2000),
@@ -35,8 +75,11 @@ export const CoachingMessageSchema = z.object({
     previousMessages: z.array(z.string()).optional(),
     currentGoal: z.string().optional(),
     urgencyLevel: z.enum(['low', 'medium', 'high', 'crisis']).default('medium'),
-    sessionType: z.enum(['diagnostic', 'intervention', 'reflection', 'goal_setting']).default('diagnostic')
-  }).optional()
+    sessionType: z.enum(['diagnostic', 'intervention', 'reflection', 'goal_setting', 'onboarding_diagnostic', 'snapshot_generation']).default('diagnostic'),
+    onboardingAnswers: OnboardingAnswersSchema.optional(),
+    previousTask: z.string().optional(), // For 'reflection' sessionType: the task just completed
+    reflectionId: z.string().optional(), // For 'reflection' sessionType: e.g., 'easy', 'silly', 'not_done'
+  }).default({})
 });
 
 export type CoachingMessage = z.infer<typeof CoachingMessageSchema>;
@@ -93,11 +136,41 @@ export interface GuardrailConfig extends ChainConfig {
 export interface DiagnosticConfig extends ChainConfig {
   assessmentFrameworks: ('ET' | 'SDT' | 'CBT' | 'ACT')[];
   maxQuestions: number;
+  assessmentAreas: string[];
 }
 
 export interface InterventionConfig extends ChainConfig {
   interventionTypes: ('behavioral' | 'cognitive' | 'motivational' | 'goal_setting')[];
   personalityFactors: boolean;
+  microtaskSystemPrompt?: string; // Add this line
+}
+
+export enum ErrorCode {
+  // General Errors
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+  PROCESSING_ERROR = 'PROCESSING_ERROR',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  NOT_FOUND = 'NOT_FOUND',
+
+  // Authentication & Authorization
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+  INVALID_TOKEN = 'INVALID_TOKEN',
+
+  // API & Network
+  BAD_REQUEST = 'BAD_REQUEST',
+  INVALID_SESSION_TYPE = 'INVALID_SESSION_TYPE',
+  MISSING_ONBOARDING_ANSWERS = 'MISSING_ONBOARDING_ANSWERS',
+  MISSING_REFLECTION_DATA = 'MISSING_REFLECTION_DATA',
+
+  // KV & Database
+  KV_NOT_CONFIGURED = 'KV_NOT_CONFIGURED',
+  DB_ERROR = 'DB_ERROR',
+
+  // AI & Chains
+  CRISIS_DETECTED = 'CRISIS_DETECTED',
+  CHAIN_EXECUTION_ERROR = 'CHAIN_EXECUTION_ERROR',
+  LLM_ERROR = 'LLM_ERROR',
 }
 
 // API Response Types
@@ -106,7 +179,7 @@ export interface APIResponse<T = any> {
   data?: T;
   error?: {
     message: string;
-    code: string;
+    code: ErrorCode;
     details?: any;
   };
   metadata?: {
@@ -129,8 +202,9 @@ export interface Env {
   ENVIRONMENT: 'development' | 'staging' | 'production';
   
   // KV Namespaces
-  RATE_LIMIT_KV?: KVNamespace;
-  USER_SESSIONS_KV?: KVNamespace;
+  PROFILES_KV?: KVNamespace;
+  SESSIONS_KV?: KVNamespace;
+  SNAPSHOTS_KV?: KVNamespace;
   COACHING_HISTORY_KV?: KVNamespace;
   
   // D1 Database (optional)
@@ -224,3 +298,26 @@ export interface CrisisIndicators {
   confidence: number;
   recommendedAction: 'continue' | 'escalate' | 'emergency_services' | 'crisis_line';
 }
+
+export interface Microtask {
+  rationale: string;
+  task: string;
+}
+
+export interface MomentumMirrorData {
+  title: string;
+  body: string;
+}
+
+export interface DashboardTeaserData {
+  teaserText: string;
+}
+
+// Handler function type
+export type SessionHandler = (
+  coachingMessage: CoachingMessage,
+  userProfile: UserProfile,
+  env: Env,
+  executionCtx: import('hono').Context['executionCtx'],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+) => Promise<any>;

@@ -1,17 +1,29 @@
-import React, { useState, useEffect } from 'react';
 import { Check, Zap, Brain, Target, BarChart3, BookOpen, Sparkles, Crown, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
-import Card from './Card';
-import Button from './Button';
+import React, { useState, useEffect } from 'react';
+
 import { 
   purchaseSubscription, 
   getOfferings, 
   PRODUCT_IDS,
   checkSubscriptionStatus 
 } from '../lib/revenuecat';
+import useStore from '../store/store'; // Import Zustand store
+
+import Button from './Button';
+import Card from './Card';
+import LoadingSpinner from './LoadingSpinner';
+
 
 const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = false }) => {
+  // isAuthenticatedUser prop is still useful to tailor UI elements if needed.
+  // onSubscribe and onSubscriptionSuccess are passed from App.jsx to handle post-purchase logic.
+
+  const setHasSubscription = useStore((state) => state.setHasSubscription);
+  const setCurrentView = useStore((state) => state.setCurrentView);
+  // Potentially: const session = useStore((state) => state.session); to get user ID for RevenueCat if not already handled.
+
   const [selectedPlan, setSelectedPlan] = useState('annual'); // Default to annual (best value)
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Local loading for purchase process
   const [error, setError] = useState(null);
   const [offerings, setOfferings] = useState(null);
   const [loadingOfferings, setLoadingOfferings] = useState(true);
@@ -37,6 +49,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
   const handleSubscribe = async () => {
     if (loading) return;
 
+    console.log('handleSubscribe called');
     setLoading(true);
     setError(null);
 
@@ -55,62 +68,60 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
         const status = await checkSubscriptionStatus();
         
         if (status.hasSubscription) {
-          // Call success callback if provided
+          setHasSubscription(true); // Update store
+          // Call success callback passed from App.jsx (which might also refresh or set view)
           onSubscriptionSuccess?.(result.customerInfo, selectedPlan);
-          
-          // Call the original callback
-          onSubscribe?.(selectedPlan);
+          // onSubscribe is also called by App.jsx's handleSubscriptionSuccess,
+          // so calling it here might be redundant if onSubscriptionSuccess already covers it.
+          // For now, assume App.jsx's onSubscriptionSuccess will call its onSubscribe logic.
+          // If the user is authenticated, App.jsx's subscription gate will handle view change.
+          // If not authenticated (e.g. end of onboarding), might need to set view to auth.
+          if (!isAuthenticatedUser) {
+            // setCurrentView('auth'); // Or let App.jsx handle this transition via onSubscriptionSuccess
+          }
         } else {
-          throw new Error('Subscription not found after purchase');
+          // This case should ideally not happen if purchase was successful and status check is reliable.
+          setHasSubscription(false); // Ensure store reflects reality
+          throw new Error('Subscription not found after successful purchase confirmation. Please contact support.');
         }
       } else {
-        // Purchase failed
+        // Purchase failed or was cancelled
         if (result.userCancelled) {
-          // User cancelled, don't show error
           console.log('User cancelled subscription purchase');
+          // No error message needed for user cancellation
         } else {
           setError(result.error || 'Failed to process subscription. Please try again.');
+          setHasSubscription(false); // Ensure store reflects no subscription
         }
       }
     } catch (error) {
       console.error('Subscription error:', error);
       setError(error.message || 'An unexpected error occurred. Please try again.');
+      setHasSubscription(false); // Ensure store reflects no subscription on error
     } finally {
-      setLoading(false);
+      setLoading(false); // Reset local loading state
     }
   };
 
+  // Updated premiumFeatures as per onboard.md
   const premiumFeatures = [
     {
-      icon: Zap,
-      title: 'Unlimited, continuous coaching dialogue',
-      description: 'Never-ending personalized guidance tailored to your unique profile'
+      icon: Zap, // Keeping Zap icon, can be changed
+      title: 'An Adaptive Plan that Evolves With You',
+      // No description in onboard.md, can add one if desired
+      description: 'Your coaching plan adapts based on your progress and reflections.'
     },
     {
-      icon: Brain,
-      title: 'Full access to the diagnostic engine (ET→SDT→GST)',
-      description: 'Deep psychological insights using Evidence-based Therapy principles'
+      icon: Brain, // Keeping Brain icon
+      title: 'Unlock Your Next Step, and the Next...',
+      description: 'Continuously receive tailored steps to build momentum towards your goals.'
     },
     {
-      icon: Target,
-      title: 'Personalized, evidence-based interventions',
-      description: 'Custom strategies designed specifically for your motivational profile'
-    },
-    {
-      icon: BarChart3,
-      title: 'Unlimited goal setting and tracking',
-      description: 'Set, monitor, and achieve as many goals as you want'
-    },
-    {
-      icon: Sparkles,
-      title: 'Advanced "Data Storytelling" progress summaries',
-      description: 'Beautiful, insightful reports that show your growth over time'
-    },
-    {
-      icon: BookOpen,
-      title: 'Access to all specialized coaching playbooks',
-      description: 'Comprehensive guides for every aspect of personal development'
+      icon: Target, // Keeping Target icon
+      title: 'Ongoing Insights from Your Personal AI Coach',
+      description: 'Benefit from continuous analysis and feedback from your AI coach.'
     }
+    // Removed other features to match onboard.md's conciseness for Phase 6
   ];
 
   // Helper function to get pricing from offerings
@@ -133,7 +144,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
       annual: {
         price: annualPackage?.product.priceString || '$119.99',
         monthlyEquivalent: annualPackage ? 
-          `$${(annualPackage.product.price / 12).toFixed(2)}` : 
+          `${(annualPackage.product.price / 12).toFixed(2)}` : 
           '$9.99'
       },
       monthly: {
@@ -147,30 +158,20 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
   if (loadingOfferings) {
     return (
       <div 
-        className="min-h-screen flex items-center justify-center font-inter"
-        style={{ backgroundColor: '#0f172a' }}
-      >
-        <div className="text-center space-y-4">
-          <Loader2 
-            className="w-8 h-8 animate-spin mx-auto"
-            style={{ color: '#f97316' }}
-          />
-          <p 
-            className="text-lg"
-            style={{ color: '#94a3b8' }}
-          >
-            Loading subscription options...
-          </p>
-        </div>
-      </div>
+      className="min-h-screen flex items-center justify-center font-inter"
+      style={{ backgroundColor: '#0f172a' }}
+    >
+      <LoadingSpinner text="Loading subscription options..." />
+    </div>
     );
   }
 
   return (
     <div 
-      className="min-h-screen flex flex-col items-center justify-center font-inter p-6"
+      className="min-h-screen flex flex-col items-center justify-center font-inter p-6 relative"
       style={{ backgroundColor: '#0f172a' }} // Professional theme background
     >
+      
       <div className="max-w-5xl mx-auto w-full space-y-12">
         {/* Header Section */}
         <div className="text-center space-y-6">
@@ -188,20 +189,23 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
               className="text-4xl md:text-6xl font-bold leading-tight"
               style={{ color: '#f1f5f9' }} // slate-100 text
             >
-              {isAuthenticatedUser ? 'Unlock Premium Features' : 'Unlock Your Full Potential'}
+              Let's Keep the Momentum Going.
             </h1>
             <p 
               className="text-lg md:text-xl leading-relaxed max-w-3xl mx-auto"
               style={{ color: '#94a3b8' }} // slate-400 muted
             >
-              {isAuthenticatedUser 
-                ? 'You need an active subscription to access premium coaching features. Choose your plan below to continue your growth journey.'
-                : 'The free snapshot was just the beginning. Unlock the continuous coaching relationship to diagnose why you\'re stuck and build a personalized plan to move forward.'
-              }
+              You've already seen how a personalized first step can make a difference. The real power of LocusOfYou is turning that one action into a consistent practice.
+            </p>
+            <p
+              className="text-md md:text-lg leading-relaxed max-w-3xl mx-auto" // Sub-Body
+              style={{ color: '#94a3b8' }} // slate-400 muted
+            >
+              Subscribing unlocks your full, ongoing coaching experience. We'll help you reflect on every step, adapt your plan based on how it goes, and reveal your next step, every single time.
             </p>
           </div>
 
-          {/* Back to Limited Access (for authenticated users only) */}
+          {/* Back to Limited Access (for authenticated users only) - This might be less relevant if Paywall is part of onboarding before full auth wall */}
           {isAuthenticatedUser && (
             <div className="flex justify-center">
               <button
@@ -299,7 +303,8 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
                 </div>
               </div>
 
-              <div
+              <button
+                type="button"
                 className={`
                   relative p-8 rounded-xl transition-all duration-300 cursor-pointer
                   ${selectedPlan === 'annual' 
@@ -374,11 +379,12 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
             </div>
 
             {/* Monthly Plan */}
-            <div
+            <button
+              type="button"
               className={`
                 p-8 rounded-xl transition-all duration-300 cursor-pointer
                 ${selectedPlan === 'monthly' 
@@ -459,7 +465,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
                   </div>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -484,8 +490,9 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
             {premiumFeatures.map((feature, index) => {
               const IconComponent = feature.icon;
               return (
-                <div
+                <button
                   key={index}
+                  type="button"
                   className="flex items-start space-x-4 p-6 rounded-xl transition-all duration-300 hover:scale-102"
                   style={{
                     backgroundColor: '#1e293b',
@@ -519,7 +526,7 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
                       strokeWidth={2}
                     />
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -547,14 +554,25 @@ const Paywall = ({ onSubscribe, onSubscriptionSuccess, isAuthenticatedUser = fal
                 </div>
               ) : (
                 <>
-                  {isAuthenticatedUser 
-                    ? `🚀 Subscribe to ${selectedPlan === 'annual' ? 'Annual' : 'Monthly'} Plan`
-                    : '🚀 Start My 7-Day Free Trial'
-                  }
+                  {/* Text updated as per onboard.md */}
+                  Unlock My Full Plan
                 </>
               )}
             </Button>
             
+            {/* The "Skip for now" button might be removed if this is a hard paywall in the onboarding flow */}
+            {/* For now, keeping it but commenting out, as onboard.md doesn't specify it for Phase 6 */}
+            {/* {!isAuthenticatedUser && (
+              <div className="mt-4">
+                <button
+                  onClick={() => onSubscriptionSuccess?.(null, 'skipped')}
+                  className="text-sm font-medium text-gray-400 hover:underline"
+                >
+                  Skip for now (limited access)
+                </button>
+              </div>
+            )} */}
+
             <div className="mt-4 space-y-2">
               <p 
                 className="text-sm font-medium"

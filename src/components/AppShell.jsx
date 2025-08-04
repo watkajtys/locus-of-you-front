@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
 import { MessageCircle, BarChart3, User } from 'lucide-react';
+import React, { useState } from 'react';
+
+// We don't need to import useStore here if AppShell itself doesn't use store values directly.
+// Child components will import and use the store.
+import Account from './Account';
 import CoachingInterface from './CoachingInterface';
 import Dashboard from './Dashboard';
-import Account from './Account';
 
-const AppShell = ({ session, hasSubscription }) => {
+
+const AppShell = () => { // Removed session and hasSubscription props
   const [activeTab, setActiveTab] = useState('coach');
 
   const tabs = [
@@ -32,17 +36,20 @@ const AppShell = ({ session, hasSubscription }) => {
 
   return (
     <div 
-      className="min-h-screen flex flex-col font-inter"
-      style={{ backgroundColor: 'var(--color-background)' }}
-    >
+        className="min-h-screen flex flex-col font-inter relative"
+        style={{ backgroundColor: 'var(--color-background)' }}
+      >
+        
+      <div className="absolute top-4 right-4">
+        <a href="https://boltfactory.io" target="_blank" rel="noopener noreferrer">
+          <img src={boltBadge} alt="Bolt Badge" className="w-16 h-16" />
+        </a>
+      </div>
+
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden">
-        {ActiveComponent && (
-          <ActiveComponent 
-            session={session} 
-            hasSubscription={hasSubscription}
-          />
-        )}
+        {/* ActiveComponent will now fetch its own data from the store if needed */}
+        {ActiveComponent && <ActiveComponent />}
       </div>
 
       {/* Bottom Tab Navigation */}

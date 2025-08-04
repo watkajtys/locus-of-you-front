@@ -1,24 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { useState } from 'react';
 
-// Create the Aura context
-const AuraContext = createContext();
-
-// Custom hook to use the Aura context
-export const useAura = () => {
-  const context = useContext(AuraContext);
-  if (!context) {
-    throw new Error('useAura must be used within an AuraProvider');
-  }
-  return context;
-};
-
-// Aura state types
-export const AURA_STATES = {
-  IDLE: 'idle',
-  PROCESSING: 'processing',
-  SUCCESS: 'success',
-  ERROR: 'error'
-};
+import { AuraContext, AURA_STATES } from './auraConstants';
 
 // Aura Provider component
 export const AuraProvider = ({ children }) => {

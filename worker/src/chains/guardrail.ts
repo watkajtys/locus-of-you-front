@@ -52,7 +52,12 @@ export class GuardrailChain {
     const response = await this.model.invoke([this.systemPrompt, userMessage]);
 
     try {
-      const indicators: CrisisIndicators = JSON.parse(response.content as string);
+      let jsonString = response.content as string;
+      // Attempt to strip markdown code blocks if present
+      if (jsonString.startsWith("```json")) {
+        jsonString = jsonString.substring(jsonString.indexOf("\n") + 1, jsonString.lastIndexOf("```"));
+      }
+      const indicators: CrisisIndicators = JSON.parse(jsonString.trim());
 
       if (indicators.severity === "immediate") {
         return {
